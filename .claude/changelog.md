@@ -1,3 +1,44 @@
+## 2026-09-12 — Waifu Coder follows OpenCode idle, not a second loop
+- **Why:** OpenCode 1.18.30 ends a turn at `session.idle` (the loop
+  exits when the last assistant finish is not tool-calls and no tools
+  remain). halt() publishes `MessageAbortedError` then idle. We were
+  throwing that as a Dart error and dumping the Map.toString as Tiffany
+  speech. A leftover auto-continue helper would have sent a hidden
+  prompt after idle — fighting the loop, not using it.
+- **What:** Pump completes only on idle. Abort is not spoken. Agent
+  prompt says todowrite is not the end so the model keeps calling tools
+  and OpenCode keeps looping, and that the spoken close is this
+  character wrapping up what they did and what is next. Deleted the
+  unused continue/demote files.
+- **Files:** `opencode_events.dart`, `opencode_client.dart`,
+  `waifu_coworker_prompt.dart`
+- **Commit:** (this commit)
+
+## 2026-09-12 — Stoop Inbox notifications were blank bars
+- **Why:** Notice cards used a rounded BoxDecoration with a teal/ember
+  left accent and a different hairline on the other sides. Flutter
+  refuses to paint that (non-uniform Border + borderRadius). Layout
+  still reserved the card height, so the Inbox looked like empty slabs.
+- **What:** Uniform hairline + a 3px accent strip widget. Parser also
+  accepts type/snake_case/text for SYSTEM notices.
+- **Files:** `stoop_notifications_tab.dart`, `stoop_message.dart`
+- **Commit:** (this commit)
+
+## 2026-09-12 — Model Settings is a one-row host switcher
+- **Why:** Switching Nano-GPT ↔ OpenRouter in chat meant retyping the URL
+  even though keys were already stored per host. The dialog was still
+  Local / Remote API / oMLX plus a raw URL field.
+- **What:** One row of hosts (KoboldCpp, OpenRouter, Nano-GPT, LM Studio,
+  oMLX on macOS only, Custom). Tap restores that host's key and last
+  model. URL field only on Custom. oMLX is hidden on Windows/Linux, same
+  hide as the old chat toggle. Settings Backend tab uses the same bar.
+  Web Settings matches (LM Studio option; oMLX only if the host is macOS).
+- **Files:** `lib/ui/settings/widgets/remote_provider_bar.dart`,
+  `remote_provider_apply.dart`, `lib/services/storage/settings/remote_provider.dart`,
+  `backend_settings.dart`, `model_settings_dialog*.dart`,
+  `backend_mode_selector.dart`, `web_ui/src/pages/SettingsPage.tsx`
+- **Commit:** (this commit)
+
 ## 2026-09-12 — Notarization uses App Store Connect API key
 - **Why:** Changing the Apple ID password revoked the app-specific password
   in `APPLE_ID_PASSWORD`. Nightlies 214–216 all 401'd at `notarytool submit`

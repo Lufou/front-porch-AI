@@ -88,8 +88,27 @@ class OpenCodeTodoUpdated extends OpenCodeBusEvent {
 }
 
 class OpenCodeErrorEvent extends OpenCodeBusEvent {
-  const OpenCodeErrorEvent(this.message);
+  const OpenCodeErrorEvent({
+    required this.message,
+    this.sessionId = '',
+    this.name = '',
+    this.aborted = false,
+  });
+  final String sessionId;
   final String message;
+  final String name;
+  final bool aborted;
+}
+
+/// OpenCode halt() publishes MessageAbortedError, then idle. Abort is
+/// not a spoken turn.
+bool openCodeErrorIsAbort({required String name, required String message}) {
+  final blob = '$name $message'.toLowerCase();
+  if (blob.contains('messageabortederror') || blob.contains('aborterror')) {
+    return true;
+  }
+  final m = message.trim().toLowerCase();
+  return m == 'aborted' || m == 'the operation was aborted.';
 }
 
 /// Dumb consumer the UI/harness implements. OpenCode owns tools; no Dart ledger.
@@ -132,8 +151,8 @@ void dispatchOpenCodeEvent(OpenCodeBusEvent event, OpenCodeEventSink sink) {
       sink.onTodo(todos);
     case OpenCodeSessionIdle():
       sink.onIdle();
-    case OpenCodeErrorEvent(:final message):
-      sink.onError(message);
+    case OpenCodeErrorEvent(:final message, :final aborted):
+      if (!aborted) sink.onError(message);
   }
 }
 
@@ -220,10 +239,39 @@ OpenCodeBusEvent? openCodeEventFromJson(
         ],
       );
     case 'session.error':
-      return OpenCodeErrorEvent(map['error']?.toString() ?? 'session error');
+      return _sessionError(map);
     default:
       return null;
   }
+}
+
+OpenCodeErrorEvent _sessionError(Map<String, dynamic> map) {
+  final sessionId = map['sessionID']?.toString() ?? '';
+  final err = map['error'];
+  if (err is Map) {
+    final name = err['name']?.toString() ?? '';
+    final data = err['data'];
+    var message = '';
+    if (data is Map) {
+      message = data['message']?.toString() ?? '';
+    }
+    if (message.isEmpty) message = err['message']?.toString() ?? '';
+    if (message.isEmpty) {
+      message = name.isEmpty ? 'session error' : name;
+    }
+    return OpenCodeErrorEvent(
+      sessionId: sessionId,
+      name: name,
+      message: message,
+      aborted: openCodeErrorIsAbort(name: name, message: message),
+    );
+  }
+  final raw = err?.toString() ?? 'session error';
+  return OpenCodeErrorEvent(
+    sessionId: sessionId,
+    message: raw,
+    aborted: openCodeErrorIsAbort(name: '', message: raw),
+  );
 }
 
 OpenCodePermissionAsked? _permissionAsked(Map<String, dynamic> map) {

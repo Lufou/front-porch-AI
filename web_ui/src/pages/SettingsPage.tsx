@@ -19,7 +19,7 @@ import {
   type GenSettings,
 } from '../components/GenerationSettingsFields';
 import { VoiceMediaSettings } from '../components/VoiceMediaSettings';
-import { urlHasStoredApiKey } from '../remoteApiKeys';
+import { isLmStudioUrl, urlHasStoredApiKey } from '../remoteApiKeys';
 
 // A single backend picker (replacing the old Backend + Provider dropdowns,
 // which overlapped). Each entry maps to a real BackendType; the OpenAI-compatible
@@ -36,11 +36,12 @@ interface BackendOption {
   kind: 'local' | 'api';
 }
 const BACKEND_OPTIONS: BackendOption[] = [
-  { id: 'kobold', label: 'KoboldCpp (local)', backend: 'kobold', kind: 'local' },
-  { id: 'omlx', label: 'oMLX (local API)', backend: 'omlx', url: 'http://localhost:8000/v1', kind: 'api' },
-  { id: 'nanogpt', label: 'Nano-GPT', backend: 'openRouter', url: 'https://nano-gpt.com/api/v1', kind: 'api' },
+  { id: 'kobold', label: 'KoboldCpp', backend: 'kobold', kind: 'local' },
   { id: 'openrouter', label: 'OpenRouter', backend: 'openRouter', url: 'https://openrouter.ai/api/v1', kind: 'api' },
-  { id: 'custom', label: 'Custom API (OpenAI-compatible)', backend: 'openRouter', url: '', kind: 'api' },
+  { id: 'nanogpt', label: 'Nano-GPT', backend: 'openRouter', url: 'https://nano-gpt.com/api/v1', kind: 'api' },
+  { id: 'lmstudio', label: 'LM Studio', backend: 'openRouter', url: 'http://localhost:1234/v1', kind: 'api' },
+  { id: 'omlx', label: 'oMLX', backend: 'omlx', url: 'http://localhost:8000/v1', kind: 'api' },
+  { id: 'custom', label: 'Custom', backend: 'openRouter', url: '', kind: 'api' },
 ];
 
 type Gen = GenSettings;
@@ -53,6 +54,8 @@ interface Settings {
   remoteModelName: string;
   hasApiKey: boolean;
   remoteApiUrlsWithKeys?: string[];
+  /** Host is macOS — oMLX is Apple Silicon only. Absent = hide (old hosts). */
+  omlxAvailable?: boolean;
   remoteConfigured?: boolean;
   remoteReachability?: 'unknown' | 'checking' | 'reachable' | 'unreachable';
   contextSize: number;
@@ -231,7 +234,9 @@ export function SettingsPage() {
   // OpenAI-compatible "openRouter" backend is disambiguated by its saved URL
   // (Nano-GPT / OpenRouter / else Custom).
   const currentBackendId = (): string => {
-    if (s.backend !== 'openRouter') return s.backend;
+    if (s.backend === 'kobold') return 'kobold';
+    if (s.backend === 'omlx') return 'omlx';
+    if (isLmStudioUrl(s.remoteApiUrl)) return 'lmstudio';
     const match = BACKEND_OPTIONS.find(
       (o) => o.backend === 'openRouter' && o.url && o.url === s.remoteApiUrl.trim(),
     );
@@ -283,10 +288,16 @@ export function SettingsPage() {
   // the dropdown changes (before saving). Local backends are host subprocesses;
   // the API ones connect to an OpenAI-compatible server.
   const selectedId = currentBackendId();
+  const visibleBackends = BACKEND_OPTIONS.filter(
+    (o) => o.id !== 'omlx' || s.omlxAvailable === true,
+  );
   const isApi = s.backend === 'openRouter' || s.backend === 'omlx';
   const isManagedLocal = s.backend === 'kobold';
-  const showUrlField = selectedId === 'custom'; // named providers + oMLX have fixed URLs
-  const showKeyField = s.backend === 'openRouter'; // oMLX is local — no key
+  const showUrlField = selectedId === 'custom';
+  const showKeyField =
+    selectedId === 'openrouter' ||
+    selectedId === 'nanogpt' ||
+    selectedId === 'custom';
 
   return (
     <div className="page">
@@ -303,7 +314,7 @@ export function SettingsPage() {
         <label>
           Backend
           <select value={selectedId} onChange={(e) => onBackendChange(e.target.value)}>
-            {BACKEND_OPTIONS.map((o) => (
+            {visibleBackends.map((o) => (
               <option key={o.id} value={o.id}>{o.label}</option>
             ))}
           </select>

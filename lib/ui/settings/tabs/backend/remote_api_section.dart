@@ -20,6 +20,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:front_porch_ai/services/services.dart';
+import 'package:front_porch_ai/services/storage/settings/remote_provider.dart';
 import 'package:front_porch_ai/ui/theme/app_colors.dart';
 import 'package:front_porch_ai/ui/widgets/widgets.dart';
 import 'package:front_porch_ai/ui/settings/widgets/widgets.dart';
@@ -52,48 +53,18 @@ class _RemoteApiSectionState extends State<RemoteApiSection> {
   bool _isFetchingModels = false;
   bool _isCheckingConnection = false;
 
-  Future<void> _selectPreset(String label, String url) async {
-    final storageService = Provider.of<StorageService>(context, listen: false);
-    // Per-host key: stash the current URL's key and restore this host's
-    // (or empty). Sharing one key made Check Connection look filled while
-    // generate hit Nano-GPT without that host's Authorization header.
-    await storageService.setRemoteApiUrl(url);
-    widget.apiUrlController.text = url;
-    widget.apiKeyController.text = storageService.remoteApiKey;
-
-    // setRemoteApiUrl above already triggered LLMProvider's storage sync,
-    // which applies the live config per active backend; the picker fetch
-    // targets the new URL explicitly instead of clobbering live state.
-    final openRouter = Provider.of<OpenRouterService>(context, listen: false);
-    setState(() => _isFetchingModels = true);
-    try {
-      final models = await openRouter.fetchAvailableModels(
-        apiUrl: url,
-        apiKey: storageService.remoteApiKey,
-      );
-      if (!mounted) return;
-      setState(() => _isFetchingModels = false);
-      widget.onModelsFetched(models);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            models.isEmpty
-                ? '$label connected — no models found yet.'
-                : '$label connected — found ${models.length} models.',
-          ),
-        ),
-      );
-    } catch (_) {
-      if (mounted) setState(() => _isFetchingModels = false);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final storageService = Provider.of<StorageService>(context);
     final remote = Provider.of<OpenRouterService>(context);
     final theme = Theme.of(context);
     final accent = AppColors.porchAmberOf(context);
+    final kind = resolveRemoteProviderKind(
+      backendType: storageService.backendType,
+      url: storageService.remoteApiUrl,
+    );
+    final showUrl = remoteProviderShowsUrlField(kind);
+    final needsKey = remoteProviderNeedsApiKey(kind);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -112,88 +83,57 @@ class _RemoteApiSectionState extends State<RemoteApiSection> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Quick-connect presets.
-              Text('Quick Connect', style: theme.textTheme.bodySmall),
-              const SizedBox(height: 6),
-              Wrap(
-                spacing: 8,
-                runSpacing: 6,
-                children: [
-                  ApiPresetChip(
-                    label: '🖥️ LM Studio',
-                    active:
-                        storageService.remoteApiUrl ==
-                        'http://localhost:1234/v1',
-                    onPressed: () =>
-                        _selectPreset('LM Studio', 'http://localhost:1234/v1'),
-                  ),
-                  ApiPresetChip(
-                    label: '🌐 OpenRouter',
-                    active:
-                        storageService.remoteApiUrl ==
-                        'https://openrouter.ai/api/v1',
-                    onPressed: () => _selectPreset(
-                      'OpenRouter',
-                      'https://openrouter.ai/api/v1',
+              if (showUrl) ...[
+                Text('API URL', style: theme.textTheme.bodySmall),
+                const SizedBox(height: 4),
+                TextFormField(
+                  controller: widget.apiUrlController,
+                  decoration: InputDecoration(
+                    hintText: 'https://your-server.example/v1',
+                    filled: true,
+                    fillColor: theme.scaffoldBackgroundColor,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
                     ),
                   ),
-                  ApiPresetChip(
-                    label: '⚡ Nano-GPT',
-                    active:
-                        storageService.remoteApiUrl ==
-                        'https://nano-gpt.com/api/v1',
-                    onPressed: () => _selectPreset(
-                      'Nano-GPT',
-                      'https://nano-gpt.com/api/v1',
+                  onChanged: (val) =>
+                      storageService.setRemoteApiUrl(val.trim()),
+                ),
+                const SizedBox(height: 16),
+              ],
+              if (needsKey) ...[
+                Text('API Key', style: theme.textTheme.bodySmall),
+                const SizedBox(height: 4),
+                TextFormField(
+                  controller: widget.apiKeyController,
+                  obscureText: true,
+                  decoration: InputDecoration(
+                    hintText: storageService.remoteApiKey.isNotEmpty
+                        ? '•••••• (leave blank to keep)'
+                        : 'paste your API key',
+                    filled: true,
+                    fillColor: theme.scaffoldBackgroundColor,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
                     ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
+                    suffixIcon: const Icon(Icons.key, size: 18),
                   ),
-                  // No oMLX chip here on purpose: oMLX has its own dedicated
-                  // Backend Mode radio above (with oMLX-specific handling),
-                  // so a second way to reach it through the generic client
-                  // was a redundant, subtly-different path. Use the radio.
-                ],
-              ),
-              const SizedBox(height: 16),
-              Text('API URL', style: theme.textTheme.bodySmall),
-              const SizedBox(height: 4),
-              TextFormField(
-                controller: widget.apiUrlController,
-                decoration: InputDecoration(
-                  hintText: 'https://openrouter.ai/api/v1',
-                  filled: true,
-                  fillColor: theme.scaffoldBackgroundColor,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 10,
-                  ),
+                  onChanged: (val) {
+                    if (val.trim().isNotEmpty) {
+                      storageService.setRemoteApiKey(val.trim());
+                    }
+                  },
                 ),
-                onChanged: (val) => storageService.setRemoteApiUrl(val.trim()),
-              ),
-              const SizedBox(height: 16),
-              Text('API Key', style: theme.textTheme.bodySmall),
-              const SizedBox(height: 4),
-              TextFormField(
-                controller: widget.apiKeyController,
-                obscureText: true,
-                decoration: InputDecoration(
-                  hintText: 'sk-or-...',
-                  filled: true,
-                  fillColor: theme.scaffoldBackgroundColor,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 10,
-                  ),
-                  suffixIcon: const Icon(Icons.key, size: 18),
-                ),
-                onChanged: (val) => storageService.setRemoteApiKey(val.trim()),
-              ),
-              const SizedBox(height: 12),
+                const SizedBox(height: 12),
+              ],
               // ── Check Connection Button ──
               SizedBox(
                 width: double.infinity,

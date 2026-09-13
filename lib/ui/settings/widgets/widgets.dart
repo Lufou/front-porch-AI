@@ -4,7 +4,8 @@
 // Barrel for the Settings-local widgets (section headers, sliders,
 // color rows, preset chips, and the settings cards).
 
-export 'api_preset_chip.dart';
+export 'remote_provider_bar.dart';
+export 'remote_provider_apply.dart';
 export 'color_row.dart';
 export 'feature_row.dart';
 export 'image_gen_enable_section.dart';

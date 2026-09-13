@@ -232,6 +232,10 @@ void main() {
     test('Check Connection and generate send the same restored key', () async {
       await storage.setRemoteApiUrl(_nanoGpt);
       await storage.setRemoteApiKey(_nanoKey);
+      // Per-host model vault: a first visit to Nano has no last model, so
+      // the live id is cleared (must not keep x-ai/grok on Nano). Generate
+      // still needs a model id to POST.
+      await storage.setRemoteModelName('nano/model');
 
       await storage.setRemoteApiUrl(_openRouter);
       expect(remote.apiKey, _orKey);

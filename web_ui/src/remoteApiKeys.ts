@@ -27,3 +27,27 @@ export function urlHasStoredApiKey(
   if (!target) return false;
   return (urlsWithKeys ?? []).some((u) => normalizeRemoteApiUrl(u) === target);
 }
+
+function loopbackPort(url: string): number | null {
+  try {
+    const parsed = new URL(url.trim());
+    const host = parsed.hostname.toLowerCase();
+    if (host !== 'localhost' && host !== '127.0.0.1') return null;
+    const port = parsed.port
+      ? Number(parsed.port)
+      : parsed.protocol === 'https:'
+        ? 443
+        : 80;
+    return port;
+  } catch {
+    return null;
+  }
+}
+
+export function isLmStudioUrl(url: string): boolean {
+  return loopbackPort(url) === 1234;
+}
+
+export function isOmlxUrl(url: string): boolean {
+  return loopbackPort(url) === 8000;
+}

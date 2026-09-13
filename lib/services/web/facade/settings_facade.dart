@@ -17,6 +17,7 @@
 // along with Front Porch AI. If not, see <https://www.gnu.org/licenses/>.
 
 import 'dart:async';
+import 'dart:io';
 
 import 'package:path/path.dart' as p;
 
@@ -172,6 +173,7 @@ class SettingsFacade {
       'remoteModelName': b.remoteModelName,
       'hasApiKey': b.remoteApiKey.isNotEmpty,
       'remoteApiUrlsWithKeys': b.remoteApiUrlsWithKeys,
+      'omlxAvailable': Platform.isMacOS,
       'remoteConfigured': _llm.openRouterService.isConfigured,
       'remoteReachability': _llm.openRouterService.reachability.name,
       'contextSize': b.contextSize,
@@ -404,11 +406,17 @@ class SettingsFacade {
     }
 
     var remoteChanged = false;
+    var urlChanged = false;
     if (body.containsKey('remoteApiUrl')) {
-      await b.setRemoteApiUrl(body['remoteApiUrl'].toString());
+      final nextUrl = body['remoteApiUrl'].toString();
+      urlChanged = nextUrl != b.remoteApiUrl;
+      await b.setRemoteApiUrl(nextUrl);
       remoteChanged = true;
     }
-    if (body.containsKey('remoteModelName')) {
+    // A provider-bar swap sends the previous model's id in the same POST.
+    // setRemoteApiUrl already restored this host's last model — do not
+    // stamp the leftover onto the new host.
+    if (body.containsKey('remoteModelName') && !urlChanged) {
       await b.setRemoteModelName(body['remoteModelName'].toString());
       remoteChanged = true;
     }

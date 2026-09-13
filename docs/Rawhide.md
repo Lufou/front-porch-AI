@@ -7,6 +7,12 @@ Last shipped nightly: `rawhide.20260906.7059c91`. Everything below is unreleased
 
 ## Recent improvements (unreleased — ships in the next build)
 
+- 🖥️ **Waifu Coder wraps up in character** — stop/abort is not a `{name: MessageAbortedError…}` bubble. When a turn actually finishes, the coworker says what they did and what’s next, as the card — not a generic agent recap.
+
+- 📣 **Stoop Inbox notifications show the actual notice again** — they were painting as empty bars because Flutter will not draw a rounded card with a different-colored left stripe.
+
+- 🔀 **Swap OpenRouter and Nano-GPT in one tap** — Model Settings is a row of hosts (KoboldCpp, OpenRouter, Nano-GPT, LM Studio, Custom; oMLX on Mac only). Each host keeps its own key and last model. Same on Settings and the phone.
+
 - 🖥️ **Waifu Coder is powered by OpenCode** — the custom coding engine is gone; your coworker now tools through OpenCode.
 - 🎭 **Characters are not “she” by default** — generic prompts, mood copy, and Waifu Coder blurbs use they/them unless the card’s Sex field is actually female (woman / she / her still maps to she/her).
 

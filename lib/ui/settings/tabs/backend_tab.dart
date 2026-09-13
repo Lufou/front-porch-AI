@@ -82,7 +82,10 @@ class BackendTab extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const BackendModeSelector(),
+          BackendModeSelector(
+            apiUrlController: apiUrlController,
+            apiKeyController: apiKeyController,
+          ),
           if (llmProvider.activeBackend == BackendType.openRouter)
             RemoteApiSection(
               apiUrlController: apiUrlController,

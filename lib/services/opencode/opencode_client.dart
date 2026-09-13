@@ -260,15 +260,15 @@ class OpenCodeClient {
               OpenCodeSessionIdle(:final sessionId) => sessionId,
               OpenCodePermissionAsked(:final sessionId) => sessionId,
               OpenCodeTodoUpdated(:final sessionId) => sessionId,
-              OpenCodeErrorEvent() => sessionId,
+              OpenCodeErrorEvent(:final sessionId) => sessionId,
             };
             if (sid.isNotEmpty && sid != sessionId) continue;
             dispatchOpenCodeEvent(event, sink);
+            // OpenCode ends a turn at idle. halt() may publish
+            // session.error (abort, overflow) first, then idle — error
+            // is not turn-end and must not throw out of the pump.
             if (event is OpenCodeSessionIdle && !idle.isCompleted) {
               idle.complete();
-            }
-            if (event is OpenCodeErrorEvent && !idle.isCompleted) {
-              idle.completeError(StateError(event.message));
             }
           }
         },

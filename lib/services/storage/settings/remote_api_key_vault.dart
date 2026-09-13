@@ -93,6 +93,8 @@ class RemoteApiKeyVault {
 /// not on whichever URL happened to be selected when the shared pref froze.
 const kOpenRouterApiV1 = 'https://openrouter.ai/api/v1';
 const kNanoGptApiV1 = 'https://nano-gpt.com/api/v1';
+const kLmStudioApiV1 = 'http://localhost:1234/v1';
+const kOmlxApiV1 = 'http://localhost:8000/v1';
 
 bool remoteApiUrlIsOpenRouter(String url) {
   final host = Uri.tryParse(normalizeRemoteApiUrl(url))?.host ?? '';
@@ -102,6 +104,28 @@ bool remoteApiUrlIsOpenRouter(String url) {
 bool remoteApiUrlIsNanoGpt(String url) {
   final host = Uri.tryParse(normalizeRemoteApiUrl(url))?.host ?? '';
   return host == 'nano-gpt.com' || host.endsWith('.nano-gpt.com');
+}
+
+bool _isLoopbackHost(String host) => host == 'localhost' || host == '127.0.0.1';
+
+int _urlPort(Uri uri) {
+  if (uri.hasPort) return uri.port;
+  return uri.scheme == 'https' ? 443 : 80;
+}
+
+/// LM Studio's default OpenAI listener (localhost / 127.0.0.1 port 1234).
+bool remoteApiUrlIsLmStudio(String url) {
+  final uri = Uri.tryParse(normalizeRemoteApiUrl(url));
+  if (uri == null || uri.host.isEmpty) return false;
+  return _isLoopbackHost(uri.host) && _urlPort(uri) == 1234;
+}
+
+/// oMLX's fixed local OpenAI listener (port 8000). Chip identity only —
+/// switching to oMLX still uses [BackendType.omlx], not this URL write.
+bool remoteApiUrlIsOmlx(String url) {
+  final uri = Uri.tryParse(normalizeRemoteApiUrl(url));
+  if (uri == null || uri.host.isEmpty) return false;
+  return _isLoopbackHost(uri.host) && _urlPort(uri) == 8000;
 }
 
 bool remoteApiKeyLooksOpenRouter(String key) =>

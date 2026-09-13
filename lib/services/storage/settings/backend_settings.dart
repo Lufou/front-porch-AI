@@ -35,6 +35,10 @@ class BackendSettings with SettingsBase {
   String _remoteModelName = '';
   RemoteApiKeyVault _remoteApiKeys = RemoteApiKeyVault();
 
+  /// Last model id per host (same slot rule as keys). Reuses the vault
+  /// map type — url → string — not a second key store.
+  RemoteApiKeyVault _remoteApiModels = RemoteApiKeyVault();
+
   bool _reasoningEnabled = false;
   String _reasoningEffort = 'medium';
   bool _koboldThinkingModel = false;
@@ -75,6 +79,9 @@ class BackendSettings with SettingsBase {
 
   /// Normalized URLs that have a non-empty saved key (web placeholder).
   List<String> get remoteApiUrlsWithKeys => _remoteApiKeys.urlsWithKeys;
+
+  /// Last model id stored for [url], independent of the live selection.
+  String remoteApiModelFor(String url) => _remoteApiModels.keyFor(url);
   bool get reasoningEnabled => _reasoningEnabled;
   String get reasoningEffort => _reasoningEffort;
   bool get koboldThinkingModel => _koboldThinkingModel;
@@ -151,6 +158,9 @@ class BackendSettings with SettingsBase {
     _remoteApiKeys = RemoteApiKeyVault.decode(
       prefs?.getString(k('remote_api_keys')),
     );
+    _remoteApiModels = RemoteApiKeyVault.decode(
+      prefs?.getString(k('remote_api_models')),
+    );
     // Pre-fix installs had one shared key. Never put a leftover `sk-or-`
     // into the Nano slot (or the inverse) — that is the community stuck
     // state. Attribute by key shape; persist when migration changes either.
@@ -164,6 +174,15 @@ class BackendSettings with SettingsBase {
     if (_remoteApiKey != beforeKey || _remoteApiKeys.encode() != beforeVault) {
       prefs?.setString(k('remote_api_key'), _remoteApiKey);
       prefs?.setString(k('remote_api_keys'), _remoteApiKeys.encode());
+    }
+    // Seed the live model into this host's slot so the first provider
+    // switch can restore it.
+    final modelSlot = _modelSlot();
+    if (modelSlot.isNotEmpty &&
+        _remoteModelName.isNotEmpty &&
+        _remoteApiModels.keyFor(modelSlot).isEmpty) {
+      _remoteApiModels.put(modelSlot, _remoteModelName);
+      prefs?.setString(k('remote_api_models'), _remoteApiModels.encode());
     }
     _reasoningEnabled = prefs?.getBool(k('reasoning_enabled')) ?? false;
     _reasoningEffort = prefs?.getString(k('reasoning_effort')) ?? 'medium';
@@ -218,8 +237,38 @@ class BackendSettings with SettingsBase {
         prefs?.getInt(k('kv_quantization_level')) ?? _kvQuantizationLevel;
   }
 
+  /// Vault slot for the live model: oMLX has a fixed URL so it does not
+  /// steal the OpenRouter/Nano slot when that backend is selected.
+  String _modelSlot({String? backend, String? url}) {
+    final b = backend ?? _backendType;
+    if (b == 'omlx') return normalizeRemoteApiUrl(kOmlxApiV1);
+    return normalizeRemoteApiUrl(url ?? _remoteApiUrl);
+  }
+
+  Future<void> _persistRemoteApiModels() async {
+    await prefs?.setString(k('remote_api_models'), _remoteApiModels.encode());
+  }
+
+  void _stashLiveModel() {
+    final slot = _modelSlot();
+    if (slot.isEmpty) return;
+    _remoteApiModels.put(slot, _remoteModelName);
+  }
+
+  Future<void> _restoreModelForSlot(String slot) async {
+    _remoteModelName = slot.isEmpty ? '' : _remoteApiModels.keyFor(slot);
+    await prefs?.setString(k('remote_model_name'), _remoteModelName);
+  }
+
   Future<void> setBackendType(String value) async {
-    _backendType = value;
+    if (value != _backendType) {
+      _stashLiveModel();
+      _backendType = value;
+      await _restoreModelForSlot(_modelSlot());
+      await _persistRemoteApiModels();
+    } else {
+      _backendType = value;
+    }
     await prefs?.setString(k('backend_type'), value);
     notify();
   }
@@ -249,11 +298,14 @@ class BackendSettings with SettingsBase {
         remoteApiKeyBelongsToUrl(_remoteApiKey, _remoteApiUrl)) {
       _remoteApiKeys.put(_remoteApiUrl, _remoteApiKey);
     }
+    _stashLiveModel();
     _remoteApiUrl = value;
     _remoteApiKey = _remoteApiKeys.keyFor(value);
     await prefs?.setString(k('remote_api_url'), value);
     await prefs?.setString(k('remote_api_key'), _remoteApiKey);
     await _persistRemoteApiKeys();
+    await _restoreModelForSlot(_modelSlot());
+    await _persistRemoteApiModels();
     notify();
   }
 
@@ -263,7 +315,10 @@ class BackendSettings with SettingsBase {
 
   Future<void> setRemoteModelName(String value) async {
     _remoteModelName = value;
+    final slot = _modelSlot();
+    if (slot.isNotEmpty) _remoteApiModels.put(slot, value);
     await prefs?.setString(k('remote_model_name'), value);
+    await _persistRemoteApiModels();
     notify();
   }
 

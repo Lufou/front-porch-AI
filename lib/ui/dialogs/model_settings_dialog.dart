@@ -29,6 +29,8 @@ import 'package:front_porch_ai/ui/widgets/widgets.dart';
 import 'package:front_porch_ai/services/model_file_check.dart';
 import 'package:front_porch_ai/services/optimization_service.dart';
 import 'package:front_porch_ai/ui/theme/app_colors.dart';
+import 'package:front_porch_ai/ui/settings/widgets/widgets.dart';
+import 'package:front_porch_ai/services/storage/settings/remote_provider.dart';
 import 'package:front_porch_ai/utils/utils.dart';
 
 // The local-backend actions/settings, remote-settings, and model-picker
@@ -70,6 +72,7 @@ class _ModelSettingsDialogState extends State<ModelSettingsDialog> {
   final _modelNameController = TextEditingController();
   String? _connectionStatus;
   bool _isTesting = false;
+  bool _showKeyEditor = false;
 
   // Preset fields
   List<File> _localPresets = [];
@@ -132,13 +135,22 @@ class _ModelSettingsDialogState extends State<ModelSettingsDialog> {
   @override
   Widget build(BuildContext context) {
     final llmProvider = Provider.of<LLMProvider>(context);
+    final storage = Provider.of<StorageService>(context);
     final backend = llmProvider.activeBackend;
+    final providerKind = resolveRemoteProviderKind(
+      backendType: switch (backend) {
+        BackendType.kobold => 'kobold',
+        BackendType.omlx => 'omlx',
+        BackendType.openRouter => 'openRouter',
+      },
+      url: storage.remoteApiUrl,
+    );
 
     return Dialog(
       backgroundColor: AppColors.surfaceOf(context),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Container(
-        width: 500,
+        width: 540,
         constraints: const BoxConstraints(maxHeight: 600),
         padding: const EdgeInsets.all(24),
         child: Column(
@@ -167,44 +179,24 @@ class _ModelSettingsDialogState extends State<ModelSettingsDialog> {
             ),
             const SizedBox(height: 16),
 
-            // Backend toggle
-            Container(
-              decoration: BoxDecoration(
-                color: AppColors.surfaceContainerOf(context),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: _buildToggleButton(
-                      label: 'Local',
-                      icon: Icons.computer,
-                      isSelected: backend == BackendType.kobold,
-                      onTap: () =>
-                          llmProvider.setActiveBackend(BackendType.kobold),
-                    ),
-                  ),
-                  Expanded(
-                    child: _buildToggleButton(
-                      label: 'Remote API',
-                      icon: Icons.cloud,
-                      isSelected: backend == BackendType.openRouter,
-                      onTap: () =>
-                          llmProvider.setActiveBackend(BackendType.openRouter),
-                    ),
-                  ),
-                  if (Platform.isMacOS)
-                    Expanded(
-                      child: _buildToggleButton(
-                        label: 'oMLX',
-                        icon: Icons.apple,
-                        isSelected: backend == BackendType.omlx,
-                        onTap: () =>
-                            llmProvider.setActiveBackend(BackendType.omlx),
-                      ),
-                    ),
-                ],
-              ),
+            RemoteProviderBar(
+              selected: providerKind,
+              showOmlx: Platform.isMacOS,
+              onSelected: (kind) async {
+                await applyRemoteProvider(
+                  kind: kind,
+                  storage: storage,
+                  llm: llmProvider,
+                  urlController: _apiUrlController,
+                  keyController: _apiKeyController,
+                  modelController: _modelNameController,
+                );
+                if (!mounted) return;
+                setState(() {
+                  _showKeyEditor = false;
+                  _connectionStatus = null;
+                });
+              },
             ),
             const SizedBox(height: 16),
 
@@ -222,57 +214,18 @@ class _ModelSettingsDialogState extends State<ModelSettingsDialog> {
     );
   }
 
-  Widget _buildToggleButton({
-    required String label,
-    required IconData icon,
-    required bool isSelected,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
-        decoration: BoxDecoration(
-          color: isSelected ? AppColors.formMasterAccent : Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              icon,
-              size: 14,
-              color: isSelected
-                  ? AppColors.onChaosAccent
-                  : AppColors.textSecondary(context),
-            ),
-            const SizedBox(width: 4),
-            Text(
-              label,
-              style: TextStyle(
-                color: isSelected
-                    ? AppColors.onChaosAccent
-                    : AppColors.textSecondary(context),
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                fontSize: 12,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildTextField({
     required String label,
     required TextEditingController controller,
     bool isNumber = false,
     bool isObscured = false,
+    VoidCallback? onEditingComplete,
   }) {
     return TextField(
       controller: controller,
       keyboardType: isNumber ? TextInputType.number : TextInputType.text,
       obscureText: isObscured,
+      onEditingComplete: onEditingComplete,
       style: TextStyle(color: AppColors.textPrimary(context)),
       decoration: InputDecoration(
         labelText: label,
