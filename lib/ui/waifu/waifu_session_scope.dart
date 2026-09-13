@@ -35,11 +35,16 @@ WaifuStore? waifuStoreForContext(BuildContext context, {WaifuStore? injected}) {
   }
 }
 
-/// Sit-down estimate. OpenCode owns the real window; this is chrome only.
-int waifuIdleRequestTokens(WaifuSession session) {
+/// Sit-down estimate. OpenCode owns the real window; this is chrome only
+/// until a session.updated / GET session usage lands.
+int waifuIdleRequestTokens(WaifuSession session, {int mcpToolCount = 0}) {
   final sys = buildWaifuOpenCodeAgentPrompt(session.coworker);
   final speech = [for (final m in session.transcript) m.text].join('\n');
-  return waifuEstimateTokens(sys) + waifuEstimateTokens(speech);
+  return waifuOpenCodePromptEstimate(
+    systemPrompt: sys,
+    speech: speech,
+    mcpToolCount: mcpToolCount,
+  );
 }
 
 /// Remeter then persist so sit-down is never saved as 0/N.
@@ -47,9 +52,13 @@ void waifuArmSessionMeter({
   required WaifuSession session,
   WaifuHarness? harness,
   WaifuStore? store,
+  int mcpToolCount = 0,
 }) {
   if (session.tokensUsed == 0 && !session.tokensFromApi) {
-    session.tokensUsed = waifuIdleRequestTokens(session);
+    session.tokensUsed = waifuIdleRequestTokens(
+      session,
+      mcpToolCount: mcpToolCount,
+    );
   }
   harness?.refreshMeter();
   store?.saveLast(session);

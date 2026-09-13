@@ -1,3 +1,96 @@
+## 2026-09-13 — Waifu wrap-up ran twice in one speech bubble
+- **Why:** The live plugin treated the next session.idle as "wrap-up
+  done" and cleared its lock. A duplicate coding idle (common while
+  oMLX prefills) then started a second voice pass. Dart also used to
+  promptAsync voice after 1.5s. config/plugins/ auto-load plus the
+  `plugin` array could load the same file twice.
+- **What:** Claim the session before any await; only clear the lock
+  when the last assistant is `voice`. Dart never prompts voice.
+  Plugin file lives beside opencode.json; the old plugins/ copy is
+  deleted. Serve restarts when the JS changes.
+- **Files:** `opencode_voice_plugin.dart`, `opencode_config.dart`,
+  `opencode_client.dart`, `waifu_harness.dart`, `waifu_opencode.dart`
+- **Commit:** (this commit)
+
+## 2026-09-13 — Waifu context bar was card-only; oMLX was chewing 10k+
+- **Why:** The meter counted coworker card + transcript (~689) against
+  kcpps n_ctx (277k). OpenCode actually sends native tools + 112 MCP
+  Docker schemas; oMLX prefilling ~10k/40k. session.updated tokens were
+  ignored.
+- **What:** Idle estimate includes native + MCP tool schemas. oMLX
+  budget is not a 256k kcpps window. OpenCode session tokens update
+  the bar when present.
+- **Files:** `waifu_tokens.dart`, `waifu_page.dart`,
+  `opencode_events.dart`, `waifu_harness.dart`
+- **Commit:** (this commit)
+
+## 2026-09-13 — Waifu oMLX uses the real model id so oMLX loads it
+- **Why:** Regular chat POSTs `model: gemma-4-…` to `/v1/chat/completions`,
+  which is how oMLX loads a model. OpenCode was configured as
+  `porch/current` and prompted with modelID `current`, so oMLX never
+  loaded the picked weights.
+- **What:** Catalog key, default model, agent model, and prompt modelID
+  are the live model id (same string chat uses).
+- **Files:** `opencode_config.dart`, `waifu_harness.dart`
+- **Commit:** (this commit)
+
+## 2026-09-13 — OpenCode serve logs to the closet; --pure was killing plugins
+- **Why:** `--print-logs` went to stderr and we discarded it. `--pure`
+  skipped the voice plugin. File logs landed in
+  `~/.local/share/opencode/log/opencode.log`. The loop itself is OpenCode
+  `exiting loop` after step 1–2 (model stopped tools; one 502
+  malformed_tool_call).
+- **What:** Tee stdout/stderr to `opencode-bin/log/serve.log`. Drop
+  `--pure`. Set XDG_DATA_HOME + DEBUG so OpenCode's own file log stays
+  in the closet.
+- **Files:** `opencode_process.dart`, `opencode_paths.dart`,
+  `opencode_manager.dart`
+- **Commit:** (this commit)
+
+## 2026-09-13 — Waifu uses the Model Settings host; voice wait is not 300ms
+- **Why:** oMLX→Nano left OpenRouterService on localhost:8000 because
+  oMLX parks the Nano URL and setRemoteApiUrl was a no-op. patchConfig
+  also does not reload the running porch provider. Voice wrap-up never
+  appeared: pump unsubscribed 300ms after coding idle, and Kimi 2.6
+  thinking-only replies stayed in Thought.
+- **What:** setActiveBackend(openRouter) reconfigures from parked URL.
+  Model switch restarts OpenCode and opens a new session. Voice plugin
+  is a 1.18 `{id, server}` export. Pump waits for the voice idle (Dart
+  fallback prompt at 1.5s). Empty voice speech promotes reasoning.
+- **Files:** `llm_provider.dart`, `waifu_harness.dart`,
+  `opencode_client.dart`, `opencode_voice_plugin.dart`
+- **Commit:** (this commit)
+
+## 2026-09-12 — Waifu dump-regex and wrap-up prompt hacks deleted
+- **Why:** Coding text is Thought; only the voice plugin is speech.
+  Prefix dump-detection and "don't announce the next tool" were leftover
+  from fighting OpenCode in Dart/prompt.
+- **What:** Think-gate is append-only (thinking vs text). Salvage,
+  noteTool, spoken-line split, and dump prefixes are gone. Coding
+  preamble no longer describes a wrap-up or a voice pass.
+- **Files:** `waifu_speech.dart`, `waifu_harness.dart`,
+  `waifu_coworker_prompt.dart`
+- **Commit:** (this commit)
+
+## 2026-09-12 — Only the voice pass is the spoken bubble
+- **Why:** Coding-agent text ("I can see the project structure…") was
+  landing in the character bubble. Dump regex cannot fix that.
+- **What:** During the tool turn every OpenCode text delta is Thought.
+  After idle, the voice plugin pass is speech (new bubble).
+- **Files:** `waifu_harness.dart`, `waifu_speech.dart`
+- **Commit:** (this commit)
+
+## 2026-09-12 — Waifu wrap-up is an OpenCode voice plugin, not a recipe
+- **Why:** Asking the coding agent to "say what you did and what's next"
+  is how OpenCode idles. After `ls` she announced the next look and
+  stopped. Dart dump-nannies cannot fix that.
+- **What:** Coding agent just tools. On session.idle a closet plugin
+  promptAsync's a no-tool `voice` agent once (card wrap-up). Pump waits
+  for that second idle (300ms if the plugin never starts).
+- **Files:** `opencode_voice_plugin.dart`, `opencode_config.dart`,
+  `opencode_client.dart`, `waifu_coworker_prompt.dart`
+- **Commit:** (this commit)
+
 ## 2026-09-12 — Waifu Coder follows OpenCode idle, not a second loop
 - **Why:** OpenCode 1.18.30 ends a turn at `session.idle` (the loop
   exits when the last assistant finish is not tool-calls and no tools

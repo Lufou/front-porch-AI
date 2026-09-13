@@ -87,6 +87,17 @@ class OpenCodeTodoUpdated extends OpenCodeBusEvent {
   final List<OpenCodeTodoItem> todos;
 }
 
+class OpenCodeSessionTokens extends OpenCodeBusEvent {
+  const OpenCodeSessionTokens({
+    required this.sessionId,
+    required this.promptTokens,
+    required this.outputTokens,
+  });
+  final String sessionId;
+  final int promptTokens;
+  final int outputTokens;
+}
+
 class OpenCodeErrorEvent extends OpenCodeBusEvent {
   const OpenCodeErrorEvent({
     required this.message,
@@ -129,6 +140,7 @@ abstract class OpenCodeEventSink {
   void onTodo(List<OpenCodeTodoItem> todos);
   void onIdle();
   void onError(String message);
+  void onTokens({required int promptTokens, required int outputTokens});
 }
 
 void dispatchOpenCodeEvent(OpenCodeBusEvent event, OpenCodeEventSink sink) {
@@ -151,6 +163,8 @@ void dispatchOpenCodeEvent(OpenCodeBusEvent event, OpenCodeEventSink sink) {
       sink.onTodo(todos);
     case OpenCodeSessionIdle():
       sink.onIdle();
+    case OpenCodeSessionTokens(:final promptTokens, :final outputTokens):
+      sink.onTokens(promptTokens: promptTokens, outputTokens: outputTokens);
     case OpenCodeErrorEvent(:final message, :final aborted):
       if (!aborted) sink.onError(message);
   }
@@ -222,6 +236,8 @@ OpenCodeBusEvent? openCodeEventFromJson(
       return _partUpdated(map, thinkByPart);
     case 'session.idle':
       return OpenCodeSessionIdle(map['sessionID']?.toString() ?? '');
+    case 'session.updated':
+      return _sessionTokens(map);
     case 'permission.asked':
     case 'permission.v2.asked':
       return _permissionAsked(map);
@@ -243,6 +259,30 @@ OpenCodeBusEvent? openCodeEventFromJson(
     default:
       return null;
   }
+}
+
+int _asTokenCount(dynamic v) {
+  if (v is num) return v.round();
+  return int.tryParse(v?.toString() ?? '') ?? 0;
+}
+
+OpenCodeSessionTokens? _sessionTokens(Map<String, dynamic> map) {
+  final sid = map['sessionID']?.toString() ?? map['id']?.toString() ?? '';
+  final tokens = map['tokens'];
+  if (tokens is! Map) return null;
+  final input = _asTokenCount(tokens['input']);
+  final output = _asTokenCount(tokens['output']);
+  final reasoning = _asTokenCount(tokens['reasoning']);
+  var cacheRead = 0;
+  final cache = tokens['cache'];
+  if (cache is Map) cacheRead = _asTokenCount(cache['read']);
+  final prompt = input + reasoning + cacheRead;
+  if (prompt <= 0 && output <= 0) return null;
+  return OpenCodeSessionTokens(
+    sessionId: sid,
+    promptTokens: prompt,
+    outputTokens: output,
+  );
 }
 
 OpenCodeErrorEvent _sessionError(Map<String, dynamic> map) {

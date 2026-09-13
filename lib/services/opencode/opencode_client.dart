@@ -190,6 +190,30 @@ class OpenCodeClient {
     }
   }
 
+  /// Session token totals OpenCode last wrote (prompt + output).
+  Future<OpenCodeSessionTokens?> fetchSessionTokens(String sessionId) async {
+    final client = _newClient();
+    try {
+      final resp = await client.get(_uri('/session/$sessionId'));
+      if (resp.statusCode < 200 || resp.statusCode >= 300) return null;
+      final json = jsonDecode(resp.body);
+      if (json is! Map) return null;
+      final map = Map<String, dynamic>.from(json);
+      final info = map['info'];
+      final body = info is Map ? Map<String, dynamic>.from(info) : map;
+      body['sessionID'] = body['sessionID'] ?? body['id'] ?? sessionId;
+      final event = openCodeEventFromJson({
+        'type': 'session.updated',
+        'properties': body,
+      });
+      return event is OpenCodeSessionTokens ? event : null;
+    } catch (_) {
+      return null;
+    } finally {
+      client.close();
+    }
+  }
+
   /// Hot-update isolated config. Does not create a session.
   Future<void> patchConfig(Map<String, dynamic> config) async {
     final client = _newClient();
@@ -246,6 +270,10 @@ class OpenCodeClient {
     final client = _newClient();
     final idle = Completer<void>();
     StreamSubscription<List<int>>? sub;
+    Timer? settle;
+    var codingIdle = false;
+    var sawVoiceText = false;
+    var aborted = false;
     try {
       final req = http.Request('GET', _uri('/event'))
         ..headers['accept'] = 'text/event-stream';
@@ -260,15 +288,35 @@ class OpenCodeClient {
               OpenCodeSessionIdle(:final sessionId) => sessionId,
               OpenCodePermissionAsked(:final sessionId) => sessionId,
               OpenCodeTodoUpdated(:final sessionId) => sessionId,
+              OpenCodeSessionTokens(:final sessionId) => sessionId,
               OpenCodeErrorEvent(:final sessionId) => sessionId,
             };
             if (sid.isNotEmpty && sid != sessionId) continue;
             dispatchOpenCodeEvent(event, sink);
-            // OpenCode ends a turn at idle. halt() may publish
-            // session.error (abort, overflow) first, then idle — error
-            // is not turn-end and must not throw out of the pump.
+            if (event is OpenCodeErrorEvent && event.aborted) {
+              aborted = true;
+            }
+            // Plugin owns wrap-up. Dart must not promptAsync voice or
+            // oMLX prefill (>1.5s) causes a second wrap-up. Extra
+            // session.idle before voice text is a duplicate coding idle.
+            if (event is OpenCodeTextDelta && codingIdle && !idle.isCompleted) {
+              sawVoiceText = true;
+              settle?.cancel();
+            }
             if (event is OpenCodeSessionIdle && !idle.isCompleted) {
-              idle.complete();
+              if (aborted) {
+                settle?.cancel();
+                idle.complete();
+              } else if (!codingIdle) {
+                codingIdle = true;
+                settle?.cancel();
+                settle = Timer(const Duration(seconds: 90), () {
+                  if (!idle.isCompleted) idle.complete();
+                });
+              } else if (sawVoiceText) {
+                settle?.cancel();
+                idle.complete();
+              }
             }
           }
         },
@@ -285,7 +333,10 @@ class OpenCodeClient {
         modelID: modelID,
       );
       await idle.future;
+      final usage = await fetchSessionTokens(sessionId);
+      if (usage != null) dispatchOpenCodeEvent(usage, sink);
     } finally {
+      settle?.cancel();
       await sub?.cancel();
       client.close();
     }

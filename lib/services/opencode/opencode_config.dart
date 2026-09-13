@@ -19,7 +19,10 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:path/path.dart' as p;
+
 import 'package:front_porch_ai/services/opencode/opencode_paths.dart';
+import 'package:front_porch_ai/services/opencode/opencode_voice_plugin.dart';
 
 /// OpenCode 1.18.30 custom OpenAI-compatible adapter. Without this npm
 /// field a `porch` provider is ignored (models.dev has no such catalog).
@@ -32,6 +35,48 @@ const kOpenCodePorchModelSlot = 'current';
 
 /// Isolated OpenCode config. Model is Porch's current OpenAI-compatible
 /// backend (oMLX, OpenRouter, or Nano-GPT). Default agent is `waifu`.
+/// Beside opencode.json, not config/plugins/ — that folder is auto-loaded
+/// and listing the same file in `plugin` would run wrap-up twice.
+String openCodeVoicePluginPath(OpenCodeCloset closet) =>
+    p.join(closet.configDir, 'waifu-voice.js');
+
+String openCodeVoicePluginSpec(OpenCodeCloset closet) =>
+    Uri.file(openCodeVoicePluginPath(closet)).toString();
+
+String openCodeVoicePluginStalePath(OpenCodeCloset closet) =>
+    p.join(closet.configDir, 'plugins', 'waifu-voice.js');
+
+/// Writes the voice plugin. True when serve must restart to load it.
+Future<bool> writeOpenCodeVoicePluginFile(OpenCodeCloset closet) async {
+  final file = File(openCodeVoicePluginPath(closet));
+  await file.parent.create(recursive: true);
+  final previous = await file.exists() ? await file.readAsString() : '';
+  if (previous != kWaifuVoicePluginSource) {
+    await file.writeAsString(kWaifuVoicePluginSource);
+  }
+  final stale = File(openCodeVoicePluginStalePath(closet));
+  var removedStale = false;
+  if (await stale.exists()) {
+    await stale.delete();
+    removedStale = true;
+  }
+  return previous != kWaifuVoicePluginSource || removedStale;
+}
+
+Map<String, dynamic> openCodeVoicePermissionMap() {
+  return {
+    'read': 'deny',
+    'edit': 'deny',
+    'glob': 'deny',
+    'grep': 'deny',
+    'list': 'deny',
+    'todowrite': 'deny',
+    'skill': 'deny',
+    'bash': 'deny',
+    'external_directory': 'deny',
+  };
+}
+
 Map<String, dynamic> buildOpenCodeConfigMap({
   required String agentPrompt,
   required String baseUrl,
@@ -40,15 +85,21 @@ Map<String, dynamic> buildOpenCodeConfigMap({
   required Map<String, dynamic> permission,
   String defaultAgent = 'waifu',
   Map<String, dynamic>? mcp,
+  String? voicePrompt,
+  String? pluginPath,
 }) {
   final slot = modelId.isEmpty ? kOpenCodePorchModelSlot : modelId;
+  final voice = openCodeVoicePermissionMap();
+  final porchModel = '$kOpenCodePorchProvider/$slot';
   return {
     '\$schema': 'https://opencode.ai/config.json',
     'autoupdate': false,
     'share': 'disabled',
-    'plugin': <String>[],
+    'plugin': [if (pluginPath != null && pluginPath.isNotEmpty) pluginPath],
     'default_agent': defaultAgent,
-    'model': '$kOpenCodePorchProvider/$kOpenCodePorchModelSlot',
+    // Catalog key IS the API model id so oMLX loads it the same way
+    // regular chat does (POST /v1/chat/completions model=<id>).
+    'model': porchModel,
     'enabled_providers': [kOpenCodePorchProvider],
     'provider': {
       kOpenCodePorchProvider: {
@@ -56,11 +107,7 @@ Map<String, dynamic> buildOpenCodeConfigMap({
         'name': 'Front Porch',
         'options': {'baseURL': baseUrl, 'apiKey': apiKey},
         'models': {
-          kOpenCodePorchModelSlot: {
-            'id': slot,
-            'name': slot,
-            'tool_call': true,
-          },
+          slot: {'id': slot, 'name': slot, 'tool_call': true},
         },
       },
     },
@@ -68,14 +115,24 @@ Map<String, dynamic> buildOpenCodeConfigMap({
       'waifu': {
         'description': 'Sit-down coworker',
         'mode': 'primary',
+        'model': porchModel,
         'prompt': agentPrompt,
         'permission': permission,
       },
       'plan': {
         'mode': 'primary',
+        'model': porchModel,
         'prompt': agentPrompt,
         'permission': permission,
       },
+      if (voicePrompt != null && voicePrompt.isNotEmpty)
+        'voice': {
+          'description': 'In-character wrap-up after tools',
+          'mode': 'primary',
+          'model': porchModel,
+          'prompt': voicePrompt,
+          'permission': voice,
+        },
     },
     'permission': permission,
     if (mcp != null && mcp.isNotEmpty) 'mcp': mcp,

@@ -130,44 +130,43 @@ void main() {
     expect(body['parts'][0]['text'], 'count the files');
   });
 
-  test(
-    'promptAndPump streams assistant text into a dumb sink until idle',
-    () async {
-      final sink = _RecordingSink();
-      final client = OpenCodeClient(
-        baseUri: Uri.parse('http://127.0.0.1:4096'),
-        directory: '/tmp/porch',
-        clientFactory: () => MockClient.streaming((req, body) async {
-          if (req.url.path == '/event') {
-            final chunk = utf8.encode(
-              'data: {"type":"message.part.delta","properties":{"sessionID":"ses_1","messageID":"msg_1","partID":"prt_1","field":"text","delta":"Hmph."}}\n'
-              '\n'
-              'data: {"type":"session.idle","properties":{"sessionID":"ses_1"}}\n'
-              '\n',
-            );
-            return http.StreamedResponse(
-              Stream<List<int>>.fromIterable([chunk]),
-              200,
-              headers: {'content-type': 'text/event-stream'},
-            );
-          }
-          if (req.url.path.endsWith('/prompt_async')) {
-            return http.StreamedResponse(const Stream.empty(), 204);
-          }
-          return http.StreamedResponse(const Stream.empty(), 404);
-        }),
-      );
-      await client.promptAndPump(
-        sessionId: 'ses_1',
-        parts: [
-          {'type': 'text', 'text': 'hi'},
-        ],
-        sink: sink,
-      );
-      expect(sink.deltas.join(), 'Hmph.');
-      expect(sink.idle, isTrue);
-    },
-  );
+  test('promptAndPump streams assistant text into a dumb sink until idle', () async {
+    final sink = _RecordingSink();
+    final client = OpenCodeClient(
+      baseUri: Uri.parse('http://127.0.0.1:4096'),
+      directory: '/tmp/porch',
+      clientFactory: () => MockClient.streaming((req, body) async {
+        if (req.url.path == '/event') {
+          final chunk = utf8.encode(
+            'data: {"type":"session.idle","properties":{"sessionID":"ses_1"}}\n'
+            '\n'
+            'data: {"type":"message.part.delta","properties":{"sessionID":"ses_1","messageID":"msg_1","partID":"prt_1","field":"text","delta":"Hmph."}}\n'
+            '\n'
+            'data: {"type":"session.idle","properties":{"sessionID":"ses_1"}}\n'
+            '\n',
+          );
+          return http.StreamedResponse(
+            Stream<List<int>>.fromIterable([chunk]),
+            200,
+            headers: {'content-type': 'text/event-stream'},
+          );
+        }
+        if (req.url.path.endsWith('/prompt_async')) {
+          return http.StreamedResponse(const Stream.empty(), 204);
+        }
+        return http.StreamedResponse(const Stream.empty(), 404);
+      }),
+    );
+    await client.promptAndPump(
+      sessionId: 'ses_1',
+      parts: [
+        {'type': 'text', 'text': 'hi'},
+      ],
+      sink: sink,
+    );
+    expect(sink.deltas.join(), 'Hmph.');
+    expect(sink.idle, isTrue);
+  });
 
   test('revert posts messageID; unrevert posts empty body', () async {
     final hits = <http.Request>[];
@@ -244,4 +243,7 @@ class _RecordingSink implements OpenCodeEventSink {
 
   @override
   void onError(String message) {}
+
+  @override
+  void onTokens({required int promptTokens, required int outputTokens}) {}
 }

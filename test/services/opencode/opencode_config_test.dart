@@ -36,12 +36,12 @@ void main() {
     );
     expect(map['default_agent'], 'waifu');
     expect(map['autoupdate'], isFalse);
-    expect(map['model'], 'porch/current');
+    expect(map['model'], 'porch/local');
     expect(map['enabled_providers'], ['porch']);
     final porch = (map['provider'] as Map)['porch'] as Map;
     expect(porch['npm'], kOpenCodeCompatibleNpm);
     expect((porch['options'] as Map)['baseURL'], 'http://127.0.0.1:5001/v1');
-    expect((porch['models'] as Map)['current']['id'], 'local');
+    expect((porch['models'] as Map)['local']['id'], 'local');
     expect(porch.containsKey('api'), isFalse);
     final agent = map['agent'] as Map;
     expect(agent['waifu']['mode'], 'primary');
@@ -50,6 +50,37 @@ void main() {
     expect(perm['external_directory'], 'deny');
     expect(perm['edit'], 'ask');
     expect((perm['bash'] as Map)['rm -rf *'], 'deny');
+  });
+
+  test('voice agent is no-tools; plugin path is wired', () {
+    final map = buildOpenCodeConfigMap(
+      agentPrompt: 'code',
+      voicePrompt: 'speak',
+      pluginPath: '/tmp/waifu-voice.js',
+      baseUrl: 'http://127.0.0.1:5001/v1',
+      apiKey: 'x',
+      modelId: 'local',
+      permission: openCodePermissionMap(folderJail: true, yolo: false),
+    );
+    expect(map['plugin'], ['/tmp/waifu-voice.js']);
+    final voice = (map['agent'] as Map)['voice'] as Map;
+    expect(voice['prompt'], 'speak');
+    expect(voice['permission']['edit'], 'deny');
+    expect(voice['permission']['bash'], 'deny');
+    expect(kWaifuVoicePluginSource, contains('promptAsync'));
+    expect(kWaifuVoicePluginSource, contains('agent: "voice"'));
+    expect(kWaifuVoicePluginSource, contains('id: "waifu-voice"'));
+    expect(kWaifuVoicePluginSource, contains('server:'));
+    expect(kWaifuVoicePluginSource, contains('__waifuVoiceWrapping'));
+    expect(kWaifuVoicePluginSource, contains('lastAssistantAgent'));
+    expect(
+      kWaifuVoicePluginSource,
+      isNot(
+        contains(
+          'if (wrapping.has(sessionID)) {\n          wrapping.delete(sessionID)',
+        ),
+      ),
+    );
   });
 
   test('yolo allows edits; disk does not deny external_directory', () {
@@ -105,15 +136,15 @@ void main() {
       modelId: backend.modelId,
       permission: openCodePermissionMap(folderJail: true, yolo: false),
     );
-    expect(map['model'], 'porch/current');
+    expect(map['model'], 'porch/gpt-4o-mini');
     expect(map['enabled_providers'], ['porch']);
     final porch = (map['provider'] as Map)['porch'] as Map;
     expect(porch['npm'], kOpenCodeCompatibleNpm);
     final options = porch['options'] as Map;
     expect(options['baseURL'], kNanoGptApiV1);
     expect(options.containsKey('apiKey'), isTrue);
-    expect((porch['models'] as Map)['current']['id'], 'gpt-4o-mini');
-    expect((porch['models'] as Map)['current']['name'], 'gpt-4o-mini');
+    expect((porch['models'] as Map)['gpt-4o-mini']['id'], 'gpt-4o-mini');
+    expect((porch['models'] as Map)['gpt-4o-mini']['name'], 'gpt-4o-mini');
     expect(porch.containsKey('api'), isFalse);
   });
 
@@ -134,12 +165,12 @@ void main() {
       modelId: backend.modelId,
       permission: openCodePermissionMap(folderJail: true, yolo: false),
     );
-    expect(map['model'], 'porch/current');
+    expect(map['model'], 'porch/anthropic/claude-sonnet-4');
     final porch = (map['provider'] as Map)['porch'] as Map;
     expect(porch['npm'], kOpenCodeCompatibleNpm);
     expect((porch['options'] as Map)['baseURL'], kOpenRouterApiV1);
     expect(
-      (porch['models'] as Map)['current']['id'],
+      (porch['models'] as Map)['anthropic/claude-sonnet-4']['id'],
       'anthropic/claude-sonnet-4',
     );
     expect(porch.containsKey('api'), isFalse);

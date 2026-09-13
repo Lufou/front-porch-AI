@@ -16,6 +16,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Front Porch AI. If not, see <https://www.gnu.org/licenses/>.
 
+import 'dart:async';
 import 'dart:io';
 
 /// What [OpenCodeManager] asked the OS to spawn. Tests assert this instead
@@ -26,12 +27,14 @@ class OpenCodeSpawnRequest {
     required this.arguments,
     required this.environment,
     this.workingDirectory,
+    this.logPath,
   });
 
   final String executable;
   final List<String> arguments;
   final Map<String, String> environment;
   final String? workingDirectory;
+  final String? logPath;
 }
 
 typedef OpenCodeSpawn =
@@ -78,5 +81,21 @@ Future<OpenCodeProcessHandle> openCodeSpawnProcess(
     workingDirectory: request.workingDirectory,
     includeParentEnvironment: true,
   );
+  final logPath = request.logPath;
+  if (logPath != null && logPath.isNotEmpty) {
+    final log = File(logPath).openWrite(mode: FileMode.append);
+    void pipe(Stream<List<int>> stream) {
+      stream.listen(log.add, onError: (_) {});
+    }
+
+    pipe(process.stdout);
+    pipe(process.stderr);
+    unawaited(
+      process.exitCode.whenComplete(() async {
+        await log.flush();
+        await log.close();
+      }),
+    );
+  }
   return openCodeHandleForProcess(process);
 }

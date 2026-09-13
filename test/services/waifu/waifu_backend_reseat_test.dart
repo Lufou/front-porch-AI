@@ -55,6 +55,10 @@ void main() {
     final raw = await File(closet.configFilePath).readAsString();
     expect(raw, contains('localhost:8000'));
     expect(raw, contains('mlx-community/Qwen'));
+    expect(raw, contains('porch/mlx-community/Qwen'));
+    expect(raw, isNot(contains('porch/current')));
     expect(raw, isNot(contains('nano-gpt.com')));
+    expect(raw, contains('waifu-voice.js'));
+    expect(raw, isNot(contains('/plugins/waifu-voice.js')));
   });
 }

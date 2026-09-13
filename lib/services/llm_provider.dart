@@ -339,10 +339,19 @@ class LLMProvider extends ChangeNotifier {
     }
     await _storageService.setBackendType(persistValue);
 
-    // Auto-configure oMLX URL when switching to it
+    // oMLX is a fixed localhost URL. Nano/OpenRouter/LM Studio use the
+    // parked remoteApiUrl — must reconfigure even when that URL did not
+    // change (oMLX never writes remoteApiUrl, so setRemoteApiUrl is a
+    // no-op and Waifu would keep hitting oMLX).
     if (type == BackendType.omlx) {
       _openRouterService.configure(
         apiUrl: 'http://localhost:8000/v1',
+        apiKey: _storageService.remoteApiKey,
+        modelName: _storageService.remoteModelName,
+      );
+    } else if (type == BackendType.openRouter) {
+      _openRouterService.configure(
+        apiUrl: _storageService.remoteApiUrl,
         apiKey: _storageService.remoteApiKey,
         modelName: _storageService.remoteModelName,
       );

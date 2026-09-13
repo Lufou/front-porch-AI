@@ -28,6 +28,44 @@ int waifuEstimateTokens(String text) {
   return (text.length / 4).ceil();
 }
 
+/// OpenCode native tools (read/write/edit/bash/glob/grep/list/todo/skill).
+const kWaifuOpenCodeNativeToolTokens = 2800;
+
+/// Rough schema cost per MCP tool OpenCode injects into the prompt.
+const kWaifuMcpToolSchemaTokens = 160;
+
+/// What OpenCode actually sends is card + speech + native tools + MCP.
+int waifuOpenCodePromptEstimate({
+  required String systemPrompt,
+  required String speech,
+  int mcpToolCount = 0,
+}) {
+  final mcp = mcpToolCount < 0 ? 0 : mcpToolCount;
+  return waifuEstimateTokens(systemPrompt) +
+      waifuEstimateTokens(speech) +
+      kWaifuOpenCodeNativeToolTokens +
+      mcp * kWaifuMcpToolSchemaTokens;
+}
+
+bool waifuLooksLikeOmlxUrl(String url) {
+  final u = url.toLowerCase();
+  return u.contains('localhost:8000') || u.contains('127.0.0.1:8000');
+}
+
+/// kcpps / remote n_ctx is not the oMLX window (dashboard ~40k).
+int waifuResolveContextBudget({
+  required int porchContextSize,
+  required String? apiUrl,
+}) {
+  final porch = porchContextSize < 1
+      ? kWaifuDefaultContextTokens
+      : porchContextSize;
+  if (apiUrl != null && waifuLooksLikeOmlxUrl(apiUrl) && porch > 65536) {
+    return 40960;
+  }
+  return porch;
+}
+
 bool waifuShouldCompact({required int used, required int budget}) {
   final cap = budget < 1 ? kWaifuDefaultContextTokens : budget;
   if (cap <= 0) return false;

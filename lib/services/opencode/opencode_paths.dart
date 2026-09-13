@@ -47,6 +47,8 @@ class OpenCodeCloset {
 
   String get logDir => p.join(binDir, 'log');
 
+  String get serveLogPath => p.join(logDir, 'serve.log');
+
   String get stateDir => p.join(binDir, 'state');
 
   String get unpackDir => p.join(binDir, 'unpack');
@@ -76,6 +78,8 @@ Map<String, String> openCodeIsolatedEnvironment(
     'OPENCODE_DATA_DIR': closet.dataDir,
     'OPENCODE_CACHE_DIR': closet.cacheDir,
     'OPENCODE_LOG_DIR': closet.logDir,
+    'OPENCODE_LOG_LEVEL': 'DEBUG',
+    'XDG_DATA_HOME': closet.dataDir,
     'OPENCODE_STATE_DIR': closet.stateDir,
     'OPENCODE_DISABLE_GLOBAL_CONFIG': 'true',
     'OPENCODE_DISABLE_PROJECT_CONFIG': 'true',
@@ -90,5 +94,6 @@ List<String> openCodeServeArgs(int port) => [
   '--port',
   '$port',
   '--print-logs',
-  '--pure',
+  '--log-level',
+  'DEBUG',
 ];

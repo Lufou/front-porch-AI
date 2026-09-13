@@ -23,18 +23,21 @@ void main() {
     },
   );
 
-  test('preamble asks for an in-character wrap-up, not a generic recap', () {
+  test('voice agent owns the in-character wrap-up, coding agent does not', () {
+    expect(kWaifuVoicePreamble, contains('Speak as this character'));
+    expect(kWaifuVoicePreamble, contains('No tools'));
     expect(
       kWaifuOpenCodePreamble,
-      contains('what you did, then what is next if anything'),
+      isNot(contains('Speak as this character. Say what got done')),
     );
     expect(
       kWaifuOpenCodePreamble,
-      contains('Always end as this character, never a generic agent recap'),
+      isNot(contains('what you did, then what is next')),
     );
+    expect(kWaifuOpenCodePreamble, isNot(contains('separate voice pass')));
     expect(
       kWaifuOpenCodePreamble,
-      contains('The spoken reply is one in-character line'),
+      isNot(contains('Do not end a turn by announcing')),
     );
   });
 }

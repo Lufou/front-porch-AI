@@ -47,6 +47,22 @@ void main() {
     }
   });
 
+  test('voice plugin sits beside opencode.json, not config/plugins', () async {
+    final closet = OpenCodeCloset(root.path);
+    await closet.ensureLayout();
+    final stale = File(openCodeVoicePluginStalePath(closet));
+    await stale.parent.create(recursive: true);
+    await stale.writeAsString('old-double-load-copy');
+    expect(await writeOpenCodeVoicePluginFile(closet), isTrue);
+    expect(await File(openCodeVoicePluginPath(closet)).exists(), isTrue);
+    expect(
+      openCodeVoicePluginPath(closet),
+      isNot(contains('${p.separator}plugins${p.separator}')),
+    );
+    expect(await stale.exists(), isFalse);
+    expect(await writeOpenCodeVoicePluginFile(closet), isFalse);
+  });
+
   test('ensureInstalled writes the pinned binary under the closet', () async {
     final captured = <Uri>[];
     final mgr = OpenCodeManager(
@@ -135,8 +151,11 @@ void main() {
       expect(spawned!.executable, mgr.closet.binaryPath);
       expect(
         spawned!.arguments,
-        containsAll(['serve', '--hostname', '127.0.0.1', '--pure']),
+        containsAll(['serve', '--hostname', '127.0.0.1', '--log-level']),
       );
+      expect(spawned!.arguments, isNot(contains('--pure')));
+      expect(spawned!.logPath, mgr.closet.serveLogPath);
+      expect(spawned!.environment['OPENCODE_LOG_DIR'], mgr.closet.logDir);
       expect(
         spawned!.environment['OPENCODE_CONFIG'],
         mgr.closet.configFilePath,

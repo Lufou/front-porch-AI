@@ -90,10 +90,65 @@ void main() {
     expect(sink.errors, isEmpty);
     expect(sink.idle, isTrue);
   });
+
+  test(
+    'promptAndPump waits for voice wrap-up idle, not the first coding idle',
+    () async {
+      final sink = _Sink();
+      final client = OpenCodeClient(
+        baseUri: Uri.parse('http://127.0.0.1:4096'),
+        directory: '/tmp/porch',
+        clientFactory: () => MockClient.streaming((req, body) async {
+          if (req.url.path == '/event') {
+            final controller = StreamController<List<int>>();
+            unawaited(() async {
+              controller.add(
+                utf8.encode(
+                  'data: {"type":"session.idle","properties":{"sessionID":"ses_1"}}\n'
+                  '\n'
+                  'data: {"type":"session.idle","properties":{"sessionID":"ses_1"}}\n'
+                  '\n',
+                ),
+              );
+              await Future<void>.delayed(const Duration(milliseconds: 50));
+              controller.add(
+                utf8.encode(
+                  'data: {"type":"message.part.delta","properties":{"sessionID":"ses_1","field":"text","delta":"Hmph. Listed the folder."}}\n'
+                  '\n'
+                  'data: {"type":"session.idle","properties":{"sessionID":"ses_1"}}\n'
+                  '\n',
+                ),
+              );
+              await controller.close();
+            }());
+            return http.StreamedResponse(
+              controller.stream,
+              200,
+              headers: {'content-type': 'text/event-stream'},
+            );
+          }
+          if (req.url.path.endsWith('/prompt_async')) {
+            return http.StreamedResponse(const Stream.empty(), 204);
+          }
+          return http.StreamedResponse(const Stream.empty(), 404);
+        }),
+      );
+      await client.promptAndPump(
+        sessionId: 'ses_1',
+        parts: [
+          {'type': 'text', 'text': 'hi'},
+        ],
+        sink: sink,
+      );
+      expect(sink.deltas.join(), 'Hmph. Listed the folder.');
+      expect(sink.idle, isTrue);
+    },
+  );
 }
 
 class _Sink implements OpenCodeEventSink {
   final errors = <String>[];
+  final deltas = <String>[];
   var idle = false;
 
   @override
@@ -101,7 +156,7 @@ class _Sink implements OpenCodeEventSink {
     String delta, {
     String messageId = '',
     bool thinking = false,
-  }) {}
+  }) => deltas.add(delta);
 
   @override
   void onTool({
@@ -123,4 +178,7 @@ class _Sink implements OpenCodeEventSink {
 
   @override
   void onError(String message) => errors.add(message);
+
+  @override
+  void onTokens({required int promptTokens, required int outputTokens}) {}
 }

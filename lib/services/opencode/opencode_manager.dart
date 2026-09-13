@@ -234,11 +234,15 @@ class OpenCodeManager extends ChangeNotifier {
       await _writeStubConfig();
     }
     final port = await _pickPort();
+    final logFile = File(closet.serveLogPath);
+    await logFile.parent.create(recursive: true);
+    await logFile.writeAsBytes(const []);
     final req = OpenCodeSpawnRequest(
       executable: closet.binaryPath,
       arguments: openCodeServeArgs(port),
       environment: openCodeIsolatedEnvironment(closet, pwd: cwd),
       workingDirectory: cwd,
+      logPath: logFile.path,
     );
     if (openCodeLooksLikeBrewPath(req.executable)) {
       throw StateError('Refusing to spawn a brew OpenCode');

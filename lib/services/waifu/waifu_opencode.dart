@@ -91,11 +91,14 @@ Future<void> writeWaifuOpenCodeConfig({
   required WaifuPathMode pathMode,
   required WaifuMode mode,
   Map<String, dynamic>? mcp,
-}) {
+}) async {
+  await writeOpenCodeVoicePluginFile(closet);
   return writeOpenCodeConfigFile(
     closet,
     buildOpenCodeConfigMap(
       agentPrompt: buildWaifuOpenCodeAgentPrompt(coworker),
+      voicePrompt: buildWaifuVoiceAgentPrompt(coworker),
+      pluginPath: openCodeVoicePluginSpec(closet),
       baseUrl: backend.baseUrl,
       apiKey: backend.apiKey,
       modelId: backend.modelId,
@@ -128,6 +131,9 @@ Future<OpenCodeSessionInfo> waifuOpenCodeSitDown({
     mode: mode,
     mcp: mcp,
   );
+  // Plugins load at serve start. Reuse of a healthy process would keep
+  // the previous waifu-voice.js in memory.
+  await manager.stop();
   await manager.start(workingDirectory: folderRoot);
   final client = clientOf(manager.baseUri, folderRoot);
   return client.createSession(
@@ -157,6 +163,8 @@ Future<void> waifuRetargetOpenCode({
   await client.patchConfig(
     buildOpenCodeConfigMap(
       agentPrompt: buildWaifuOpenCodeAgentPrompt(coworker),
+      voicePrompt: buildWaifuVoiceAgentPrompt(coworker),
+      pluginPath: openCodeVoicePluginSpec(closet),
       baseUrl: backend.baseUrl,
       apiKey: backend.apiKey,
       modelId: backend.modelId,

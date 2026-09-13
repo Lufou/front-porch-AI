@@ -7,7 +7,9 @@ Last shipped nightly: `rawhide.20260906.7059c91`. Everything below is unreleased
 
 ## Recent improvements (unreleased — ships in the next build)
 
-- 🖥️ **Waifu Coder wraps up in character** — stop/abort is not a `{name: MessageAbortedError…}` bubble. When a turn actually finishes, the coworker says what they did and what’s next, as the card — not a generic agent recap.
+- 🖥️ **Waifu Coder wrap-up speaks once** — after tools stop, the in-character recap is one spoken bubble, not two copies of the same goodbye.
+
+- 🖥️ **Waifu Coder follows Model Settings** — switching Nano-GPT / oMLX / OpenRouter (or the model on that host) restarts the coding session onto that backend. The spoken bubble is the in-character voice pass after tools stop; Kimi-style thinking-only wrap-ups still land as speech. The context bar counts OpenCode tools and MCP schemas, not just the character card, and oMLX no longer shows a 256k Kobold window.
 
 - 📣 **Stoop Inbox notifications show the actual notice again** — they were painting as empty bars because Flutter will not draw a rounded card with a different-colored left stripe.
 
