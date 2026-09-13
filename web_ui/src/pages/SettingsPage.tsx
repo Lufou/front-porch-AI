@@ -6,6 +6,7 @@ import { api, ApiError } from '../api/client';
 import { PersonaManager } from '../components/PersonaManager';
 import { ModelPicker } from '../components/ModelPicker';
 import { ChatColorsSettings } from '../components/ChatColorsSettings';
+import { ReadingSizeSettings } from '../components/ReadingSizeSettings';
 import { PorchLifeSettings } from '../components/PorchLifeSettings';
 import { ModelTransportCard } from '../components/ModelTransportCard';
 import { applySpellCheckLang } from '../spellCheckLang';
@@ -304,6 +305,8 @@ export function SettingsPage() {
       <h2>Settings</h2>
 
       <PersonaManager />
+
+      <ReadingSizeSettings />
 
       <ChatColorsSettings />
 

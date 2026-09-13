@@ -233,7 +233,7 @@ extension _ChatPageInputActions on _ChatPageState {
               maxLines: 10,
               minLines: _inputMinLines,
               textInputAction: TextInputAction.newline,
-              style: TextStyle(color: AppColors.textPrimary(context)),
+              style: readingSurfaceStyle(color: AppColors.textPrimary(context)),
               spellCheckConfiguration: SpellCheckConfiguration.disabled(),
               decoration: InputDecoration(
                 hintText: hint,

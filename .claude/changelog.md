@@ -1,3 +1,23 @@
+## 2026-09-13 — Reading size only grew chat bubbles
+- **Why:** Discord user Musenik (9/10) needed glasses. One pref
+  (`text_scale`) was applied twice on bubbles (`14 * textScale` AND
+  the house MediaQuery scaler) so bubbles jumped while the composer
+  only got MediaQuery and the edit overlay dropped the scaler entirely
+  (same trap as Stoop detail). Sidebar help sat at 9–11px in
+  faint-on-dark. Web had no control at all.
+- **What:** One name (Reading Size), one machine (MediaQuery
+  textScaler). Bubbles/composer/edit share a 14px base. Edit dialog
+  re-applies the launching scaler. Sidebar help is 13px primary text.
+  Settings blurbs use secondary, not tertiary. Web gets the same
+  slider (device-local, like chat colors) on bubbles/composer/edit/
+  sidebar help.
+- **Files:** `reading_size.dart`, `styled_chat_message.dart`,
+  `message_edit_dialog.dart`, `chat_page.input_actions.dart`,
+  `expandable_sidebar_text.dart`, `feature_row.dart`,
+  `general_tab.dart`, `ui_settings_dialog.dart`, `readingSize.ts`,
+  `ReadingSizeSettings.tsx`, `styles.css`
+- **Commit:** (this commit)
+
 ## 2026-09-13 — Waifu wrap-up ran twice in one speech bubble
 - **Why:** The live plugin treated the next session.idle as "wrap-up
   done" and cleared its lock. A duplicate coding idle (common while

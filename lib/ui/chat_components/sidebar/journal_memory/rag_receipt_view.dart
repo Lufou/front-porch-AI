@@ -20,7 +20,7 @@ import 'package:flutter/material.dart';
 
 import 'package:front_porch_ai/services/chat/chat.dart'
     show kRagReceiptError, kRagReceiptNotOperational, kRagReceiptOk;
-import 'package:front_porch_ai/ui/theme/app_colors.dart';
+import 'package:front_porch_ai/ui/theme/theme.dart';
 import 'package:front_porch_ai/ui/chat_components/chat_components.dart';
 
 /// "What memory just did" — renders the last reply's RAG receipt
@@ -145,16 +145,7 @@ class RagReceiptView extends StatelessWidget {
                 ),
               ),
             ),
-          Expanded(
-            child: ExpandableSidebarText(
-              text: preview,
-              maxLines: 4,
-              style: TextStyle(
-                fontSize: 10,
-                color: AppColors.textSecondary(context),
-              ),
-            ),
-          ),
+          Expanded(child: ExpandableSidebarText(text: preview, maxLines: 4)),
           // Jump lives on the icon so a tap on the preview can expand
           // instead of seeking the transcript.
           if (canJump)

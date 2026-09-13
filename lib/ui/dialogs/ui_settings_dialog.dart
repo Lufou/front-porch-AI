@@ -20,7 +20,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:front_porch_ai/services/services.dart';
 import 'package:front_porch_ai/models/models.dart';
-import 'package:front_porch_ai/ui/theme/app_colors.dart';
+import 'package:front_porch_ai/ui/theme/theme.dart';
 import 'package:flex_color_picker/flex_color_picker.dart';
 import 'background_settings_dialog.dart';
 
@@ -184,12 +184,15 @@ class _UiSettingsDialogState extends State<UiSettingsDialog> {
               ),
               const SizedBox(height: 4),
               _buildSlider(
-                'Chat Text Size',
-                storageService.textScale,
-                0.5,
-                2.0,
+                'Reading Size',
+                storageService.textScale.clamp(
+                  kReadingScaleMin,
+                  kReadingScaleMax,
+                ),
+                kReadingScaleMin,
+                kReadingScaleMax,
                 (val) => storageService.setTextScale(val),
-                divisions: 30,
+                divisions: 13,
               ),
               if (_characterNotifier.value != null) ...[
                 const SizedBox(height: 8),

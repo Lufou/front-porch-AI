@@ -22,7 +22,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import 'package:front_porch_ai/app_version.dart';
 import 'package:front_porch_ai/services/services.dart';
-import 'package:front_porch_ai/ui/theme/app_colors.dart';
+import 'package:front_porch_ai/ui/theme/theme.dart';
 import 'package:front_porch_ai/ui/widgets/widgets.dart';
 import 'package:front_porch_ai/ui/settings/widgets/widgets.dart';
 import 'package:front_porch_ai/ui/settings/dialogs/prompt_save_dialog.dart';
@@ -197,7 +197,7 @@ class GeneralTab extends StatelessWidget {
           ],
           const SizedBox(height: 16),
           SliderSetting(
-            label: 'Font Size Scale',
+            label: 'Reading Size',
             value: storageService.textScale,
             min: 0.7,
             max: 2.0,

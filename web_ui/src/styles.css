@@ -42,6 +42,9 @@
   --chat-user-text: var(--accent-ink);
   --chat-ai-bubble: var(--surface-2);
   --chat-ai-text: var(--text);
+  /* Reading size (Settings + in-chat theme drawer). 1 = default. Applied to
+     bubbles, composer, edit, sidebar help — not nav/chips/chrome. */
+  --reading-size: 1;
   /* Tag pills (honey). */
   --tag-bg: rgba(233, 196, 106, 0.2);
   --tag-border: rgba(233, 196, 106, 0.45);
@@ -80,6 +83,13 @@ button, a, [role='button'], .nav-item, summary, label { touch-action: manipulati
    Force 16px on phones so focusing a field never zooms/!shifts the layout. */
 @media (max-width: 767px) {
   input, textarea, select, .search { font-size: 16px; }
+  /* Reading-size composer/edit must not drop below 16px or iOS zooms the page. */
+  .chat-input .composer-backdrop,
+  .chat-input .composer-input,
+  .msg-edit-body,
+  .msg-edit-backdrop {
+    font-size: max(16px, calc(14px * var(--reading-size, 1)));
+  }
   .page { overflow-wrap: anywhere; }
 }
 
@@ -643,6 +653,7 @@ button.ghost.small, .ghost.small { font-size: 0.72rem; padding: 4px 8px; backgro
 .bubble {
   max-width: 85%; padding: 10px 14px; border-radius: 16px; white-space: pre-wrap;
   line-height: 1.4; word-break: break-word;
+  font-size: calc(14px * var(--reading-size, 1));
   /* Decorative theme border (approximated from the desktop painters). Unset when
      no theme is active → no border, unchanged look. */
   border: var(--chat-bubble-border, none);
@@ -703,7 +714,7 @@ button.ghost.small, .ghost.small { font-size: 0.72rem; padding: 4px 8px; backgro
 .chat-input .composer-backdrop,
 .chat-input .composer-input {
   margin: 0; width: 100%; box-sizing: border-box;
-  font-family: inherit; font-size: 16px; line-height: 1.5;
+  font-family: inherit; font-size: calc(14px * var(--reading-size, 1)); line-height: 1.5;
   letter-spacing: normal; tab-size: 4;
   padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px;
   white-space: pre-wrap; overflow-wrap: break-word; word-break: break-word;
@@ -835,7 +846,8 @@ button.ghost.small, .ghost.small { font-size: 0.72rem; padding: 4px 8px; backgro
 }
 .msg-edit-thinking {
   resize: vertical; min-height: 90px; max-height: 28vh;
-  font-style: italic; color: var(--muted); font-size: 0.9rem;
+  font-style: italic; color: var(--muted);
+  font-size: calc(14px * var(--reading-size, 1));
   background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px;
   padding: 10px 12px; width: 100%; box-sizing: border-box;
 }
@@ -849,7 +861,7 @@ button.ghost.small, .ghost.small { font-size: 0.72rem; padding: 4px 8px; backgro
 .msg-edit-backdrop,
 .msg-edit-body {
   margin: 0; width: 100%; height: 100%; box-sizing: border-box;
-  font-family: inherit; font-size: 15px; line-height: 1.55;
+  font-family: inherit; font-size: calc(14px * var(--reading-size, 1)); line-height: 1.55;
   letter-spacing: normal; tab-size: 4;
   padding: 12px 14px; border: 1px solid var(--border); border-radius: 12px;
   white-space: pre-wrap; overflow-wrap: break-word; word-break: break-word;
@@ -2793,7 +2805,23 @@ button.danger:hover { background: rgba(255, 107, 107, 0.12); filter: none; }
   -webkit-box-orient: vertical;
   overflow: hidden;
   cursor: pointer;
+  font-size: calc(0.95rem * var(--reading-size, 1));
+  color: var(--text);
+  line-height: 1.4;
 }
+.reading-blurb {
+  margin: 0 0 10px;
+  font-size: calc(0.9rem * var(--reading-size, 1));
+  color: var(--text);
+  line-height: 1.45;
+}
+.reading-size-row {
+  display: flex; align-items: center; gap: 10px;
+  color: var(--text); font-size: 0.95rem;
+  margin: 8px 0 12px;
+}
+.reading-size-row input[type='range'] { flex: 1; accent-color: var(--accent); }
+.reading-size-value { font-variant-numeric: tabular-nums; min-width: 3.2em; text-align: right; }
 .expandable-text.open {
   display: block;
   overflow: visible;
@@ -2863,7 +2891,7 @@ button.danger:hover { background: rgba(255, 107, 107, 0.12); filter: none; }
 }
 
 @media (max-width: 640px) {
-  .expandable-text { font-size: 0.85rem; }
+  .expandable-text { font-size: calc(0.95rem * var(--reading-size, 1)); }
   .variant-picker-modal { width: 96vw; max-height: 80vh; }
   .variant-card-head { flex-wrap: wrap; }
   .variant-card-meta { margin-left: 0; width: 100%; order: 3; }

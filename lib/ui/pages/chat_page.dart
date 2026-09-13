@@ -35,7 +35,7 @@ import 'package:front_porch_ai/ui/chat_components/overlays/absence_recap_banner.
 import 'package:front_porch_ai/ui/dialogs/dialogs.dart';
 
 // Specific dialogs and modules not covered by the barrels (or intentionally direct)
-import 'package:front_porch_ai/ui/theme/app_colors.dart';
+import 'package:front_porch_ai/ui/theme/theme.dart';
 import 'package:front_porch_ai/ui/dialogs/avatar_gallery/avatar_gallery_controller.dart';
 import 'package:front_porch_ai/ui/dialogs/avatar_gallery/avatar_gallery_dialog.dart';
 import 'package:front_porch_ai/ui/pages/edit_character_page.dart';

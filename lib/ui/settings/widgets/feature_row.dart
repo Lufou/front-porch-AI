@@ -18,7 +18,7 @@
 
 import 'package:flutter/material.dart';
 
-import 'package:front_porch_ai/ui/theme/app_colors.dart';
+import 'package:front_porch_ai/ui/theme/theme.dart';
 
 /// How a feature relates to the thing it sits next to, stated honestly on the
 /// row itself. The audit (docs/design/feature-independence.md) found several
@@ -133,9 +133,9 @@ class FeatureRow extends StatelessWidget {
                       Text(
                         blurb,
                         style: TextStyle(
-                          fontSize: 12,
+                          fontSize: 13,
                           height: 1.35,
-                          color: AppColors.textTertiary(context),
+                          color: AppColors.textSecondary(context),
                         ),
                       ),
                     ],
@@ -256,8 +256,8 @@ class FeatureGroupCard extends StatelessWidget {
               Text(
                 subtitle,
                 style: TextStyle(
-                  fontSize: 12,
-                  color: AppColors.textTertiary(context),
+                  fontSize: 13,
+                  color: AppColors.textSecondary(context),
                 ),
               ),
             ],

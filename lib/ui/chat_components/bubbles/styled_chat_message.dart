@@ -22,7 +22,7 @@ import 'package:provider/provider.dart';
 
 import 'package:front_porch_ai/models/models.dart';
 import 'package:front_porch_ai/services/services.dart';
-
+import 'package:front_porch_ai/ui/theme/theme.dart';
 import 'package:front_porch_ai/ui/widgets/widgets.dart';
 import 'external_image_widget.dart';
 
@@ -127,7 +127,7 @@ class _StyledChatMessageState extends State<StyledChatMessage> {
   _tokenCache = {};
 
   // Style caches (invalidated when any styling input changes).
-  (String?, Color, Color, Color, double)? _styleKey;
+  (String?, Color, Color, Color)? _styleKey;
   TextStyle? _plainStyle;
   TextStyle? _dialogueStyle;
   TextStyle? _actionStyle;
@@ -137,7 +137,7 @@ class _StyledChatMessageState extends State<StyledChatMessage> {
   _tokensFor(String segment) =>
       _tokenCache.putIfAbsent(segment, () => tokenizeChat(segment).toList());
 
-  void _refreshStyles(StorageService storageService, double scaledSize) {
+  void _refreshStyles(StorageService storageService) {
     final character = widget.character;
     final fontFamily = storageService.getChatFontFamily(
       character,
@@ -165,37 +165,34 @@ class _StyledChatMessageState extends State<StyledChatMessage> {
       widget.themePreset,
       widget.themeOverrides,
     );
-    final key = (fontFamily, textColor, dialogueColor, actionColor, scaledSize);
+    final key = (fontFamily, textColor, dialogueColor, actionColor);
     if (key == _styleKey) return;
     _styleKey = key;
+    // fontSize is the shared reading base. MediaQuery textScaler is the only
+    // multiplier — do not also multiply StorageService.textScale here.
     _plainStyle = _applyGoogleFont(
       fontFamily,
-      TextStyle(color: textColor, fontSize: scaledSize),
+      readingSurfaceStyle(color: textColor),
     );
     _dialogueStyle = _applyGoogleFont(
       fontFamily,
-      TextStyle(
-        color: dialogueColor,
-        fontWeight: FontWeight.w500,
-        fontSize: scaledSize,
-      ),
+      readingSurfaceStyle(color: dialogueColor, fontWeight: FontWeight.w500),
     );
     _actionStyle = _applyGoogleFont(
       fontFamily,
-      TextStyle(color: actionColor, fontSize: scaledSize),
+      readingSurfaceStyle(color: actionColor),
     );
     _rootStyle = _applyGoogleFont(
       fontFamily,
-      TextStyle(color: textColor, fontSize: scaledSize, height: 1.4),
+      readingSurfaceStyle(color: textColor, height: 1.4),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final storageService = Provider.of<StorageService>(context);
-    final scaledSize = 14.0 * storageService.textScale;
     final text = widget.text;
-    _refreshStyles(storageService, scaledSize);
+    _refreshStyles(storageService);
 
     // Check for markdown images (cached per source text).
     if (!identical(text, _parseSource)) {
@@ -259,24 +256,25 @@ class _StyledChatMessageState extends State<StyledChatMessage> {
     int lastEnd = 0;
     for (final t in tokens) {
       if (t.start > lastEnd) {
-        spans.add(TextSpan(
-          text: segment.substring(lastEnd, t.start),
-          style: _plainStyle,
-        ));
+        spans.add(
+          TextSpan(
+            text: segment.substring(lastEnd, t.start),
+            style: _plainStyle,
+          ),
+        );
       }
-      spans.add(TextSpan(
-        text: t.matchText,
-        style: t.type == StyledTokenType.dialogue
-            ? _dialogueStyle
-            : _actionStyle,
-      ));
+      spans.add(
+        TextSpan(
+          text: t.matchText,
+          style: t.type == StyledTokenType.dialogue
+              ? _dialogueStyle
+              : _actionStyle,
+        ),
+      );
       lastEnd = t.end;
     }
     if (lastEnd < segment.length) {
-      spans.add(TextSpan(
-        text: segment.substring(lastEnd),
-        style: _plainStyle,
-      ));
+      spans.add(TextSpan(text: segment.substring(lastEnd), style: _plainStyle));
     }
 
     if (spans.isEmpty) {
