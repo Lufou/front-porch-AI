@@ -56,5 +56,12 @@ void main() {
     expect(request, contains('buildMcpCatalog'));
     expect(request, contains('inProcessWebSearchTool()'));
     expect(request, contains('shouldAdvertiseWebSearch'));
+    expect(
+      request,
+      isNot(contains('catalogDecisionPrompt')),
+      reason:
+          'MCP+search share the character-mouth tools round; no silent '
+          'think-to-call cue',
+    );
   });
 }

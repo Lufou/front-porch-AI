@@ -28,29 +28,6 @@ const String kWebSearchCharacterLine =
     'Don\'t break character. You simply know the thing now.';
 const String kSearchCharacterLine = kWebSearchCharacterLine;
 
-/// Tools-round-only cue. This round is a silent think-to-search check,
-/// not the character reply — without that split, RP completion ending in
-/// `Name:` just talks unless the user OOC-forces a lookup.
-const String kWebSearchDecisionCue =
-    '[This is a silent lookup check, not your reply. Think: does the last '
-    'user message name something you are not certain of — a person, place, '
-    'show, character, book, lore, term, weather, news, date, or anything '
-    'you do not recognize? Fiction counts. If yes, call web_search with '
-    'that query. The call is silent; you are not breaking character. Do '
-    'not guess. If you already know it from your character or the scene, '
-    'or it is just conversation, call nothing. Do not write the reply yet.]';
-
-/// Last-token wrap so the cue beats the `Name:` suffix on local models.
-String webSearchDecisionPrompt(String prompt) =>
-    '$prompt\n\n$kWebSearchDecisionCue';
-
-/// System wrap so remote models that ignore the user-tail still see it.
-String webSearchDecisionSystemPrompt(String? systemPrompt) {
-  final base = systemPrompt?.trim() ?? '';
-  if (base.isEmpty) return kWebSearchDecisionCue;
-  return '$base\n\n$kWebSearchDecisionCue';
-}
-
 /// Gated character fragments for a web_search result. Speaker sees them;
 /// they are not written into the bubble or the user's lorebook.
 class SearchInjection {

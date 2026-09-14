@@ -89,18 +89,17 @@ bool shouldAdvertiseWebSearch({
 }
 
 /// One `generateWithTools` with `web_search`. No call + text → canned
-/// (think-phase scratch; dispatch must not use it as the bubble).
-/// A `web_search` call → cache lookup, HTTP on miss, fragment.
+/// spoken reply. A `web_search` call → cache lookup, HTTP on miss, fragment.
+/// Live dispatch uses [runCatalogRound] instead; this helper remains for
+/// unit tests of the search client.
 Future<WebSearchRound> runWebSearchRound({
   required LLMService llm,
   required GenerationParams params,
   required WebSearchService search,
 }) async {
   debugPrint(
-    '[WebSearch] decision round backend=${llm.backendName} '
+    '[WebSearch] tools round backend=${llm.backendName} '
     'reasoning=${params.reasoningEnabled} effort=${params.reasoningEffort} '
-    'cueInPrompt=${params.prompt.contains(kWebSearchDecisionCue)} '
-    'cueInSystem=${params.systemPrompt?.contains(kWebSearchDecisionCue) ?? false} '
     'promptTail="${_wsClip(params.prompt)}"',
   );
   LlmToolResponse? resp;

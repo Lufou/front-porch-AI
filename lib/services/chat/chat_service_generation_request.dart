@@ -197,7 +197,9 @@ extension ChatServiceGenerationRequest on ChatService {
     // Unified tools catalog: in-process web_search plus MCP tools enabled
     // for this chat. Continue / autonomous / xml-only skip the round-trip.
     // Search still requires a direct user send; MCP also runs on regen and
-    // group follow-ups. One round-trip; inject; stream the in-character reply.
+    // group follow-ups. Tools ride the *character* prompt (no silent
+    // lookup/think-to-call cue). Call → inject → stream without tools.
+    // Spoken tools text with no call is the bubble (no second trip).
     final globalDefault = _storageService.webSearchSettings.webSearchDefault;
     final xmlOnly = _toolProbe.isXmlOnly(_evalBackendIdentity);
     final includeSearch = shouldAdvertiseWebSearch(
@@ -233,30 +235,9 @@ extension ChatServiceGenerationRequest on ChatService {
       enabledForChat: _mcpEnabledServerIds,
     );
     if (catalog.tools.isNotEmpty) {
-      final savedSuffix = t.plan.section('suffix').text;
-      t.plan.section('suffix').text = '';
-      final decisionPrompt = catalog.hasMcp
-          ? catalogDecisionPrompt(
-              t.plan.userText,
-              hasSearch: catalog.hasSearch,
-              hasMcp: true,
-            )
-          : webSearchDecisionPrompt(t.plan.userText);
-      t.plan.section('suffix').text = savedSuffix;
       final round = await runCatalogRound(
         llm: llmService,
-        params: paramsOf(
-          decisionPrompt,
-          systemPrompt: catalog.hasMcp
-              ? catalogDecisionSystemPrompt(
-                  chatSystemPrompt,
-                  hasSearch: catalog.hasSearch,
-                  hasMcp: true,
-                )
-              : webSearchDecisionSystemPrompt(chatSystemPrompt),
-          reasoningEnabled: !_callMode,
-          reasoningMaxTokens: _callMode ? 0 : null,
-        ),
+        params: genParams,
         catalog: catalog,
         search: _webSearchService,
         hub: _mcpHub,
@@ -264,14 +245,20 @@ extension ChatServiceGenerationRequest on ChatService {
       );
       t.searchReceipt = round.searchReceipt;
       t.mcpReceipt = round.mcpReceipt;
-      if (round.injection != null && round.injection!.isNotEmpty) {
-        t.plan.section('web_search').text = round.injection!;
+      final injection = round.injection;
+      final spoken = round.spokenText;
+      if (injection != null && injection.isNotEmpty) {
+        t.plan.section('web_search').text = injection;
         genParams = paramsOf(t.plan.userText);
         debugPrint('[MCP] dispatch inject+stream (in-character reply)');
+        t.stream = llmService.generateStream(genParams);
+      } else if (spoken != null && spoken.isNotEmpty) {
+        debugPrint('[MCP] dispatch spoken tools text (no second trip)');
+        t.stream = Stream<String>.value(spoken);
       } else {
         debugPrint('[MCP] dispatch no tool result — stream in-character reply');
+        t.stream = llmService.generateStream(genParams);
       }
-      t.stream = llmService.generateStream(genParams);
     } else {
       t.stream = llmService.generateStream(genParams);
     }

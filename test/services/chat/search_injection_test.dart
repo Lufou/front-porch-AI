@@ -100,53 +100,37 @@ void main() {
     expect(tool['type'], 'function');
     final fn = tool['function'] as Map;
     expect(fn['name'], 'web_search');
-    expect(fn['description'], contains("do not recognize"));
+    expect(fn['description'], contains('do not recognize'));
+    expect(
+      fn['description'],
+      contains('MUST call'),
+      reason: 'the schema, not a silent pre-gen cue, is the must-search rule',
+    );
+    expect(fn['description'], contains('Never invent'));
     final params = fn['parameters'] as Map;
     expect(params['required'], ['query']);
   });
 
-  test('decision cue tells the model to search unknown facts on its own', () {
-    expect(kWebSearchDecisionCue, contains('web_search'));
-    expect(kWebSearchDecisionCue.toLowerCase(), contains('weather'));
-    expect(kWebSearchDecisionCue.toLowerCase(), contains('fiction'));
-    expect(kWebSearchDecisionCue.toLowerCase(), contains('not your reply'));
-    expect(kWebSearchDecisionCue.toLowerCase(), contains('do not guess'));
-    expect(
-      kWebSearchDecisionCue.toLowerCase(),
-      contains('not breaking character'),
-    );
-    expect(
-      kWebSearchDecisionCue.toLowerCase(),
-      isNot(contains('real-world')),
-      reason:
-          'Gandalf / the Ring / anime must search too — '
-          'do not gate on real-world facts',
-    );
-    expect(
-      kWebSearchCharacterLine,
-      contains('react to it as yourself'),
-      reason: 'after-search in-character reaction must stay',
-    );
-  });
-
-  test('decision prompt appends the cue after the RP tail', () {
-    const tail = 'Iris:\n';
-    final prompted = webSearchDecisionPrompt(tail);
-    expect(prompted.startsWith(tail), isTrue);
-    expect(prompted.endsWith(kWebSearchDecisionCue), isTrue);
-    expect(
-      prompted.indexOf(tail),
-      lessThan(prompted.indexOf(kWebSearchDecisionCue)),
-    );
-  });
-
-  test('decision system prompt keeps the standing line and adds the cue', () {
-    final system = webSearchDecisionSystemPrompt(kWebSearchCharacterLine);
-    expect(system, contains(kWebSearchCharacterLine));
-    expect(system, contains(kWebSearchDecisionCue));
-    expect(
-      system.indexOf(kWebSearchCharacterLine),
-      lessThan(system.indexOf(kWebSearchDecisionCue)),
-    );
-  });
+  test(
+    'standing character line is after-search reaction, not a silent check',
+    () {
+      expect(kWebSearchCharacterLine, contains('react to it as yourself'));
+      expect(kWebSearchCharacterLine, contains("Don't break character"));
+      expect(
+        kWebSearchCharacterLine.toLowerCase(),
+        isNot(contains('silent lookup')),
+      );
+      expect(
+        kWebSearchCharacterLine,
+        isNot(contains('Do not write the reply yet')),
+      );
+      expect(
+        kWebSearchCharacterLine.toLowerCase(),
+        isNot(contains('real-world')),
+        reason:
+            'Gandalf / the Ring / anime must search too — '
+            'do not gate on real-world facts',
+      );
+    },
+  );
 }

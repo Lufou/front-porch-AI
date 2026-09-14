@@ -1,3 +1,9 @@
+## 2026-09-13 — Web Search rides the character's mouth, not a silent pre-gen
+- **Why:** With Web Search on, Porch first sent a fake “don't talk yet, should I look this up?” prompt (`kWebSearchDecisionCue`). Roleplay models treated that as more scene, guessed Spokane weather, and Tavily never got a hit.
+- **What:** Deleted the silent decision cue from the live path (search-only and MCP+search). `generateWithTools` now sees the real character prompt (`Name:` suffix, standing `kWebSearchCharacterLine`). A `web_search` call still runs Tavily/Wikipedia, writes `SearchInjection`, then streams the spoken reply without tools. No call + spoken text is the bubble — no second empty RP trip. Schema still says MUST call / never invent. Gate unchanged (Porch Life global, first reply to a user send only).
+- **Files:** `chat_service_generation_request.dart`, `mcp_tools_round.dart`, `search_injection.dart`, `mcp_injection.dart`, `web_search_service.dart`, search/MCP wiring and turn tests
+- **Commit:** (this commit)
+
 ## 2026-09-13 — Tavily key field stays visible with Web Search off
 - **Why:** The paste box lived as a FeatureRow child, which only renders
   when the switch is on — so you could not save a key before flipping

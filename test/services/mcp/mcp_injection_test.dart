@@ -21,8 +21,11 @@ void main() {
     expect(kMcpCharacterLine, contains("Don't break character"));
   });
 
-  test('decision cue is a silent check, not the reply', () {
-    expect(kMcpDecisionCue, contains('silent tool-use check'));
-    expect(mcpDecisionPrompt('Hello'), contains(kMcpDecisionCue));
+  test('standing MCP line is after-tool reaction, not a silent check', () {
+    expect(
+      kMcpCharacterLine.toLowerCase(),
+      isNot(contains('silent tool-use check')),
+    );
+    expect(kMcpCharacterLine, isNot(contains('Do not write the reply yet')));
   });
 }

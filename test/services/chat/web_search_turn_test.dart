@@ -260,7 +260,7 @@ void main() {
   });
 
   test(
-    'tools round is told to search unknown facts; the stream is not',
+    'search-only generation advertises tools on the character prompt',
     () async {
       await chat.setActiveCharacter(card());
       await chat.sendMessage('what is the weather in Spokane');
@@ -284,32 +284,42 @@ void main() {
         reason: 'web_search must be on a tools payload, not only report_ping',
       );
       expect(
-        searchParams!.prompt,
-        contains(kWebSearchDecisionCue),
+        searchParams!.prompt.trimRight(),
+        endsWith('Mara:'),
         reason:
-            'without a last-token cue the RP suffix wins and they only '
-            'search when the user OOC-forces it',
-      );
-      expect(searchParams.systemPrompt, contains(kWebSearchDecisionCue));
-      expect(
-        searchParams.reasoningEnabled,
-        isTrue,
-        reason:
-            'the lookup check is a think phase so the model can notice '
-            'what it does not know; the in-character stream keeps the '
-            'user\'s reasoning setting',
+            'tools ride the real character completion (the Name: suffix), '
+            'not a stripped silent-check prompt',
       );
       expect(
-        llm.streamPrompts.any((p) => p.contains(kWebSearchDecisionCue)),
+        searchParams.systemPrompt,
+        contains(kWebSearchCharacterLine),
+        reason: 'the standing after-search line stays on the character prompt',
+      );
+      expect(
+        searchParams.prompt.toLowerCase(),
+        isNot(contains('silent lookup check')),
+        reason: 'a silent pre-gen judge is why models guess instead of search',
+      );
+      expect(
+        searchParams.prompt,
+        isNot(contains('Do not write the reply yet')),
+      );
+      expect(
+        searchParams.systemPrompt?.toLowerCase() ?? '',
+        isNot(contains('silent lookup check')),
+      );
+      expect(
+        llm.streamPrompts.any(
+          (p) =>
+              p.toLowerCase().contains('silent lookup check') ||
+              p.contains('Do not write the reply yet'),
+        ),
         isFalse,
-        reason:
-            'the decision cue is a tools-round stage direction; the '
-            'in-character stream must not see it',
       );
     },
   );
 
-  test('no tool call still streams the in-character reply', () async {
+  test('no tool call uses the spoken tools text (no second trip)', () async {
     llm.searchQuery = null;
     llm.replyText = 'Hey there.';
     await chat.setActiveCharacter(card());
@@ -318,10 +328,10 @@ void main() {
 
     expect(
       llm.streamPrompts,
-      isNotEmpty,
+      isEmpty,
       reason:
-          'the think-to-search round is not the bubble — even a no-lookup '
-          'turn must stream the in-character reply',
+          'when generateWithTools already returned spoken text and no '
+          'web_search call, do not pay a second empty RP completion',
     );
     expect(chat.messages.last.isUser, isFalse);
     expect(chat.messages.last.text, contains('Hey there'));

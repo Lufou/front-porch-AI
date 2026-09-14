@@ -26,14 +26,6 @@ const String kMcpCharacterLine =
     'emotions. Don\'t recite the JSON. Don\'t break character. You simply '
     'know the thing now.';
 
-/// Tools-round-only cue. Same split as web_search: this round is a silent
-/// check, not the character reply.
-const String kMcpDecisionCue =
-    '[This is a silent tool-use check, not your reply. If the last user '
-    'message would be answered by calling one of your tools, call that tool '
-    'now. The call is silent; you are not breaking character. Do not write '
-    'the reply yet. If no tool is needed, call nothing.]';
-
 /// Gated character fragments for an MCP tool result. Speaker sees them;
 /// they are not written into the bubble.
 class McpInjection {
@@ -68,41 +60,3 @@ String mcpEmptyResultFragment() => McpInjection.emptyResultFragment;
 
 String mcpResultFragment(String snippet) =>
     McpInjection.resultFragment(snippet);
-
-String mcpDecisionPrompt(String prompt) => '$prompt\n\n$kMcpDecisionCue';
-
-String mcpDecisionSystemPrompt(String? systemPrompt) {
-  final base = systemPrompt?.trim() ?? '';
-  if (base.isEmpty) return kMcpDecisionCue;
-  return '$base\n\n$kMcpDecisionCue';
-}
-
-/// Combine search + MCP decision cues so one tools round can advertise both.
-String catalogDecisionPrompt(
-  String prompt, {
-  required bool hasSearch,
-  required bool hasMcp,
-}) {
-  final cues = <String>[
-    if (hasSearch) kWebSearchDecisionCue,
-    if (hasMcp) kMcpDecisionCue,
-  ];
-  if (cues.isEmpty) return prompt;
-  return '$prompt\n\n${cues.join('\n')}';
-}
-
-String catalogDecisionSystemPrompt(
-  String? systemPrompt, {
-  required bool hasSearch,
-  required bool hasMcp,
-}) {
-  final cues = <String>[
-    if (hasSearch) kWebSearchDecisionCue,
-    if (hasMcp) kMcpDecisionCue,
-  ];
-  if (cues.isEmpty) return systemPrompt?.trim() ?? '';
-  final joined = cues.join('\n');
-  final base = systemPrompt?.trim() ?? '';
-  if (base.isEmpty) return joined;
-  return '$base\n\n$joined';
-}

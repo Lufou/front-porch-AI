@@ -28,11 +28,21 @@ import 'package:front_porch_ai/services/mcp/mcp_models.dart';
 
 /// Outcome of the one tools round-trip over the unified catalog.
 class CatalogRound {
-  const CatalogRound({this.injection, this.searchReceipt, this.mcpReceipt});
+  const CatalogRound({
+    this.injection,
+    this.searchReceipt,
+    this.mcpReceipt,
+    this.spokenText,
+  });
 
   final String? injection;
   final Map<String, dynamic>? searchReceipt;
   final Map<String, dynamic>? mcpReceipt;
+
+  /// Spoken character text from `generateWithTools` when no advertised
+  /// tool fired. Dispatch may use this as the bubble instead of a second
+  /// empty completion.
+  final String? spokenText;
 }
 
 /// One `generateWithTools` with the flat catalog. Dispatches by source:
@@ -82,10 +92,12 @@ Future<CatalogRound> runCatalogRound({
     );
   }
   if (call == null || entry == null) {
+    final text = resp.text.trim();
     debugPrint(
-      '[MCP] no advertised tool call — will stream in-character reply',
+      '[MCP] no advertised tool call — '
+      '${text.isEmpty ? 'will stream in-character reply' : 'using spoken tools text'}',
     );
-    return const CatalogRound();
+    return CatalogRound(spokenText: text.isEmpty ? null : text);
   }
 
   if (entry.source == McpToolSource.inProcess &&

@@ -139,38 +139,38 @@ void main() {
     );
   });
 
-  test('tools round-trip carries the decision cue, not the bare RP prompt', () {
-    final request = File(
-      'lib/services/chat/chat_service_generation_request.dart',
-    ).readAsStringSync();
-    expect(
-      request,
-      contains('webSearchDecisionPrompt'),
-      reason:
-          'the tools round must append the last-token search cue; '
-          'passing genParams unchanged is why OOC was required',
-    );
-    expect(
-      request,
-      contains('webSearchDecisionSystemPrompt'),
-      reason:
-          'remote models read system; local models read the last user token',
-    );
-    expect(
-      request,
-      contains('reasoningEnabled: !_callMode'),
-      reason:
-          'the lookup check forces thinking so the model can notice gaps; '
-          'call mode keeps the speed lane',
-    );
-    expect(
-      request,
-      isNot(contains('round.cannedReply!')),
-      reason:
-          'think-phase text must not become the bubble; always stream '
-          'the in-character reply after the lookup check',
-    );
-  });
+  test(
+    'tools round-trip uses the character prompt, not a silent lookup cue',
+    () {
+      final request = File(
+        'lib/services/chat/chat_service_generation_request.dart',
+      ).readAsStringSync();
+      expect(
+        request,
+        isNot(contains('webSearchDecisionPrompt')),
+        reason: 'search-only must not wrap the prompt in a silent lookup cue',
+      );
+      expect(request, isNot(contains('webSearchDecisionSystemPrompt')));
+      expect(request, isNot(contains('catalogDecisionPrompt')));
+      expect(
+        request,
+        contains('params: genParams'),
+        reason: 'generateWithTools sees the same character prompt as the mouth',
+      );
+      expect(
+        request,
+        contains('runCatalogRound'),
+        reason: 'one catalog round still dispatches in-process web_search',
+      );
+      expect(
+        request,
+        contains('spokenText'),
+        reason:
+            'spoken tools text with no call is the bubble — do not pay a '
+            'second RP completion',
+      );
+    },
+  );
 
   test('no slash-command parser / /search route exists', () {
     expect(
