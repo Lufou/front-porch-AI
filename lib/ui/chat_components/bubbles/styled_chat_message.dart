@@ -284,6 +284,9 @@ class _StyledChatMessageState extends State<StyledChatMessage> {
     return SelectionArea(
       child: RichText(
         text: TextSpan(style: _rootStyle, children: spans),
+        // RichText defaults to TextScaler.noScaling and will not read
+        // the house MediaQuery. Text() does; this path must pass it.
+        textScaler: MediaQuery.textScalerOf(context),
       ),
     );
   }

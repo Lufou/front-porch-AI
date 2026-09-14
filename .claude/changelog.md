@@ -1,3 +1,9 @@
+## 2026-09-14 — Reading Size 2.00 left quoted / *action* bubbles at 14px
+- **Why:** Yesterday's reading-size pass stopped multiplying fontSize (to kill double-scale) and trusted MediaQuery. Chat bubbles with quotes or *actions* paint through `RichText`, whose Flutter default is `TextScaler.noScaling` — it does not read that ancestor. The slider wrote 2.00; the words stayed 14px. Plain `Text` (composer, empty bubbles) already scaled, so the first test (MediaQuery on the element) stayed green.
+- **What:** Pass `MediaQuery.textScalerOf(context)` into that `RichText`. New guard asserts the widget's own scaler, not the ancestor's. Proven red (expected 1.5, actual 1.0) before the pass, green after.
+- **Files:** `styled_chat_message.dart`, `reading_size_test.dart`, `docs/Rawhide.md`
+- **Commit:** (this commit)
+
 ## 2026-09-14 — WebUI tsc was typechecking vitest files
 - **Why:** `ChatTools.clock.test.tsx` (clock-chevron source grep from the audit punch) imports `node:fs` / `__dirname`. CI `npm run lint` is `tsc --noEmit` over all of `src`, and the web tsconfig is browser-only — no Node types. Vitest itself was fine; lint died first. Not caused by the search-copy commits; they just ran the job.
 - **What:** Exclude `*.test.ts` / `*.test.tsx` from `web_ui/tsconfig.json`. App still typechecks. Vitest still runs the clock pin.

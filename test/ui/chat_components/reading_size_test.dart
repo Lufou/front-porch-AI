@@ -228,4 +228,48 @@ void main() {
       expect(_declaredFontSize(style) * 1.5, kReadingFontSize * 1.5);
     },
   );
+
+  // The first test only checked MediaQuery on the element. Flutter's
+  // RichText defaults to TextScaler.noScaling and does NOT read that
+  // ancestor — which is why Reading Size 2.00 left quoted / *action*
+  // bubbles at 14px after we stopped multiplying fontSize ourselves.
+  testWidgets(
+    'quoted and action bubbles pass the house scaler into RichText, not noScaling',
+    (tester) async {
+      const scale = 1.5;
+      await tester.pumpWidget(
+        MediaQuery(
+          data: const MediaQueryData(textScaler: TextScaler.linear(scale)),
+          child: ChangeNotifierProvider<StorageService>.value(
+            value: _ReadingStorage(scale),
+            child: const MaterialApp(
+              home: Scaffold(
+                body: StyledChatMessage(
+                  text: '"Hello," she said. *winks*',
+                  isUser: true,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      final richTexts = tester.widgetList<RichText>(find.byType(RichText));
+      expect(
+        richTexts,
+        isNotEmpty,
+        reason: 'dialogue/action path uses RichText',
+      );
+      for (final rt in richTexts) {
+        expect(
+          rt.textScaler.scale(1.0),
+          scale,
+          reason:
+              'RichText defaults to TextScaler.noScaling. Ambient MediaQuery '
+              'is not enough — the widget must pass the house scaler.',
+        );
+      }
+    },
+  );
 }
