@@ -12,6 +12,8 @@ Last shipped nightly: `rawhide.20260906.7059c91`. Everything below is unreleased
 
 - 🔎 **Web Search happens in the reply, not a silent extra trip** — the character sees the search tool while they are actually talking. If they look something up, the result lands and they speak; if they already know, they just speak. Same on the phone.
 
+- 🌳 **Growth Rings grow again on a hot scene** — a bond spike used to re-check every turn and only water the same two rings. Checks wait for the slider (or a real kick) so new rings can land and old ones can fade. Journal is unchanged.
+
 - 🔎 **Reading Size is one knob for what you read** — bubbles, the chat input box, and message edit follow that slider. Sidebar stays put.
 
 - 🖥️ **Waifu Coder wrap-up speaks once** — after tools stop, the in-character recap is one spoken bubble, not two copies of the same goodbye.

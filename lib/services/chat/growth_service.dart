@@ -42,6 +42,23 @@ int growthPassWindowStart(int cursor, int messageCount) {
   return start;
 }
 
+/// Whether an automatic Growth pass should fire.
+///
+/// Interval (user messages since the cursor) OR a gated [kickPending]
+/// from onSalienceKick / quest complete. Do **not** also OR
+/// [JournalPhysics.hasSalientEvent] on the same window — that metadata
+/// is what requested the kick, and reading it here bypasses the
+/// cooldown so a hot scene runs growth every turn on two messages.
+/// The model then only reinforces the same rings; new growth starves.
+bool growthPassIsDue({
+  required int userMessagesSincePass,
+  required int interval,
+  required bool kickPending,
+}) {
+  if (userMessagesSincePass <= 0) return false;
+  return kickPending || userMessagesSincePass >= interval;
+}
+
 /// Growth Rings — the growth pass + effective-personality layering
 /// (docs/design/growth-rings.md). Replaces EvolutionService's monolithic
 /// personality/scenario rewrites with small receipt-backed ring operations.

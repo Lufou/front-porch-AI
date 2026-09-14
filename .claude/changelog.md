@@ -1,3 +1,9 @@
+## 2026-09-14 — Growth Rings starved on hot scenes (same two rings forever)
+- **Why:** Zinnia at 41 messages had 2 rings (one pumped to 1.0, one at 0.40, zero Past). Flora at 37 messages had 18. Journal on Zinnia was healthy (44 cards). The gardener WAS walking — receipts on the habit ring cite almost every other message — but only watering the same two trees. A cooldown exists so a ±12 bond bar does not fire Growth every turn. The post-gen trigger still re-read that same metadata (`hasSalientEvent`) and bypassed it. Tiny 2-message windows; the model only reinforces.
+- **What:** Growth due = interval OR a gated kick. Do not OR `hasSalientEvent` on the window. Journal left as-is (it wants frequent cards).
+- **Files:** `growth_service.dart`, `chat_service_growth.dart`, `growth_test.dart`, `docs/Rawhide.md`
+- **Commit:** (this commit)
+
 ## 2026-09-14 — Reading Size is one scaler for bubbles, composer, and edit
 - **Why:** Sit-down: the slider grew chrome; bubbles followed the pref after the last pass; the chat input box stayed 14px. TextField only reads MediaQuery, and that ancestor can sit at 1.0 while the pref is 2.00. Edit overlay had the same trap.
 - **What:** One helper (`readingTextScaler` / `ReadingSizeScope`). Composer sits in that scope. Bubbles still pass the scaler into RichText (Flutter default is noScaling). Edit prefers StorageService.textScale, falls back to launching MediaQuery when tests have no storage. Guards: pref 2.0 + ambient 1.0 for composer and edit.
