@@ -1,3 +1,9 @@
+## 2026-09-14 — Search notes are not a lecture
+- **Why:** After a successful Wandenreich lookup, Sophia stayed in pose but catalogued Schrift A–Z (Yhwach, Haschwalth, Giselle) like a wiki. The standing line already said don't recite the source; it did not forbid a roster.
+- **What:** Character line and the gated search footer: don't list, lecture, or catalogue — one or two facts you'd actually say in this moment, not a taxonomy. Live poke after: still searched, spoken dropped the roster, kept the train scene.
+- **Files:** `search_injection.dart`, `search_injection_test.dart`
+- **Commit:** (this commit)
+
 ## 2026-09-14 — Web Search card: famous is not certain
 - **Why:** Kimi skipped `web_search` on in-scene Wandenreich/Sternritter talk — it named Bleach in the think and riffed from training. Weather still searched. Copy already said MUST / fiction; cocky models treated “I know this show” as a pass.
 - **What:** Tool description now says famous is not certain: even if they recognize the show, look up the specific name. No forced `tool_choice`, no second judge. Live poke after the punch: search fired (`Sternritter Wandenreich Schrift…`, ok).
