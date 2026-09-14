@@ -72,8 +72,7 @@ class NeedsSimulation {
 
   Map<String, int> _vector = {};
   String? _pendingCatastrophe;
-  String?
-  _lastSceneReason; // from model/Director for better chip reasons on scene deltas
+  String? _lastSceneReason; // from model/Director for better chip reasons on scene deltas
   /// Speakers who already got the "I reek" beat at hygiene 0. Cleared
   /// when hygiene rises (they washed). Stops a no-rebound meter from
   /// re-firing the canon scene event every turn.
@@ -120,6 +119,30 @@ class NeedsSimulation {
     'hygiene': 75,
     'comfort': 70,
   };
+
+  /// Stored group-member needs, or empty when the slot has never carried a
+  /// vector. Missing keys in a partial map are filled from [needDefaults];
+  /// a null/empty map is NOT invented — callers seed from the card instead.
+  static Map<String, int> storedNeedsOrEmpty(Map<String, int>? raw) {
+    if (raw == null || raw.isEmpty) return const {};
+    return {for (final k in needKeys) k: raw[k] ?? (needDefaults[k] ?? 80)};
+  }
+
+  /// Card baselines used to seed a fresh 1:1 chat and a group member who
+  /// has never had a stored vector. Falls back to [needDefaults] when the
+  /// card has no extensions.
+  static Map<String, int> baselinesFromExtensions(FrontPorchExtensions? ext) {
+    if (ext == null) return Map<String, int>.from(needDefaults);
+    return {
+      'hunger': ext.needsBaselineHunger,
+      'bladder': ext.needsBaselineBladder,
+      'energy': ext.needsBaselineEnergy,
+      'social': ext.needsBaselineSocial,
+      'fun': ext.needsBaselineFun,
+      'hygiene': ext.needsBaselineHygiene,
+      'comfort': ext.needsBaselineComfort,
+    };
+  }
 
   static const Map<String, int> needDecay = {
     'hunger': 2,
@@ -236,16 +259,11 @@ class NeedsSimulation {
   // has no recovery floor — the meter stays at 0 until they actually wash.
   // Enjoys-low-hygiene skips the beat (0 hygiene is comfort for them).
   static const Map<String, String> needCatastropheText = {
-    'hunger':
-        '''Starvation buckles them — they sag, grey-faced and unsteady, and have to catch themselves on the nearest support just to stay upright. Their body has hit its limit and it shows.''',
-    'bladder':
-        '''Their control gives out. It's happening right now, in the scene — a hot, unstoppable release, fabric darkening, a spreading wet patch, the smell of it. The accident is occurring this instant, not a warning or a near-miss.''',
-    'energy':
-        '''Exhaustion drops them mid-action — their knees buckle and they collapse, briefly blacking out as they slump to the floor or the nearest surface. They come to a few seconds later, dazed and groggy, barely able to keep their eyes open or form a clear thought.''',
-    'hygiene':
-        '''They can smell themselves — grimy, sour, unmistakable — and it makes them self-conscious, uncomfortable, embarrassed. They do not drop what they are doing to go wash; the stink just sits on them.''',
-    'comfort':
-        '''The strain becomes unbearable — the cramped position, the temperature, the pressure, the restraint, whatever is causing it. They have to shift, break contact with the source, or otherwise ease it; they can't simply hold still through it any longer.''',
+    'hunger': '''Starvation buckles them — they sag, grey-faced and unsteady, and have to catch themselves on the nearest support just to stay upright. Their body has hit its limit and it shows.''',
+    'bladder': '''Their control gives out. It's happening right now, in the scene — a hot, unstoppable release, fabric darkening, a spreading wet patch, the smell of it. The accident is occurring this instant, not a warning or a near-miss.''',
+    'energy': '''Exhaustion drops them mid-action — their knees buckle and they collapse, briefly blacking out as they slump to the floor or the nearest surface. They come to a few seconds later, dazed and groggy, barely able to keep their eyes open or form a clear thought.''',
+    'hygiene': '''They can smell themselves — grimy, sour, unmistakable — and it makes them self-conscious, uncomfortable, embarrassed. They do not drop what they are doing to go wash; the stink just sits on them.''',
+    'comfort': '''The strain becomes unbearable — the cramped position, the temperature, the pressure, the restraint, whatever is causing it. They have to shift, break contact with the source, or otherwise ease it; they can't simply hold still through it any longer.''',
   };
 
   /// Recovery floor by need CLASS after a catastrophe (no magic per-need +N):

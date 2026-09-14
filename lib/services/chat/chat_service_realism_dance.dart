@@ -98,10 +98,9 @@ extension ChatServiceRealismDance on ChatService {
       final currentForSpeaker = _getGroupNeeds(sidForDecay);
       final preDecay = currentForSpeaker.isNotEmpty
           ? Map<String, int>.from(currentForSpeaker)
-          : {
-              for (final k in NeedsSimulation.needKeys)
-                k: NeedsSimulation.needDefaults[k] ?? 80,
-            };
+          : NeedsSimulation.baselinesFromExtensions(
+              speaker.frontPorchExtensions,
+            );
       // Stash the true pre-decay for this speaker so post-gen chip delta computation
       // (and regen) see the correct baseline including the decay portion of the turn.
       _pendingRealismMetadata ??= {};
@@ -350,11 +349,8 @@ extension ChatServiceRealismDance on ChatService {
     _characterEmotion = _groupRealism[charId]?.emotion ?? '';
     _emotionIntensity = _groupRealism[charId]?.emotionIntensity ?? 'moderate';
 
-    // Needs vector. _getGroupNeeds fills every key in NeedsSimulation.needKeys,
-    // falling back to needDefaults, so it can never come back empty — the
-    // "member has never had needs" branch that used to sit here was
-    // unreachable, and its comment claimed a starting value (full 100) that
-    // initializeFresh does not use either.
+    // Needs vector. No stored map → empty (never invent needDefaults here;
+    // first decay / live-add seed from the card instead).
     _needsSimulation.restoreFromSnapshot({'vector': _getGroupNeeds(charId)});
   }
 

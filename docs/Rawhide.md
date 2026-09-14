@@ -7,6 +7,9 @@ Last shipped nightly: `rawhide.20260906.7059c91`. Everything below is unreleased
 
 ## Recent improvements (unreleased — ships in the next build)
 
+- 🔎 **Search results no longer steal the reply** — after a lookup, the character still starts talking at their own `Name:` line. Wiki text sits above that, not after it.
+- 🕐 **Clock chevrons work with Realism off** — if you turned on the standalone story clock in Porch Life, the ±30 minute arrows and Story Calendar work on desktop and phone. They used to look paused whenever the engine was off.
+
 - 🔎 **Web Search happens in the reply, not a silent extra trip** — the character sees the search tool while they are actually talking. If they look something up, the result lands and they speak; if they already know, they just speak. Same on the phone.
 
 - 🔎 **Reading Size actually grows what you read** — the slider (Settings and the in-chat appearance sheet) now scales chat bubbles, the composer, message edit, and sidebar help together. It used to only puff the bubbles. Same control on the phone.

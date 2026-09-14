@@ -188,6 +188,7 @@ extension ChatServiceGeneration on ChatService {
     CharacterCard? forceSpeaker,
     bool autonomous = false,
     bool directUserSend = false,
+    bool skipSpeakerEval = false,
   }) async {
     if (await _abortIfBackendDown()) {
       // No turn will run — terminate BOTH live streams. The sentence stream
@@ -303,50 +304,32 @@ extension ChatServiceGeneration on ChatService {
           ? _getCharacterIdFromCard(speakingCharacter)
           : null;
 
-      // SINGLE realism eval path (group trigger): the picked group member gets
-      // their per-turn eval here, after selection, as it always has. The 1:1
-      // host runs the SAME `_evaluateRealismForUpcomingSpeaker` from sendMessage
-      // instead (fresh turns only) so regen — which calls _generateResponse
-      // directly — does NOT re-evaluate and drift the host's realism. Lite Scene
-      // Guests (guestSpeaker != null) carry no realism.
+      // SINGLE realism eval path (group trigger). 1:1 evals live in
+      // sendMessage so regen/_generateResponse does not re-score the host.
+      // Continue and user-last/retry regen skip the dance (same as 1:1
+      // skipping sendMessage evals) but still LOAD this speaker's scalars.
+      // A normal new group turn still dances. Guests carry no realism.
       if (guestSpeaker == null &&
           _activeGroup != null &&
-          _realismActiveThisMode &&
-          mode == GenerationMode.continue_) {
-        // Continue extends the reply already on screen — the same exchange,
-        // not a new one — so it must NOT re-run the dance: that charged the
-        // speaker a second needs decay tick, a second bond/trust evaluation
-        // and a second clock advance for one turn. The comment above spells
-        // out the intent for 1:1 (its evaluation lives in sendMessage, so a
-        // continuation cannot reach it); the group branch runs inside
-        // _generateResponse and never got the matching guard.
-        //
-        // But it must still LOAD. The previous turn ended by saving this
-        // speaker's scalars back to the map and restoring the pointer to
-        // whoever was active before, so without this the continuation would be
-        // written against another member's bond, trust and needs — the prompt
-        // injection reads the live scalars. Load only: no evaluation, no
-        // second charge, right member.
-        final sid = _getCharacterIdFromCard(speakingCharacter);
-        if (sid.isNotEmpty) _loadGroupRealismIntoScalars(sid);
-      } else if (guestSpeaker == null &&
-          _activeGroup != null &&
           _realismActiveThisMode) {
-        await _evaluateRealismForUpcomingSpeaker(speakingCharacter);
-        // Cancel-aborts-generation, group edition: the dance leaves the
-        // cancel flag set for its caller (1:1's sendMessage has the twin
-        // check). Consume it and abort the turn before any prompt is built.
-        // The entry-state flags must be reset by hand — the normal clears
-        // live in the completion path and the catch, which an early return
-        // skips (the finally below only clears the speaker pin).
-        if (_realismEvalCancelled) {
-          _realismEvalCancelled = false;
-          _isGenerating = false;
-          _generationPhase = GenerationPhase.idle;
-          _generationStartTime = null;
-          await _saveChat();
-          notifyListeners();
-          return;
+        if (mode == GenerationMode.continue_ || skipSpeakerEval) {
+          final sid = _getCharacterIdFromCard(speakingCharacter);
+          if (sid.isNotEmpty) _loadGroupRealismIntoScalars(sid);
+        } else {
+          await _evaluateRealismForUpcomingSpeaker(speakingCharacter);
+          // Cancel-aborts-generation, group edition: consume the flag and
+          // abort before any prompt is built. Entry-state flags are reset
+          // by hand — the normal clears live in completion/catch.
+          if (_realismEvalCancelled) {
+            _pendingRealismMetadata = null;
+            _realismEvalCancelled = false;
+            _isGenerating = false;
+            _generationPhase = GenerationPhase.idle;
+            _generationStartTime = null;
+            await _saveChat();
+            notifyListeners();
+            return;
+          }
         }
       }
 

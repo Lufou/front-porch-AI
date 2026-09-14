@@ -44,8 +44,7 @@ class ChatToolsFacade {
   final StorageService _storage;
   final StreamHub? _hub;
 
-  /// Living Time §4 "turn this chat into a story" deps — optional so hosts
-  /// without Porch Stories wired keep working; the endpoint 400s without.
+  /// Living Time §4 story-from-chat deps. Optional; the endpoint 400s without.
   final StoryRepository? _storyRepo;
   final UserPersonaService? _personas;
 
@@ -54,6 +53,11 @@ class ChatToolsFacade {
     final chaos = _chat.chaosModeService;
     final nsfw = _chat.nsfwService;
     final time = _chat.timeService;
+    final clockRunning = StoryClock.isRunning(
+      passageOfTimeEnabled: time.passageOfTimeEnabled,
+      realismEnabled: _chat.realismEnabled,
+      standaloneClockEnabled: _storage.realismSettings.standaloneClockEnabled,
+    );
     final weather = _chat.currentWeather;
     final focused = _focusedParticipant(participantId);
     final focusedCard = focused?.card ?? _chat.activeCharacter;
@@ -179,6 +183,7 @@ class ChatToolsFacade {
         'dayCount': time.dayCount,
         'weekday': time.narrativeWeekday,
         'passageEnabled': time.passageOfTimeEnabled,
+        'clockRunning': clockRunning,
         'weather': weather == null
             ? null
             : {

@@ -154,12 +154,6 @@ extension ChatServiceReprocess on ChatService {
         _messages.last.activeMetadata?['is_chance_time_narration'] != true) {
       // New swipe; pop first so the cite is persist index, not window 23.
       final lastMsg = _messages.removeLast();
-      _invalidateJournalFrom(
-        persistMessagePosition(
-          base: _history.basePosition,
-          index: _messages.length,
-        ),
-      );
       // Is this a Scene Guest message? If so the whole regen must stay a
       // parity-safe GUEST turn: skip every Realism/Needs revert + re-eval below
       // and regenerate spoken as the guest (guestSpeaker), exactly like the
@@ -168,7 +162,9 @@ extension ChatServiceReprocess on ChatService {
       // If the message was authored by a guest who has since LEFT the scene (or
       // had their card deleted), we can neither regenerate as them nor run the
       // host realism block on their text (that would perturb the host's
-      // bond/trust/emotion/needs from guest-authored content). Refuse cleanly.
+      // bond/trust/emotion/needs from guest-authored content). Refuse cleanly
+      // BEFORE journal invalidation — the bubble stays on screen, so its
+      // cites must stay too.
       if (regenGuest == null && _isGuestAuthoredMessage(lastMsg)) {
         _messages.add(lastMsg); // put it back untouched
         notifyListeners();
@@ -178,6 +174,12 @@ extension ChatServiceReprocess on ChatService {
         );
         return;
       }
+      _invalidateJournalFrom(
+        persistMessagePosition(
+          base: _history.basePosition,
+          index: _messages.length,
+        ),
+      );
       // Snapshot the rejected swipe's metadata (e.g. manual needs reprocess) before
       // we add a new swipe — regen must not clobber prior swipe timelines.
       final rejectedSwipeIndex = lastMsg.swipeIndex;
@@ -592,6 +594,7 @@ extension ChatServiceReprocess on ChatService {
           _messages.add(lastMsg);
           _restoreRealismStateForSpeaker(lastMsg);
           _restorePocketsFromStamp(lastMsg, after: true);
+          _pendingRealismMetadata = null;
           _realismEvalCancelled = false;
           _evalChunkTimer?.cancel();
           _evalChunkTimer = null;
@@ -638,6 +641,7 @@ extension ChatServiceReprocess on ChatService {
           // returns WITH the state it was accepted under.
           _restoreRealismStateForSpeaker(lastMsg);
           _restorePocketsFromStamp(lastMsg, after: true);
+          _pendingRealismMetadata = null;
           _realismEvalCancelled = false;
           notifyListeners();
           await _saveChat();
@@ -772,11 +776,11 @@ extension ChatServiceReprocess on ChatService {
       }
     } else if (_messages.last.isUser) {
       // The last message is the user's prompt (e.g. the AI reply was deleted),
-      // so there is no swipe to add — generate a fresh response from it. Mirrors
-      // triggerNextCharacter()/the normal send path (_generateResponse consumes
-      // no new user turn, so needs decay is NOT re-ticked — that already ran
-      // when the user turn was first sent). Applies identically to 1:1 and group.
-      await _generateResponse(GenerationMode.normal);
+      // so there is no swipe to add — generate a fresh response from it.
+      // 1:1 evals live in sendMessage, so this path does not re-tick needs.
+      // Group evals live inside _generateResponse; skipSpeakerEval keeps
+      // that dance from running a second time (Continue still LOADs).
+      await _generateResponse(GenerationMode.normal, skipSpeakerEval: true);
     }
   }
 }

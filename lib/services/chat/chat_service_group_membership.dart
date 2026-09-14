@@ -305,7 +305,7 @@ extension ChatServiceGroupMembership on ChatService {
   /// membership when forking a 1:1 chat into a group).
   ///
   /// This is the core of the fix originally contributed in PR #44 by @MisterLotto.
-  Future<void> _createGroupMember(
+  Future<String> _createGroupMember(
     String groupId,
     CharacterCard character,
   ) async {
@@ -367,6 +367,7 @@ extension ChatServiceGroupMembership on ChatService {
         ),
       ),
     );
+    return mid;
   }
 
   /// Add a character to the currently active group chat.
@@ -403,7 +404,7 @@ extension ChatServiceGroupMembership on ChatService {
     // storage and insert a group_members row. Shared with forkToGroupChat
     // via _createGroupMember (ported from the fix originally contributed in
     // PR #44 by @MisterLotto).
-    await _createGroupMember(_activeGroup!.id, character);
+    final mid = await _createGroupMember(_activeGroup!.id, character);
 
     await groupRepo.save(_activeGroup!);
 
@@ -425,6 +426,12 @@ extension ChatServiceGroupMembership on ChatService {
     }
     _inheritGroupExpressionAvatars(resolved);
     _groupManager?.refreshCharacters(resolved);
+    if (_needsSimEnabled && _getGroupNeeds(mid).isEmpty) {
+      _setGroupNeeds(
+        mid,
+        NeedsSimulation.baselinesFromExtensions(character.frontPorchExtensions),
+      );
+    }
 
     debugPrint(
       '[ChatService] \u{2795} Added ${character.name} to group ${_activeGroup!.name}',

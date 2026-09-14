@@ -409,9 +409,13 @@ extension ChatServiceGenerationPlan on ChatService {
         text: '',
         counted: false, // set after budgeting; rides the +50 reserve margin
       );
+      // Untrusted search/MCP dump MUST sit before the speaker prefix
+      // (`Name:`). Insertion order is render order; after inject the
+      // completion point has to stay the suffix, not wiki junk.
+      // Chance Time / porch_night / item_intro stay AFTER suffix.
+      plan.add(id: 'web_search', text: '');
       plan.add(id: 'suffix', text: t.suffix);
       plan.add(id: 'chance_time', text: chanceTimeBlock);
-      plan.add(id: 'web_search', text: '');
       // High-recency with Chance Time so the first post-import reply
       // cannot bury the Mafia night (docs/design/llmerta-porch-memories.md §7b).
       plan.add(id: 'porch_night', text: porchNightBlock);

@@ -24,6 +24,7 @@ import 'package:front_porch_ai/services/services.dart';
 import 'package:front_porch_ai/ui/theme/app_colors.dart';
 import 'package:front_porch_ai/ui/chat_components/sidebar/character_state/calendar_today_hold.dart';
 import 'package:provider/provider.dart';
+
 import 'journal_card_editor.dart';
 
 /// The Story Calendar (docs/design/story-calendar.md §6): a month grid over
@@ -105,7 +106,20 @@ class _StoryCalendarDialogState extends State<StoryCalendarDialog> {
     final amber = AppColors.porchAmberOf(context);
     final time = _chat.timeService;
     final owners = _chat.cast.where((p) => !p.isLite).toList();
-    final canEdit = _chat.realismEnabled && !_chat.isGenerating;
+    StorageService? storage;
+    try {
+      storage = Provider.of<StorageService>(context);
+    } on ProviderNotFoundException {
+      storage = null;
+    }
+    final canEdit =
+        StoryClock.isRunning(
+          passageOfTimeEnabled: time.passageOfTimeEnabled,
+          realismEnabled: _chat.realismEnabled,
+          standaloneClockEnabled:
+              storage?.realismSettings.standaloneClockEnabled ?? false,
+        ) &&
+        !_chat.isGenerating;
 
     return Dialog(
       backgroundColor: AppColors.cardOf(context),
@@ -154,9 +168,9 @@ class _StoryCalendarDialogState extends State<StoryCalendarDialog> {
               builder: (context, _) {
                 var plannerOn = false;
                 try {
-                  plannerOn = Provider.of<StorageService>(context)
-                      .realismSettings
-                      .plannerEnabled;
+                  plannerOn = Provider.of<StorageService>(
+                    context,
+                  ).realismSettings.plannerEnabled;
                 } catch (_) {}
                 return CalendarTodayHold(
                   enabled: plannerOn,
@@ -275,8 +289,8 @@ class _StoryCalendarDialogState extends State<StoryCalendarDialog> {
     final inStory = !date.isBefore(_startDate) && !date.isAfter(_currentDate);
     final storyDay = _dayFor(date);
     final hasMemories = inStory && _cardsByDay.containsKey(storyDay);
-    final hasPlan = isCurrent &&
-        ((_chat.todaySentence ?? '').trim().isNotEmpty);
+    final hasPlan =
+        isCurrent && ((_chat.todaySentence ?? '').trim().isNotEmpty);
     final selected = inStory && _selectedDay == storyDay;
 
     return InkWell(

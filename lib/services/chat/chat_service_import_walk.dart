@@ -46,15 +46,9 @@ extension ChatServiceImportWalk on ChatService {
     _nsfwService.resetRuntimeArousalAndCooldown();
 
     if (keepNeeds) {
-      _needsSimulation.initializeFreshWithDefaults({
-        'hunger': ext.needsBaselineHunger,
-        'bladder': ext.needsBaselineBladder,
-        'energy': ext.needsBaselineEnergy,
-        'social': ext.needsBaselineSocial,
-        'fun': ext.needsBaselineFun,
-        'hygiene': ext.needsBaselineHygiene,
-        'comfort': ext.needsBaselineComfort,
-      });
+      _needsSimulation.initializeFreshWithDefaults(
+        NeedsSimulation.baselinesFromExtensions(ext),
+      );
     } else {
       _needsSimulation.clearVector();
     }
@@ -132,8 +126,7 @@ extension ChatServiceImportWalk on ChatService {
       if (stamp != null) {
         _restoreRealismStateForSpeaker(stamp);
       } else {
-        final keptPockets =
-            pocketsOn ? null : _groupRealism[sid]?.pockets;
+        final keptPockets = pocketsOn ? null : _groupRealism[sid]?.pockets;
         final seed = seeds[sid];
         _groupRealism[sid] = seed != null
             ? GroupMemberRealism.fromJson(Map<String, dynamic>.from(seed))
@@ -183,8 +176,9 @@ extension ChatServiceImportWalk on ChatService {
     if (_messages.isNotEmpty) {
       final tip = _messages[start.clamp(0, _messages.length - 1)];
       if (!tip.isUser && tip.sender != 'System') {
-        final hits =
-            _groupCharacters.where((c) => c.name == tip.sender).toList();
+        final hits = _groupCharacters
+            .where((c) => c.name == tip.sender)
+            .toList();
         if (hits.length == 1) scratch = hits.first;
       }
     }
@@ -231,7 +225,8 @@ extension ChatServiceImportWalk on ChatService {
     }
     int? storyDay;
     for (var i = start; i >= 0; i--) {
-      final top = _messages[i].activeMetadata?['story_day'] ??
+      final top =
+          _messages[i].activeMetadata?['story_day'] ??
           _messages[i].metadata?['story_day'];
       if (top is num) {
         storyDay = top.toInt();

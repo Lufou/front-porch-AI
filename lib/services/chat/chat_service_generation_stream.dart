@@ -74,12 +74,10 @@ extension ChatServiceGenerationStream on ChatService {
       originalText = t.continuePrefix;
       targetSender = t.streamTarget.sender;
       isUserTarget = t.streamTarget.isUser;
-      // Merge metadata if continuing
-      if (_pendingRealismMetadata != null) {
-        t.streamTarget.activeMetadata ??= {};
-        t.streamTarget.activeMetadata!.addAll(_pendingRealismMetadata!);
-        _pendingRealismMetadata = null;
-      }
+      // Continue extends the reply already on screen. It does not re-eval,
+      // so leftover `_pendingRealismMetadata` (a cancelled regen's chips /
+      // realism_state) must not stamp this bubble. Cancel paths null it;
+      // do not merge it here.
     } else {
       targetSender = t.mode == GenerationMode.normal
           ? t.speakingCharacter.name

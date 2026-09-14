@@ -165,14 +165,10 @@ extension ChatServiceSessionManage on ChatService {
     // fork tip so the next pass does not re-digest those same messages
     // (import uses the same rule).
     _summaryLastIndex = _messages.length;
-    _selectedLooks
-        .clear(); // fork starts with no per-chat look selection (keep reset blocks in sync)
-    _summaryPaused =
-        false; // explicit secondary zero for _summaryPaused (symmetric to generating; fork hygiene + incomplete zeroing now complete)
-    _isSummaryGenerating =
-        false; // zero secondary flag on fork (new branch hygiene, matches summary scalar reset)
-    _isGrowthPassRunning =
-        false; // growth-pass flag zero on fork (new branch hygiene; keep reset blocks in sync)
+    _selectedLooks.clear(); // fork starts with no per-chat look selection (keep reset blocks in sync)
+    _summaryPaused = false; // explicit secondary zero for _summaryPaused (symmetric to generating; fork hygiene + incomplete zeroing now complete)
+    _isSummaryGenerating = false; // zero secondary flag on fork (new branch hygiene, matches summary scalar reset)
+    _isGrowthPassRunning = false; // growth-pass flag zero on fork (new branch hygiene; keep reset blocks in sync)
 
     // Time-travel: restore from nearest realism_state in the kept prefix.
     // Stamp-less (legacy/ST): rewind bond/time/emotion/arousal from the card
@@ -367,15 +363,11 @@ extension ChatServiceSessionManage on ChatService {
     _sceneGuest.offeredOrIgnoredNames.clear();
     _summary = '';
     _summaryLastIndex = 0;
-    _selectedLooks
-        .clear(); // fresh 1:1: drop prior chat's per-chat look selection (keep reset blocks in sync)
-    _sessionGenSettings =
-        ChatGenerationSettings(); // fresh chat: drop prior chat's per-chat gen overrides — forkSession is the ONE path that inherits them on purpose (keep reset blocks in sync)
+    _selectedLooks.clear(); // fresh 1:1: drop prior chat's per-chat look selection (keep reset blocks in sync)
+    _sessionGenSettings = ChatGenerationSettings(); // fresh chat: drop prior chat's per-chat gen overrides — forkSession is the ONE path that inherits them on purpose (keep reset blocks in sync)
     _clearContextBudget();
-    _summaryPaused =
-        false; // explicit secondary zero for _summaryPaused (symmetric; startNew 1:1/ext-seed branch + incomplete zeroing ... now complete)
-    _isSummaryGenerating =
-        false; // explicit in startNewChat 1:1/ext-seed branch (both startNew explicit + incomplete zeroing... now complete (see CLAUDE.md); journal_maintenance) + "needsSimulation. (reason support kept for Director chips) ; cleared via sim initializeFresh/clearVector/resetBuffers on all paths; now complete in both branches)"
+    _summaryPaused = false; // explicit secondary zero for _summaryPaused (symmetric; startNew 1:1/ext-seed branch + incomplete zeroing ... now complete)
+    _isSummaryGenerating = false; // explicit in startNewChat 1:1/ext-seed branch (both startNew explicit + incomplete zeroing... now complete (see CLAUDE.md); journal_maintenance) + "needsSimulation. (reason support kept for Director chips) ; cleared via sim initializeFresh/clearVector/resetBuffers on all paths; now complete in both branches)"
 
     // Explicitly clear any prior branching/fork metadata. A "New Chat" is
     // never a branch/fork from a previous session. This prevents stale
@@ -399,10 +391,8 @@ extension ChatServiceSessionManage on ChatService {
     // Clear objectives for fresh session start
     _activeObjectives = [];
     _messagesSinceLastCheck = 0;
-    _isCheckingCompletion =
-        false; // see decl + keep reset blocks (incomplete zeroing... now complete (see CLAUDE.md); explicit in both startNew branches)
-    _isGrowthPassRunning =
-        false; // growth-pass flag zero in startNew 1:1/ext-seed branch (both startNew explicit; keep reset blocks in sync)
+    _isCheckingCompletion = false; // see decl + keep reset blocks (incomplete zeroing... now complete (see CLAUDE.md); explicit in both startNew branches)
+    _isGrowthPassRunning = false; // growth-pass flag zero in startNew 1:1/ext-seed branch (both startNew explicit; keep reset blocks in sync)
 
     // Create new session ID for the new chat
     _currentSessionId = DateTime.now().millisecondsSinceEpoch.toString();
@@ -510,15 +500,9 @@ extension ChatServiceSessionManage on ChatService {
       if (_needsSimEnabled) {
         // Fresh chat / new session: seed from card baselines (falls back to
         // needDefaults when the card has no baselines).
-        _needsSimulation.initializeFreshWithDefaults({
-          'hunger': extSeed.needsBaselineHunger,
-          'bladder': extSeed.needsBaselineBladder,
-          'energy': extSeed.needsBaselineEnergy,
-          'social': extSeed.needsBaselineSocial,
-          'fun': extSeed.needsBaselineFun,
-          'hygiene': extSeed.needsBaselineHygiene,
-          'comfort': extSeed.needsBaselineComfort,
-        });
+        _needsSimulation.initializeFreshWithDefaults(
+          NeedsSimulation.baselinesFromExtensions(extSeed),
+        );
       } else {
         _needsSimulation.clearVector();
       }
@@ -662,14 +646,10 @@ extension ChatServiceSessionManage on ChatService {
         }
         _activeObjectives = [];
         _messagesSinceLastCheck = 0;
-        _isCheckingCompletion =
-            false; // explicit in non-ext/group/0-session else branch of startNew (both branches now; incomplete zeroing ... now complete)
-        _summaryPaused =
-            false; // explicit secondary zero for _summaryPaused (symmetric to generating; non-ext/group/0-session startNew path + now complete)
-        _isSummaryGenerating =
-            false; // explicit secondary zero in startNew non-ext/group/0-session path (both branches + now complete for summary flag too)
-        _isGrowthPassRunning =
-            false; // growth-pass flag zero in startNew non-ext/group/0-session path (both branches; keep reset blocks in sync)
+        _isCheckingCompletion = false; // explicit in non-ext/group/0-session else branch of startNew (both branches now; incomplete zeroing ... now complete)
+        _summaryPaused = false; // explicit secondary zero for _summaryPaused (symmetric to generating; non-ext/group/0-session startNew path + now complete)
+        _isSummaryGenerating = false; // explicit secondary zero in startNew non-ext/group/0-session path (both branches + now complete for summary flag too)
+        _isGrowthPassRunning = false; // growth-pass flag zero in startNew non-ext/group/0-session path (both branches; keep reset blocks in sync)
       }
     }
 

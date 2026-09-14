@@ -108,6 +108,8 @@ interface ToolsState {
     dayCount: number;
     weekday: string;
     passageEnabled: boolean;
+    // Additive: absent on older hosts. Fallback is realismEnabled (the old gate).
+    clockRunning?: boolean;
     // Living Time story weather (additive — absent on older facades, null
     // when the feature is off).
     weather?: {
@@ -279,6 +281,7 @@ export function ChatTools({
 
   if (!t) return null;
 
+  const clockRunning = t.time.clockRunning ?? t.realismEnabled;
   const obj = t.objectives.primary;
   const checking = t.objectives.isChecking;
 
@@ -779,19 +782,18 @@ export function ChatTools({
               </div>
             ))}
           </div>
-          {/* Disabled with realism off. The server's nudgeTimePeriod returns
-              immediately in that state, so these used to be dead clicks: a 200
-              response and a clock that never moved. Desktop hides them; the
-              calendar modal below already gated on the same flag. */}
+          {/* Disabled when the clock is not actually moving (engine off AND
+              standalone off, or passage off). Desktop TimeStrip uses the
+              same StoryClock.isRunning gate. */}
           <div className="tool-row">
             <button
-              disabled={!t.realismEnabled}
-              title={t.realismEnabled ? 'Back 30 minutes' : 'Realism Mode is off, so the story clock is paused'}
+              disabled={!clockRunning}
+              title={clockRunning ? 'Back 30 minutes' : 'Story clock is paused'}
               onClick={() => apply(api.post<ToolsState>(`/api/chat/tools/time${q}`, { delta: -1 }))}
             >◀ Earlier</button>
             <button
-              disabled={!t.realismEnabled}
-              title={t.realismEnabled ? 'Forward 30 minutes' : 'Realism Mode is off, so the story clock is paused'}
+              disabled={!clockRunning}
+              title={clockRunning ? 'Forward 30 minutes' : 'Story clock is paused'}
               onClick={() => apply(api.post<ToolsState>(`/api/chat/tools/time${q}`, { delta: 1 }))}
             >Later ▶</button>
           </div>
@@ -822,7 +824,7 @@ export function ChatTools({
       {showCalendar && (
         <StoryCalendarModal
           focusedId={focusedId}
-          canEdit={t.realismEnabled}
+          canEdit={clockRunning}
           onClose={() => setShowCalendar(false)}
           onChanged={load}
         />

@@ -104,7 +104,8 @@ extension ChatServiceAccessors on ChatService {
   String? get chatPrimaryWorldId => _chatPlaceSlots.primaryId;
 
   /// Lore slots (0..N) — lorebook entries only; never drive weather.
-  List<String> get chatLoreWorldIds => List.unmodifiable(_chatPlaceSlots.loreIds);
+  List<String> get chatLoreWorldIds =>
+      List.unmodifiable(_chatPlaceSlots.loreIds);
 
   /// Coarse absence bucket ("a few days"), or null under the threshold /
   /// fresh chat. Words only — never digits (see AbsenceTracker).
@@ -193,10 +194,12 @@ extension ChatServiceAccessors on ChatService {
   /// along was a MOVING clock, not the engine. With the engine off and the
   /// standalone clock off it is false, which is exactly the frozen-clock state
   /// the old realism gate produced, so nothing changes by default.
-  bool get _clockRunning =>
-      _timeService.passageOfTimeEnabled &&
-      (_realismEnabled ||
-          _storageService.realismSettings.standaloneClockEnabled);
+  bool get _clockRunning => StoryClock.isRunning(
+    passageOfTimeEnabled: _timeService.passageOfTimeEnabled,
+    realismEnabled: _realismEnabled,
+    standaloneClockEnabled:
+        _storageService.realismSettings.standaloneClockEnabled,
+  );
 
   /// Objectives are actually running for this chat: the per-chat switch AND the
   /// global one (docs/design/feature-independence.md). Objectives depend on

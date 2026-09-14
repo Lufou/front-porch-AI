@@ -73,15 +73,7 @@ extension ChatServiceGroupRead on ChatService {
   /// from older group data are silently filtered).
   Map<String, int> getNeedsForGroupCharacter(CharacterCard character) {
     if (!isGroupRealismActive) return const {};
-    final id = _getCharacterIdFromCard(character);
-    final raw = _groupRealism[id]?.needs;
-    final result = <String, int>{};
-    for (final k in NeedsSimulation.needKeys) {
-      // Fill any missing official needs so the UI always shows the complete
-      // set (legacy/incomplete group data), and drop legacy bad keys.
-      result[k] = raw?[k] ?? (NeedsSimulation.needDefaults[k] ?? 80);
-    }
-    return result;
+    return _getGroupNeeds(_getCharacterIdFromCard(character));
   }
 
   int getAffectionForGroupCharacter(CharacterCard character) {

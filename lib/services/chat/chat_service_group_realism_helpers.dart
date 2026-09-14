@@ -107,6 +107,11 @@ extension ChatServiceGroupRealismHelpers on ChatService {
   String debugGroupSlotEmotion(String charId) =>
       _groupRealism[charId]?.emotion ?? '';
 
+  /// Test-only: stored needs for a group member. Empty when the slot has
+  /// never carried a vector (does not invent [NeedsSimulation.needDefaults]).
+  @visibleForTesting
+  Map<String, int> debugGroupNeeds(String charId) => _getGroupNeeds(charId);
+
   // ── Per-character realism state access (group mode, typed — U7) ─────────
   /// The one write door to a member's typed state. Outside group mode it
   /// hands back a THROWAWAY object, so writes vanish — observationally the
@@ -149,15 +154,8 @@ extension ChatServiceGroupRealismHelpers on ChatService {
     return const {};
   }
 
-  Map<String, int> _getGroupNeeds(String charId) {
-    final raw = _groupRealism[charId]?.needs;
-    final result = <String, int>{};
-    for (final k in NeedsSimulation.needKeys) {
-      final v = raw?[k];
-      result[k] = v ?? (NeedsSimulation.needDefaults[k] ?? 80);
-    }
-    return result;
-  }
+  Map<String, int> _getGroupNeeds(String charId) =>
+      NeedsSimulation.storedNeedsOrEmpty(_groupRealism[charId]?.needs);
 
   void _setGroupNeeds(String charId, Map<String, int> needs) {
     _memberForWrite(charId).needs = needs;
