@@ -1,3 +1,9 @@
+## 2026-09-14 — Reading Size follows the pref, not the window scaler
+- **Why:** Sit-down after the MediaQuery hand-off: chrome / composer / chips grew with the slider, chat words did not, sidebar stayed put (expected). Ambient MediaQuery in that tree can sit at 1.0 while `StorageService.textScale` is 2.0 — handing `MediaQuery.textScalerOf` into RichText still paints 14px.
+- **What:** Bubbles take `TextScaler.linear(storage.textScale)` on RichText and the empty `Text` path. Guard: pref 2.0 + ambient 1.0 → widget scaler 2.0 (red 1.0 before, green after). Do not bake the pref into fontSize (that double-applies on Text() paths).
+- **Files:** `styled_chat_message.dart`, `reading_size.dart`, `reading_size_test.dart`, `docs/Rawhide.md`
+- **Commit:** (this commit)
+
 ## 2026-09-14 — Reading Size 2.00 left quoted / *action* bubbles at 14px
 - **Why:** Yesterday's reading-size pass stopped multiplying fontSize (to kill double-scale) and trusted MediaQuery. Chat bubbles with quotes or *actions* paint through `RichText`, whose Flutter default is `TextScaler.noScaling` — it does not read that ancestor. The slider wrote 2.00; the words stayed 14px. Plain `Text` (composer, empty bubbles) already scaled, so the first test (MediaQuery on the element) stayed green.
 - **What:** Pass `MediaQuery.textScalerOf(context)` into that `RichText`. New guard asserts the widget's own scaler, not the ancestor's. Proven red (expected 1.5, actual 1.0) before the pass, green after.

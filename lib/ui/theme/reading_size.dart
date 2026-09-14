@@ -11,8 +11,11 @@
 import 'package:flutter/material.dart';
 
 /// Base font size for reading surfaces: chat bubbles, the composer, and the
-/// message editor. MediaQuery `textScaler` is the only multiplier — never
-/// also multiply by the stored `textScale` preference.
+/// message editor. Chat bubbles pass `StorageService.textScale` into
+/// RichText themselves (Flutter's RichText default is noScaling, and the
+/// ambient MediaQuery is what chrome uses — it can sit at 1.0 while the
+/// pref is 2.0). Composer / edit still ride MediaQuery. Never *also*
+/// multiply this base by the pref or you double-apply on Text() paths.
 const double kReadingFontSize = 14.0;
 
 /// Inclusive range for the Reading Size slider (General Settings and the

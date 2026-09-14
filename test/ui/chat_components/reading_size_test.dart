@@ -272,4 +272,44 @@ void main() {
       }
     },
   );
+
+  // Live report: slider at 2.00 scaled chrome / composer / chips, not the
+  // bubble body. Ambient MediaQuery in that tree can sit at 1.0 (or the
+  // 1280px responsive scaler) while StorageService.textScale is 2.0.
+  // Bubbles must follow the pref, not the ancestor.
+  testWidgets(
+    'quoted bubbles follow StorageService.textScale even when ambient MediaQuery is 1.0',
+    (tester) async {
+      const scale = 2.0;
+      await tester.pumpWidget(
+        MediaQuery(
+          data: const MediaQueryData(textScaler: TextScaler.linear(1.0)),
+          child: ChangeNotifierProvider<StorageService>.value(
+            value: _ReadingStorage(scale),
+            child: const MaterialApp(
+              home: Scaffold(
+                body: StyledChatMessage(
+                  text: '"Hello," she said. *winks*',
+                  isUser: true,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      final richTexts = tester.widgetList<RichText>(find.byType(RichText));
+      expect(richTexts, isNotEmpty);
+      for (final rt in richTexts) {
+        expect(
+          rt.textScaler.scale(1.0),
+          scale,
+          reason:
+              'Reading Size is StorageService.textScale. Ambient MediaQuery '
+              'at 1.0 must not pin quoted / *action* bubbles at 14px.',
+        );
+      }
+    },
+  );
 }

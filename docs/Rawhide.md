@@ -12,7 +12,7 @@ Last shipped nightly: `rawhide.20260906.7059c91`. Everything below is unreleased
 
 - 🔎 **Web Search happens in the reply, not a silent extra trip** — the character sees the search tool while they are actually talking. If they look something up, the result lands and they speak; if they already know, they just speak. Same on the phone.
 
-- 🔎 **Reading Size actually grows the chat** — quoted lines and *actions* were stuck at 14px even at 2.00. Those bubbles paint with a Flutter widget that ignores the house scaler unless we hand it over; they follow the slider now. Composer and message edit already did.
+- 🔎 **Reading Size actually grows the chat** — the words in the bubble follow that slider even when the rest of the window already scaled. Quoted lines and *actions* were the ones stuck at 14px. Sidebar stays put.
 
 - 🖥️ **Waifu Coder wrap-up speaks once** — after tools stop, the in-character recap is one spoken bubble, not two copies of the same goodbye.
 

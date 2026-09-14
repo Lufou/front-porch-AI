@@ -168,8 +168,8 @@ class _StyledChatMessageState extends State<StyledChatMessage> {
     final key = (fontFamily, textColor, dialogueColor, actionColor);
     if (key == _styleKey) return;
     _styleKey = key;
-    // fontSize is the shared reading base. MediaQuery textScaler is the only
-    // multiplier — do not also multiply StorageService.textScale here.
+    // fontSize is the shared reading base. The RichText/Text below get
+    // StorageService.textScale as textScaler — do not also bake it here.
     _plainStyle = _applyGoogleFont(
       fontFamily,
       readingSurfaceStyle(color: textColor),
@@ -193,6 +193,9 @@ class _StyledChatMessageState extends State<StyledChatMessage> {
     final storageService = Provider.of<StorageService>(context);
     final text = widget.text;
     _refreshStyles(storageService);
+    // Reading Size is this pref. Do not trust ambient MediaQuery — chrome
+    // may scale from it while the transcript sits at 1.0 (or the reverse).
+    final readingScaler = TextScaler.linear(storageService.textScale);
 
     // Check for markdown images (cached per source text).
     if (!identical(text, _parseSource)) {
@@ -203,7 +206,7 @@ class _StyledChatMessageState extends State<StyledChatMessage> {
     final imageMatches = _imageMatches!;
     if (imageMatches.isEmpty) {
       // No images — use existing fast path
-      return _buildStyledText(text);
+      return _buildStyledText(text, readingScaler);
     }
 
     // Split text into segments: [text, image, text, image, text]
@@ -215,7 +218,7 @@ class _StyledChatMessageState extends State<StyledChatMessage> {
       if (match.start > lastEnd) {
         final textBefore = text.substring(lastEnd, match.start).trim();
         if (textBefore.isNotEmpty) {
-          widgets.add(_buildStyledText(textBefore));
+          widgets.add(_buildStyledText(textBefore, readingScaler));
         }
       }
 
@@ -239,7 +242,7 @@ class _StyledChatMessageState extends State<StyledChatMessage> {
     if (lastEnd < text.length) {
       final textAfter = text.substring(lastEnd).trim();
       if (textAfter.isNotEmpty) {
-        widgets.add(_buildStyledText(textAfter));
+        widgets.add(_buildStyledText(textAfter, readingScaler));
       }
     }
 
@@ -249,7 +252,7 @@ class _StyledChatMessageState extends State<StyledChatMessage> {
     );
   }
 
-  Widget _buildStyledText(String segment) {
+  Widget _buildStyledText(String segment, TextScaler readingScaler) {
     final tokens = _tokensFor(segment);
 
     final spans = <TextSpan>[];
@@ -278,15 +281,18 @@ class _StyledChatMessageState extends State<StyledChatMessage> {
     }
 
     if (spans.isEmpty) {
-      return SelectionArea(child: Text(segment, style: _rootStyle));
+      return SelectionArea(
+        child: Text(segment, style: _rootStyle, textScaler: readingScaler),
+      );
     }
 
     return SelectionArea(
       child: RichText(
         text: TextSpan(style: _rootStyle, children: spans),
-        // RichText defaults to TextScaler.noScaling and will not read
-        // the house MediaQuery. Text() does; this path must pass it.
-        textScaler: MediaQuery.textScalerOf(context),
+        // RichText defaults to TextScaler.noScaling. Hand the Reading
+        // Size pref — not ambient MediaQuery — so chrome can scale
+        // while these words still follow the slider.
+        textScaler: readingScaler,
       ),
     );
   }
