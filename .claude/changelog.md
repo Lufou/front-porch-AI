@@ -1,3 +1,19 @@
+## 2026-09-13 — Objectives completion/task-gen speak tools; Porch Life tests scroll
+- **Why:** Quest YES/NO and task lists still scraped raw generateStream, so
+  tool-capable backends paid the fragile text parse. Same day, Porch Life
+  widget tests tapped Chaos/Web Search off-screen after MCP and Web became
+  its own card (CI unit job 34792524638).
+- **What:** Same `fireStructuredEval` fork as Realism/TimeService —
+  `report_objective_verdicts` / `report_objective_tasks` when tools are on,
+  numbered `1: YES` / `1. do the thing` scrape when not. Confused/unparsed
+  is NO (never a fake win). Cadence stays checkFrequency 3 + mention-gate.
+  Porch Life Chaos and Web Search tests `ensureVisible` on a 2800-tall
+  surface before tap.
+- **Files:** `objective_eval_tools.dart`, `objective_proposal.dart`,
+  `chat_service_wiring_evals.dart`, `objective_eval_tools_test.dart`,
+  `chaos_global_toggle_test.dart`, `web_search_global_toggle_test.dart`
+- **Commit:** (this commit)
+
 ## 2026-09-13 — Porch Life: MCP and Tavily get their own card
 - **Why:** MCP servers and the Tavily web-search key were mixed into
   Presence (Chaos, recap, absence) — unrelated knobs in one pile.

@@ -97,7 +97,7 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   Future<_ChaosStorage> pump(WidgetTester tester) async {
-    await tester.binding.setSurfaceSize(const Size(900, 1800));
+    await tester.binding.setSurfaceSize(const Size(900, 2800));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
     final storage = _ChaosStorage();
@@ -132,7 +132,8 @@ void main() {
     expect(
       row,
       findsOneWidget,
-      reason: 'the maintainer asked for a global toggle in Porch Life; before '
+      reason:
+          'the maintainer asked for a global toggle in Porch Life; before '
           'this there was none anywhere in Settings',
     );
 
@@ -146,13 +147,20 @@ void main() {
     expect(
       tester.widget<Switch>(sw).onChanged,
       isNotNull,
-      reason: 'no hard dependency — the audit found Chaos runs with the '
+      reason:
+          'no hard dependency — the audit found Chaos runs with the '
           'Realism Engine off, so this switch must never be gated',
     );
 
-    expect(storage.realismSettings.chaosModeDefault, isFalse,
-        reason: 'Chaos injects unplanned events into a story; that is nobody\'s '
-            'default');
+    expect(
+      storage.realismSettings.chaosModeDefault,
+      isFalse,
+      reason:
+          'Chaos injects unplanned events into a story; that is nobody\'s '
+          'default',
+    );
+    await tester.ensureVisible(sw);
+    await tester.pump();
     await tester.tap(sw);
     await tester.pump(const Duration(milliseconds: 300));
     expect(storage.realismSettings.chaosModeDefault, isTrue);
@@ -171,13 +179,15 @@ void main() {
     expect(
       find.textContaining('set per chat rather than globally'),
       findsNothing,
-      reason: 'that sentence was only true while Chaos had no global switch; '
+      reason:
+          'that sentence was only true while Chaos had no global switch; '
           'leaving it up would now be actively wrong',
     );
     expect(
       find.textContaining('These are the defaults new chats start from'),
       findsOneWidget,
-      reason: 'the replacement states the relationship the right way round — '
+      reason:
+          'the replacement states the relationship the right way round — '
           'globals here, per-chat override in the sidebar',
     );
   });
@@ -198,7 +208,8 @@ void main() {
       expect(
         src,
         contains('seedFromGroupOrExt'),
-        reason: '${e.key} no longer seeds Chaos at all — if the seed genuinely '
+        reason:
+            '${e.key} no longer seeds Chaos at all — if the seed genuinely '
             'moved, move this guard with it rather than deleting it',
       );
 
@@ -208,11 +219,16 @@ void main() {
         r'seedFromGroupOrExt\((.*?)\n\s*\);',
         dotAll: true,
       ).firstMatch(src);
-      expect(call, isNotNull, reason: 'could not read the seed call in ${e.key}');
+      expect(
+        call,
+        isNotNull,
+        reason: 'could not read the seed call in ${e.key}',
+      );
       expect(
         call!.group(1),
         contains('chaosModeDefault'),
-        reason: 'Chaos seeding for "${e.value}" ignores the Porch Life global, '
+        reason:
+            'Chaos seeding for "${e.value}" ignores the Porch Life global, '
             'so switching it on there does nothing for that entry path',
       );
     }

@@ -79,7 +79,7 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   Future<_SearchStorage> pump(WidgetTester tester) async {
-    await tester.binding.setSurfaceSize(const Size(900, 2200));
+    await tester.binding.setSurfaceSize(const Size(900, 2800));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
     final storage = _SearchStorage();
@@ -124,6 +124,8 @@ void main() {
       isFalse,
       reason: 'a per-turn remote lookup is nobody\'s default',
     );
+    await tester.ensureVisible(sw);
+    await tester.pump();
     await tester.tap(sw);
     await tester.pump(const Duration(milliseconds: 300));
     expect(storage.webSearchSettings.webSearchDefault, isTrue);
@@ -150,9 +152,8 @@ void main() {
   });
 
   test('no slash-command parser or /search route exists', () {
-    final handler = File(
-      'lib/services/chat/chat_command_handler.dart',
-    ).readAsStringSync();
+    final handler = File('lib/services/chat/chat_command_handler.dart')
+        .readAsStringSync();
     expect(
       handler.contains("'search'") || handler.contains('"search"'),
       isFalse,

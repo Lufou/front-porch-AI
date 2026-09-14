@@ -468,6 +468,10 @@ extension ChatServiceWiringEvals on ChatService {
       getIsCheckingCompletion: () => _isCheckingCompletion,
       setIsCheckingCompletion: (v) => _isCheckingCompletion = v,
       onNotify: notifyListeners,
+      fireToolEval: _fireToolEval,
+      probe: _toolProbe,
+      getBackendIdentity: () => _evalBackendIdentity,
+      getPreferTextEvals: () => _storageService.realismSettings.preferTextEvals,
       // The completion check runs pre-generation; the flags are consumed by
       // _maybeRunJournalPass/_maybeRunGrowthPass post-generation (a finished
       // quest is a story beat worth journaling AND a moment characters grow).

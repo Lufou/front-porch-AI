@@ -26,6 +26,8 @@ import 'package:front_porch_ai/models/models.dart';
 import 'package:front_porch_ai/services/chat/eval_traffic.dart';
 import 'package:front_porch_ai/services/chat/llm_eval_engine.dart'
     show recentExchange;
+import 'package:front_porch_ai/services/chat/objective_eval_tools.dart';
+import 'package:front_porch_ai/services/chat/pass_support.dart';
 import 'package:front_porch_ai/services/services.dart';
 
 /// Plain (non-ChangeNotifier) leaf sibling to LlmEvalEngine owning the objective
@@ -135,8 +137,7 @@ class ObjectiveProposal {
   final Future<void> Function(String objectiveId, String tasksJson)
   saveObjectiveTasks;
   final Future<void> Function(String objectiveId) deactivateObjective;
-  final Future<void> Function(Objective, String)
-  markTaskCompleted; // thin; god owns find+mutate 'completed':true + save+load (task auto side-effect only for currentTask YES path)
+  final Future<void> Function(Objective, String) markTaskCompleted; // thin; god owns find+mutate 'completed':true + save+load (task auto side-effect only for currentTask YES path)
   final bool Function() getIsCheckingCompletion;
   final void Function(bool) setIsCheckingCompletion;
 
@@ -153,6 +154,13 @@ class ObjectiveProposal {
   /// taskless objective completed) — with the row, so the consumer knows
   /// whose ambition it may have advanced (Living Time §6). Fire-and-forget.
   final void Function(Objective obj)? onQuestAchieved;
+
+  /// Same tools door TimeService / Realism evals use. Null = text only
+  /// (dedicated tests that never wired the probe).
+  final Object? fireToolEval;
+  final ToolTransportProbe? probe;
+  final String Function()? getBackendIdentity;
+  final bool Function()? getPreferTextEvals;
 
   ObjectiveProposal({
     required this.stripThinkBlocks,
@@ -174,6 +182,10 @@ class ObjectiveProposal {
     required this.onNotify,
     this.onObjectiveCompleted,
     this.onQuestAchieved,
+    this.fireToolEval,
+    this.probe,
+    this.getBackendIdentity,
+    this.getPreferTextEvals,
   });
 
   /// Generate subtasks for the current objective using the LLM.
@@ -222,95 +234,27 @@ class ObjectiveProposal {
                 'Match the tone and maturity level of the scenario and conversation.\n\n'
           : 'You are a creative writing assistant designing a character\'s own next steps for a roleplay scenario.\n\n';
 
-      // IMPORTANT: these tasks are the CHARACTER's own steps, not a quest handed to
-      // the player. The actor must be stated explicitly and the user named as the
-      // forbidden subject — without this, "quest designer" framing biases models
-      // (especially smaller local models) into writing tasks for $userName to do.
-      final prompt =
-          '$preamble'
-          'You are breaking an objective down into the concrete steps that $charName — the CHARACTER, not the user — will personally carry out to pursue it. '
-          'Given the objective, context, and recent conversation below, generate exactly $taskCount sequential tasks '
-          'that $charName performs to achieve the objective. '
-          'Every task is an in-story action $charName personally takes — NEVER an instruction, request, or task assigned to $userName (the user/player). '
-          'Write each task in the third person with $charName as the one acting. '
-          'Tasks should be specific, actionable, and naturally progress the story. '
-          'Do NOT include tasks for things that have already happened in the conversation.\n\n'
-          'Character who carries out every task: $charName\n'
-          'Scenario: $scenario\n'
-          'Objective $charName is pursuing: ${obj.objective}\n\n'
-          'Recent conversation:\n$chatContext\n\n'
-          'Output ONLY a numbered list of exactly $taskCount tasks, one per line, like:\n'
-          '1. [a specific action $charName takes]\n'
-          '2. [a specific action $charName takes]\n'
-          '...\n'
-          'Each task is a short, clear action $charName performs. No preamble, no explanations, just the numbered list.';
-
-      final params = GenerationParams(
-        prompt: prompt,
-        maxLength: 2000,
+      // CHARACTER's own steps, never a quest handed to the player.
+      final responseText = await _fireObjectiveEval(
+        debugLabel: kObjectiveTasksTool,
+        tools: kObjectiveTasksEvalTools,
+        toolName: kObjectiveTasksTool,
+        trafficLabel: 'objective_taskgen',
         temperature: 0.7,
-        stopSequences: [],
+        buildPrompt: ({required bool toolsMode}) => buildObjectiveTaskGenPrompt(
+          preamble: preamble,
+          charName: charName,
+          userName: userName,
+          scenario: scenario,
+          objective: obj.objective,
+          chatContext: chatContext,
+          taskCount: taskCount,
+          toolsMode: toolsMode,
+        ),
       );
-
-      final trafficWatch = Stopwatch()..start();
-      String responseText = '';
-      await for (final chunk in llmService.generateStream(params)) {
-        responseText += chunk;
-      }
-      EvalTraffic.current.record(
-        label: 'objective_taskgen',
-        lane: 'raw',
-        promptChars: params.prompt.length,
-        outputChars: responseText.length,
-        ms: trafficWatch.elapsedMilliseconds,
-      );
-
-      // Strip &lt;think&gt;...&lt;/think&gt; blocks (and unclosed ones) so thinking models can
-      // reason at length before emitting the final numbered list. We increased
-      // maxLength to 2000 to give them room.
-      responseText = stripThinkBlocks(responseText);
 
       debugPrint('[Objective] Raw tasks response:\n$responseText');
-
-      // Parse numbered list — tolerant of multiple formats (1. / 1) / - / bullet / plain)
-      final lines = responseText.split('\n');
-      final genTasks = <Map<String, dynamic>>[];
-
-      for (final line in lines) {
-        final trimmed = line.trim();
-        if (trimmed.isEmpty) continue;
-        // Try numbered: "1. ...", "1) ...", "1 - ..."
-        final numbered = RegExp(r'^\d+[\.\)\-]?\s*(.+)').firstMatch(trimmed);
-        if (numbered != null) {
-          final desc = numbered.group(1)!.trim();
-          if (desc.isNotEmpty && !desc.startsWith('[')) {
-            genTasks.add({'description': desc, 'completed': false});
-          }
-          continue;
-        }
-        // Try bullet: "- ...", "• ...", "* ..."
-        final bullet = RegExp(r'^[-•*]\s+(.+)').firstMatch(trimmed);
-        if (bullet != null) {
-          final desc = bullet.group(1)!.trim();
-          if (desc.isNotEmpty) {
-            genTasks.add({'description': desc, 'completed': false});
-          }
-          continue;
-        }
-        // Plain sentence fallback (skip very short lines or header-like lines)
-        if (trimmed.length > 15 &&
-            !trimmed.endsWith(':') &&
-            genTasks.length < taskCount) {
-          genTasks.add({'description': trimmed, 'completed': false});
-        }
-      }
-
-      // De-duplicate and cap
-      final seen = <String>{};
-      final uniqueTasks = genTasks
-          .where((t) => seen.add(t['description'] as String))
-          .take(taskCount)
-          .toList();
+      final uniqueTasks = parseObjectiveTasks(responseText, taskCount);
 
       if (uniqueTasks.isNotEmpty) {
         await saveObjectiveTasks(obj.id, jsonEncode(uniqueTasks));
@@ -333,9 +277,9 @@ class ObjectiveProposal {
   }
 
   /// Consecutive NO verdicts before a stuck step/objective is retired as
-  /// "overtaken by events" (checks run every user turn with realism on, so
-  /// this is ~4 turns of the story having moved past it — maintainer tuned
-  /// down from 8: a step the plot left behind should not linger).
+  /// "overtaken by events" (cadence is checkFrequency, default 3, plus the
+  /// mention-gate peek — not every turn). Maintainer tuned down from 8: a
+  /// step the plot left behind should not linger.
   static const int kStaleCheckRetireAfter = 4;
 
   /// Consecutive-miss counters keyed `objectiveId|currentTask`. In-memory by
@@ -397,73 +341,32 @@ class ObjectiveProposal {
               : '${i + 1}. Objective to evaluate: "${obj.objective}"',
         );
       }
-      final prompt =
-          'You are evaluating whether roleplay tasks/objectives have been '
-          'completed based on recent conversation. Be generous in your '
-          'assessment — if the events in the conversation show an item has '
-          'been accomplished, partially fulfilled, or naturally resolved, '
-          'answer YES for it.\n\n'
-          'Recent conversation:\n$contextText\n\n'
-          'Evaluate EACH item below. Reply with ONLY one line per item, in '
-          'order, formatted exactly as "1: YES" or "1: NO" — no explanations.\n'
-          '${itemLines.join('\n')}';
-
-      final params = GenerationParams(
-        prompt: prompt,
-        // Reasoning OFF (same recipe as LlmEvalEngine/Journal): thinking
-        // models were burning up to 2,000 tokens at local decode speed to
-        // reason about YES/NO verdicts — the bulk of the multi-minute
-        // objective stall on a 31B (maintainer report 2026-07-15).
-        // reasoningMaxTokens: 0 forces the disable block onto remote
-        // ":thinking" hybrids too. maxLength stays generous as headroom for
-        // models that leak reasoning anyway (stripThinkBlocks cleans it).
-        maxLength: 2000,
+      // Tools first (same fireStructuredEval fork as TimeService), text
+      // scrape as the floor. Unparsed / confused still counts as NO.
+      final responseText = await _fireObjectiveEval(
+        debugLabel: kObjectiveVerdictsTool,
+        tools: kObjectiveVerdictsEvalTools,
+        toolName: kObjectiveVerdictsTool,
+        trafficLabel: 'objective_check',
         temperature: 0.1,
-        reasoningEnabled: false,
-        reasoningMaxTokens: 0,
-        stopSequences: [],
+        reasoningOff: true,
+        buildPrompt: ({required bool toolsMode}) => buildObjectiveCheckPrompt(
+          contextText: contextText,
+          itemLines: itemLines,
+          toolsMode: toolsMode,
+        ),
       );
-
-      final trafficWatch = Stopwatch()..start();
-      String responseText = '';
-      await for (final chunk in llmService.generateStream(params)) {
-        responseText += chunk;
-      }
-      EvalTraffic.current.record(
-        label: 'objective_check',
-        lane: 'raw',
-        promptChars: params.prompt.length,
-        outputChars: responseText.length,
-        ms: trafficWatch.elapsedMilliseconds,
-      );
-      responseText = stripThinkBlocks(responseText);
-      // One raw log per batch so a parse failure or surprise YES is
-      // diagnosable (review finding: verdict-only logging hid them).
       final rawPreview = responseText.replaceAll('\n', ' / ');
       debugPrint(
         '[Objective] Batched verdicts raw: '
         '"${rawPreview.length > 300 ? rawPreview.substring(0, 300) : rawPreview}"',
       );
 
-      // Forgiving parse (local-model floor): "1: YES", "1. YES", "1) yes"…
-      final verdicts = <int, bool>{};
-      for (final m in RegExp(
-        r'^\s*(\d+)\s*[:.)\-]\s*(YES|NO)\b',
-        multiLine: true,
-        caseSensitive: false,
-      ).allMatches(responseText)) {
-        verdicts[int.parse(m.group(1)!)] =
-            m.group(2)!.toUpperCase() == 'YES';
-      }
-      // Single-item fallback keeps the historical loose behavior when a
-      // model ignores the numbering entirely.
-      if (verdicts.isEmpty && pending.length == 1) {
-        verdicts[1] = responseText.toUpperCase().contains('YES');
-      }
+      final verdicts = parseObjectiveVerdicts(responseText, pending.length);
 
       for (var i = 0; i < pending.length; i++) {
         final (obj, tasks, currentTask) = pending[i];
-        var done = verdicts[i + 1] ?? false;
+        var done = verdicts[i];
         debugPrint(
           '[Objective] Completion check for "${obj.objective}${currentTask != null ? ' - $currentTask' : ''}": ${done ? 'YES' : 'NO'}',
         );
@@ -529,5 +432,63 @@ class ObjectiveProposal {
       if (anyCompleted) onObjectiveCompleted?.call();
       onNotify();
     }
+  }
+
+  /// Tools-vs-text fork TimeService uses: `fireStructuredEval` when the
+  /// probe is wired, else the existing generateStream floor.
+  Future<String> _fireObjectiveEval({
+    required String debugLabel,
+    required List<Map<String, dynamic>> tools,
+    required String toolName,
+    required String trafficLabel,
+    required double temperature,
+    required String Function({required bool toolsMode}) buildPrompt,
+    bool reasoningOff = false,
+  }) async {
+    Future<String?> fireText(
+      String prompt, {
+      void Function(String)? onChunk,
+    }) async {
+      final llm = getLlmService();
+      if (!llm.isReady) return null;
+      final params = GenerationParams(
+        prompt: prompt,
+        maxLength: 2000,
+        temperature: temperature,
+        reasoningEnabled: false,
+        reasoningMaxTokens: reasoningOff ? 0 : null,
+        stopSequences: const [],
+      );
+      final trafficWatch = Stopwatch()..start();
+      var responseText = '';
+      await for (final chunk in llm.generateStream(params)) {
+        responseText += chunk;
+      }
+      EvalTraffic.current.record(
+        label: trafficLabel,
+        lane: 'raw',
+        promptChars: params.prompt.length,
+        outputChars: responseText.length,
+        ms: trafficWatch.elapsedMilliseconds,
+      );
+      return responseText;
+    }
+
+    final raw = fireToolEval != null && probe != null
+        ? await fireStructuredEval(
+            probe: probe!,
+            backendIdentity: getBackendIdentity?.call() ?? '',
+            debugLabel: debugLabel,
+            tools: tools,
+            buildPrompt: buildPrompt,
+            callToText: (resp) => objectiveToolCallToJson(toolName, resp.calls),
+            fireToolEval: fireToolEval!,
+            fireTextEval: fireText,
+            toolChoice: toolName,
+            maxLength: 2000,
+            getPreferTextEvals: getPreferTextEvals,
+          )
+        : await fireText(buildPrompt(toolsMode: false));
+    return stripThinkBlocks(raw ?? '');
   }
 }
