@@ -1,3 +1,14 @@
+## 2026-09-13 — Porch Life test stage taller; quest check isn't fake-CHAT
+- **Why:** Interaction sweep still used a 2200-tall fake screen; Web Search
+  sat below it. Eval-traffic grep wanted `label: 'objective_taskgen'` after
+  the tools fork. Fake backend treated quest YES/NO as a chat turn — that
+  class of steal already made Windows E2E flake.
+- **What:** 2800 + scroll-into-view before tap. Traffic test looks for the
+  label names. Fake backend answers quest check with `1: NO`.
+- **Files:** `porch_life_tab_interaction_test.dart`, `eval_traffic_test.dart`,
+  `fake_backend.dart`
+- **Commit:** (this commit)
+
 ## 2026-09-13 — Objectives completion/task-gen speak tools; Porch Life tests scroll
 - **Why:** Quest YES/NO and task lists still scraped raw generateStream, so
   tool-capable backends paid the fragile text parse. Same day, Porch Life

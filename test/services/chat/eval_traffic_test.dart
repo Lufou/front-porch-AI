@@ -111,7 +111,8 @@ void main() {
       expect(
         EvalTraffic.current.flushBackground(),
         contains('[EvalTraffic] background 1 call'),
-        reason: 'spend from the fire-and-forget passes must not read as part '
+        reason:
+            'spend from the fire-and-forget passes must not read as part '
             'of the turn the user just waited for',
       );
     });
@@ -125,22 +126,25 @@ void main() {
       expect(
         read('llm_eval_engine.dart'),
         contains('EvalTraffic.current.record'),
-        reason: 'the text lane is every eval that is not a tool call — '
+        reason:
+            'the text lane is every eval that is not a tool call — '
             'unrecorded, the line undercounts by most of the turn',
       );
       expect(
         read('chat_service_wiring_evals.dart'),
         contains("lane: 'tools'"),
-        reason: 'the tools door is the other lane; on a tools-confirmed '
+        reason:
+            'the tools door is the other lane; on a tools-confirmed '
             'backend it carries nearly all of the turn',
       );
     });
 
     test('the raw objective streams record too', () {
-      // The one pair of secondary calls that bypasses fireLLMEval entirely.
+      // Labels ride trafficLabel into EvalTraffic.record (tools-vs-text fork).
       final src = read('objective_proposal.dart');
-      expect(src, contains("label: 'objective_taskgen'"));
-      expect(src, contains("label: 'objective_check'"));
+      expect(src, contains('objective_taskgen'));
+      expect(src, contains('objective_check'));
+      expect(src, contains('EvalTraffic.current.record'));
     });
 
     test('the turn prints at post-gen, the background at send', () {
