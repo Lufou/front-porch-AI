@@ -1,3 +1,9 @@
+## 2026-09-14 — GLM 5.3 tools 400 was max_tokens:0, not "can't tools"
+- **Why:** Journal/Growth on Nano GLM 5.3: HTTP 400 "always thinks and does not support disabling reasoning", then "falling back to text", then XML 400 twice, empty eval. GLM can tools. We already strip `enabled:false` after the first 400, but evals still send `reasoning.max_tokens: 0` — GLM treats a think budget of 0 as Off and 400s again. Second 400 skips salvage (`already mandatory`) and dumps tools.
+- **What:** On a remembered always-thinks model, omit `max_tokens: 0`. Retry keeps tools. Fake 400s on 0 now, so the old payload goes red.
+- **Files:** `open_router_service.dart`, `mandatory_reasoning_failover_test.dart`, `docs/Rawhide.md`
+- **Commit:** (this commit)
+
 ## 2026-09-14 — Growth Rings starved on hot scenes (same two rings forever)
 - **Why:** Zinnia at 41 messages had 2 rings (one pumped to 1.0, one at 0.40, zero Past). Flora at 37 messages had 18. Journal on Zinnia was healthy (44 cards). The gardener WAS walking — receipts on the habit ring cite almost every other message — but only watering the same two trees. A cooldown exists so a ±12 bond bar does not fire Growth every turn. The post-gen trigger still re-read that same metadata (`hasSalientEvent`) and bypassed it. Tiny 2-message windows; the model only reinforces.
 - **What:** Growth due = interval OR a gated kick. Do not OR `hasSalientEvent` on the window. Journal left as-is (it wants frequent cards).

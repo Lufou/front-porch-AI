@@ -351,7 +351,15 @@ class OpenRouterService extends LLMService implements LlmApiEndpoint {
         );
       }
       if (params.reasoningMaxTokens != null) {
-        reasoning['max_tokens'] = params.reasoningMaxTokens;
+        // GLM 5.3 (Nano) 400s `max_tokens: 0` as "disabling reasoning"
+        // the same way it 400s `enabled: false`. After we remember the
+        // model, a salvage retry that still sends 0 falls back to XML
+        // and the XML round 400s twice more. Omit the zero budget.
+        final zeroOff =
+            params.reasoningMaxTokens == 0 && reasoningCannotDisable(modelName);
+        if (!zeroOff) {
+          reasoning['max_tokens'] = params.reasoningMaxTokens;
+        }
       }
       // When suppressing reasoning (e.g. Continue with budget 0), also ask the provider
       // to exclude reasoning tokens from the response entirely. This matches how SillyTavern
@@ -387,7 +395,9 @@ class OpenRouterService extends LLMService implements LlmApiEndpoint {
         // Continue still excludes.
         if (params.salvageReasoning) reasoning.remove('exclude');
       }
-      payload['reasoning'] = reasoning;
+      if (reasoning.isNotEmpty) {
+        payload['reasoning'] = reasoning;
+      }
     }
 
     // Qwen3's NATIVE thinking switch — LOCAL backends only. Local OpenAI-compatible

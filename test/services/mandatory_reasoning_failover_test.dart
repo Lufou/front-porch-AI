@@ -47,7 +47,8 @@ Future<HttpServer> _startFake({
     final reasoning = (body['reasoning'] as Map?)?.cast<String, dynamic>();
     seen.add(reasoning ?? <String, dynamic>{});
 
-    if (reasoning != null && reasoning['enabled'] == false) {
+    if (reasoning != null &&
+        (reasoning['enabled'] == false || reasoning['max_tokens'] == 0)) {
       req.response
         ..statusCode = 400
         ..headers.contentType = ContentType.json
@@ -200,6 +201,7 @@ void main() {
     expect(seen.first['enabled'], false);
     expect(seen.last.containsKey('enabled'), isFalse);
     expect(seen.last.containsKey('exclude'), isFalse);
+    expect(seen.last.containsKey('max_tokens'), isFalse);
     expect(reasoningCannotDisable(model), isTrue);
   }
 
@@ -248,6 +250,7 @@ void main() {
     expect(seen.length, 2);
     expect(seen.first['enabled'], false);
     expect(seen.last.containsKey('enabled'), isFalse);
+    expect(seen.last.containsKey('max_tokens'), isFalse);
     expect(reasoningCannotDisable('acme/whatever-v9'), isTrue);
   });
 }
