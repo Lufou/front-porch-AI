@@ -1,3 +1,9 @@
+## 2026-09-14 — Web Search card: famous is not certain
+- **Why:** Kimi skipped `web_search` on in-scene Wandenreich/Sternritter talk — it named Bleach in the think and riffed from training. Weather still searched. Copy already said MUST / fiction; cocky models treated “I know this show” as a pass.
+- **What:** Tool description now says famous is not certain: even if they recognize the show, look up the specific name. No forced `tool_choice`, no second judge. Live poke after the punch: search fired (`Sternritter Wandenreich Schrift…`, ok).
+- **Files:** `web_search_tools.dart`, `search_injection_test.dart`
+- **Commit:** (this commit)
+
 ## 2026-09-13 — Audit punch list P0+P1 (search suffix, Continue pending, group retry dance, clock chevrons, group needs, guest-left journal)
 - **Why:** Hermes verified six live bugs: search/MCP dumps sat after `Name:` so the model completed wiki junk; Continue inherited a cancelled regen's pending chips; group retry regen re-ran the realism dance (double needs tick); clock chevrons/calendar still required the engine while standalone was on; group members with no stored needs were invented as the 75/65 table; guest-left regen wiped Journal cites before refusing.
 - **What:** Register `web_search` before `suffix` (Chance Time still after). Continue does not merge `_pendingRealismMetadata`; 1:1 regen cancel and group dance cancel null it. User-last group regen passes `skipSpeakerEval` (Continue still loads scalars; a normal new group turn still dances). Clock mutators and desktop/web chevrons/calendar gate on `StoryClock.isRunning` (passage + engine OR standalone). `_getGroupNeeds` returns empty when there is no stored map; live-add and first decay seed from card baselines via `NeedsSimulation.baselinesFromExtensions`. Guest-left regen refuses before `_invalidateJournalFrom`.

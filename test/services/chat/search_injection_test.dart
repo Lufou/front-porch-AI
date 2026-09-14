@@ -107,6 +107,11 @@ void main() {
       reason: 'the schema, not a silent pre-gen cue, is the must-search rule',
     );
     expect(fn['description'], contains('Never invent'));
+    expect(
+      fn['description'],
+      contains('Famous is not certain'),
+      reason: 'cocky models skip lore they think they already know',
+    );
     final params = fn['parameters'] as Map;
     expect(params['required'], ['query']);
   });

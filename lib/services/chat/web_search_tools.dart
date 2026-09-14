@@ -35,14 +35,23 @@ const List<Map<String, dynamic>> kWebSearchTools = [
           'are not certain of — fiction and lore included, not just '
           'current events. You MUST call this when you do not recognize '
           'something, or for weather, news, prices, sports, or dates. '
-          'Never invent. Returns top results as plain text.',
+          'Never invent. Famous is not certain: even if you recognize '
+          'the show, you MUST look up the specific name (faction, '
+          'character, Schrift, title). Do not skip because it is anime. '
+          'Returns top results as plain text. '
+          'Put a short search-box query in `query` (the title or name, '
+          'plus at most one extra word). Do not paste the scene, '
+          'dialogue, or a bag of plot nouns.',
       'parameters': {
         'type': 'object',
         'properties': {
           'query': {
             'type': 'string',
             'maxLength': kWebSearchQueryMaxChars,
-            'description': 'The search query.',
+            'description':
+                'Short search-box text: work or thing by name, plus at '
+                'most one fact (title + anime, or a city + weather). '
+                'Not the whole conversation.',
           },
         },
         'required': ['query'],
