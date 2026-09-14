@@ -26,6 +26,7 @@ import 'package:front_porch_ai/ui/widgets/widgets.dart';
 
 import 'porch_life_defaults_note.dart';
 import 'porch_life_engine_card.dart';
+import 'porch_life_mcp_web_card.dart';
 
 /// **Porch Life** — every "what makes characters feel alive" switch in one
 /// place, grouped by what it is, each saying plainly what it needs.
@@ -353,38 +354,6 @@ class PorchLifeTab extends StatelessWidget {
               onChanged: realism.setChaosModeDefault,
             ),
             FeatureRow(
-              icon: Icons.travel_explore,
-              label: 'Web Search',
-              need: FeatureNeed.alone,
-              blurb:
-                  'When they hit a word or event they don\'t know, they can '
-                  'look it up and react as themselves — not reciting a wiki. '
-                  'Only the first reply to a message you send can search; '
-                  'Continue, Regenerate, guests, group follow-ups, and '
-                  'Dynamic Responses stay offline. '
-                  'Works with no key: search falls back to Wikipedia '
-                  '(encyclopedia lookups). Add a Tavily API key below '
-                  'for full web coverage. Off by default. Turning this on '
-                  'or off applies to every chat, including ones already open.',
-              value: storage.webSearchSettings.webSearchDefault,
-              onChanged: storage.webSearchSettings.setWebSearchDefault,
-              child: WebSearchKeyField(storage: storage),
-            ),
-            FeatureRow(
-              icon: Icons.extension_outlined,
-              label: 'MCP tools',
-              need: FeatureNeed.alone,
-              blurb:
-                  'Tools from MCP servers you run (Docker, weather, a '
-                  'calendar). Connecting a server is not consent: each chat '
-                  'has its own sidebar switches. This only seeds new chats. '
-                  'Off by default. Tap Docker or Find local servers, then '
-                  'Check connection. Front Porch does not spawn servers.',
-              value: storage.mcpSettings.mcpDefault,
-              onChanged: storage.mcpSettings.setMcpDefault,
-              child: const McpServersPanel(),
-            ),
-            FeatureRow(
               icon: Icons.history,
               label: 'Welcome-back recap',
               need: FeatureNeed.alone,
@@ -410,6 +379,8 @@ class PorchLifeTab extends StatelessWidget {
             ),
           ],
         ),
+
+        const PorchLifeMcpWebCard(),
 
         // ── After Dark ──────────────────────────────────────────────────
         // The approved sketch gives the 18+ feature its own group, "shown only

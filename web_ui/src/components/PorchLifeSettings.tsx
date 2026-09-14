@@ -508,23 +508,6 @@ export function PorchLifeSettings() {
           onChange={(v) => set('chaosModeDefault', v)}
         />
         <FeatureRow
-          icon="🔎"
-          label="Web Search"
-          need="alone"
-          blurb="When they hit a word or event they don't know, they can look it up and react as themselves — not reciting a wiki. Only the first reply to a message you send can search; Continue, Regenerate, guests, group follow-ups, and Dynamic Responses stay offline. Works with no key: search falls back to Wikipedia (encyclopedia lookups). Add a Tavily API key below for full web coverage. Off by default. Turning this on or off applies to every chat, including ones already open."
-          value={st.webSearchDefault}
-          onChange={(v) => set('webSearchDefault', v)}
-        />
-        <SearchKeyRow
-          alreadySet={!!st.hasSearchApiKey}
-          onStoredChange={(stored) =>
-            setSt((current) =>
-              current ? { ...current, hasSearchApiKey: stored } : current,
-            )
-          }
-        />
-        <McpSettings />
-        <FeatureRow
           icon="🕰️"
           label="Welcome-back recap"
           blurb={'After you have been away a while, opening a chat shows a small "where we left off" banner. Uses the time of your last message, already saved with your chat. Nothing new is collected and nothing leaves your device.'}
@@ -543,6 +526,29 @@ export function PorchLifeSettings() {
             onChange={(v) => set('absenceThresholdHours', v)}
           />
         </FeatureRow>
+      </FeatureGroup>
+
+      <FeatureGroup
+        title="MCP and Web"
+        subtitle="tools from outside the porch, and looking things up"
+      >
+        <FeatureRow
+          icon="🔎"
+          label="Web Search"
+          need="alone"
+          blurb="When they hit a word or event they don't know, they can look it up and react as themselves — not reciting a wiki. Only the first reply to a message you send can search; Continue, Regenerate, guests, group follow-ups, and Dynamic Responses stay offline. Works with no key: search falls back to Wikipedia (encyclopedia lookups). Add a Tavily API key below for full web coverage. Off by default. Turning this on or off applies to every chat, including ones already open."
+          value={st.webSearchDefault}
+          onChange={(v) => set('webSearchDefault', v)}
+        />
+        <SearchKeyRow
+          alreadySet={!!st.hasSearchApiKey}
+          onStoredChange={(stored) =>
+            setSt((current) =>
+              current ? { ...current, hasSearchApiKey: stored } : current,
+            )
+          }
+        />
+        <McpSettings />
       </FeatureGroup>
 
       {error && <p className="error pl-error">{error}</p>}

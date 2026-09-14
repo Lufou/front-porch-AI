@@ -106,8 +106,12 @@ void main() {
     final porch = File(
       'lib/ui/settings/tabs/porch_life_tab.dart',
     ).readAsStringSync();
-    expect(porch, contains('MCP tools'));
-    expect(porch, contains('McpServersPanel'));
+    final mcpWeb = File(
+      'lib/ui/settings/tabs/porch_life_mcp_web_card.dart',
+    ).readAsStringSync();
+    expect(porch, contains('PorchLifeMcpWebCard'));
+    expect(mcpWeb, contains('MCP tools'));
+    expect(mcpWeb, contains('McpServersPanel'));
 
     expect(
       File('lib/ui/settings/tabs/mcp_tab.dart').existsSync(),
@@ -208,7 +212,7 @@ void main() {
   testWidgets('MCP tools row is on Porch Life and defaults off', (
     tester,
   ) async {
-    await tester.binding.setSurfaceSize(const Size(900, 2200));
+    await tester.binding.setSurfaceSize(const Size(900, 2800));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     final storage = _McpStorage();
     storage.mcpSettings.initializeBase(null, storage.notifyListeners);
@@ -231,11 +235,14 @@ void main() {
     final row = find.text('MCP tools');
     await tester.scrollUntilVisible(row, 300, scrollable: scrollable);
     expect(row, findsOneWidget);
+    expect(find.text('MCP and Web'), findsOneWidget);
     expect(storage.mcpSettings.mcpDefault, isFalse);
     final sw = find.descendant(
       of: find.ancestor(of: row, matching: find.byType(Row)).last,
       matching: find.byType(Switch),
     );
+    await tester.ensureVisible(sw);
+    await tester.pump();
     await tester.tap(sw);
     await tester.pump(const Duration(milliseconds: 300));
     expect(storage.mcpSettings.mcpDefault, isTrue);

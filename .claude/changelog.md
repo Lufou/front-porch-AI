@@ -1,3 +1,13 @@
+## 2026-09-13 — Porch Life: MCP and Tavily get their own card
+- **Why:** MCP servers and the Tavily web-search key were mixed into
+  Presence (Chaos, recap, absence) — unrelated knobs in one pile.
+- **What:** New **MCP and Web** group on desktop and phone/web. Presence
+  keeps noticing-you switches. Same switches, same keys; just a
+  different shelf.
+- **Files:** `porch_life_mcp_web_card.dart`, `porch_life_tab.dart`,
+  `PorchLifeSettings.tsx`
+- **Commit:** (this commit)
+
 ## 2026-09-13 — Reading size only grew chat bubbles
 - **Why:** Discord user Musenik (9/10) needed glasses. One pref
   (`text_scale`) was applied twice on bubbles (`14 * textScale` AND
