@@ -17,7 +17,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:front_porch_ai/app_version.dart';
 import 'package:front_porch_ai/services/services.dart';
+import 'package:front_porch_ai/ui/settings/tabs/porch_life_mcp_web_card.dart';
 import 'package:front_porch_ai/ui/settings/widgets/widgets.dart';
+import 'package:provider/provider.dart';
 
 String get _key => isPreRelease ? 'beta_search_api_key' : 'search_api_key';
 
@@ -81,5 +83,23 @@ void main() {
     expect(await const FlutterSecureStorage().read(key: _key), isNull);
     expect((await SharedPreferences.getInstance()).containsKey(_key), isFalse);
     expect(find.text('Key removed — searches use Wikipedia.'), findsOneWidget);
+  });
+
+  testWidgets('Tavily field stays on MCP and Web with search off', (
+    tester,
+  ) async {
+    expect(storage.webSearchSettings.webSearchDefault, isFalse);
+    await tester.pumpWidget(
+      ChangeNotifierProvider<StorageService>.value(
+        value: storage,
+        child: const MaterialApp(
+          home: Scaffold(
+            body: SingleChildScrollView(child: PorchLifeMcpWebCard()),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    expect(find.text('Save key'), findsOneWidget);
   });
 }

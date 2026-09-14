@@ -50,6 +50,7 @@ class PorchLifeMcpWebCard extends StatelessWidget {
               'or off applies to every chat, including ones already open.',
           value: storage.webSearchSettings.webSearchDefault,
           onChanged: storage.webSearchSettings.setWebSearchDefault,
+          showChildWhenOff: true,
           child: WebSearchKeyField(storage: storage),
         ),
         FeatureRow(

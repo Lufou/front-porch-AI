@@ -56,6 +56,7 @@ class FeatureRow extends StatelessWidget {
     this.dependsOn,
     this.satisfied = true,
     this.child,
+    this.showChildWhenOff = false,
   });
 
   final IconData icon;
@@ -73,8 +74,13 @@ class FeatureRow extends StatelessWidget {
   final bool satisfied;
 
   /// Optional sub-control (a dropdown, a slider) shown under the blurb while
-  /// the feature is on.
+  /// the feature is on. Set [showChildWhenOff] when the control must stay
+  /// reachable with the switch off (Tavily key: you paste it before the
+  /// lookup is useful).
   final Widget? child;
+
+  /// When true, [child] is shown even if [value] is false.
+  final bool showChildWhenOff;
 
   String get _chipText => switch (need) {
     FeatureNeed.alone => 'works alone',
@@ -147,7 +153,7 @@ class FeatureRow extends StatelessWidget {
                 Switch(value: value, onChanged: gated ? null : onChanged),
               ],
             ),
-            if (child != null && value && !gated)
+            if (child != null && !gated && (value || showChildWhenOff))
               Padding(
                 padding: const EdgeInsets.only(left: 28, top: 8),
                 child: child,

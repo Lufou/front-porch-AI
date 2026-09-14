@@ -1,3 +1,13 @@
+## 2026-09-13 — Tavily key field stays visible with Web Search off
+- **Why:** The paste box lived as a FeatureRow child, which only renders
+  when the switch is on — so you could not save a key before flipping
+  search, and turning search off hid the proof it was saved.
+- **What:** `showChildWhenOff` on that row. Save is still the button, not
+  every keystroke.
+- **Files:** `feature_row.dart`, `porch_life_mcp_web_card.dart`,
+  `web_search_key_field_test.dart`
+- **Commit:** (this commit)
+
 ## 2026-09-13 — Porch Life test stage taller; quest check isn't fake-CHAT
 - **Why:** Interaction sweep still used a 2200-tall fake screen; Web Search
   sat below it. Eval-traffic grep wanted `label: 'objective_taskgen'` after
