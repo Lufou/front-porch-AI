@@ -1,3 +1,9 @@
+## 2026-09-14 — WebUI tsc was typechecking vitest files
+- **Why:** `ChatTools.clock.test.tsx` (clock-chevron source grep from the audit punch) imports `node:fs` / `__dirname`. CI `npm run lint` is `tsc --noEmit` over all of `src`, and the web tsconfig is browser-only — no Node types. Vitest itself was fine; lint died first. Not caused by the search-copy commits; they just ran the job.
+- **What:** Exclude `*.test.ts` / `*.test.tsx` from `web_ui/tsconfig.json`. App still typechecks. Vitest still runs the clock pin.
+- **Files:** `web_ui/tsconfig.json`
+- **Commit:** (this commit)
+
 ## 2026-09-14 — Search notes are not a lecture
 - **Why:** After a successful Wandenreich lookup, Sophia stayed in pose but catalogued Schrift A–Z (Yhwach, Haschwalth, Giselle) like a wiki. The standing line already said don't recite the source; it did not forbid a roster.
 - **What:** Character line and the gated search footer: don't list, lecture, or catalogue — one or two facts you'd actually say in this moment, not a taxonomy. Live poke after: still searched, spoken dropped the roster, kept the train scene.
