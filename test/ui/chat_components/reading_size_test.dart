@@ -312,4 +312,77 @@ void main() {
       }
     },
   );
+
+  testWidgets('composer follows Reading Size when ambient MediaQuery is 1.0', (
+    tester,
+  ) async {
+    const scale = 2.0;
+    final composer = TextEditingController(text: 'Hello composer');
+    addTearDown(composer.dispose);
+    await tester.pumpWidget(
+      MediaQuery(
+        data: const MediaQueryData(textScaler: TextScaler.linear(1.0)),
+        child: ChangeNotifierProvider<StorageService>.value(
+          value: _ReadingStorage(scale),
+          child: MaterialApp(
+            home: Scaffold(
+              body: ReadingSizeScope(
+                textScale: scale,
+                child: AppTextField(
+                  key: const Key('composer'),
+                  controller: composer,
+                  style: readingSurfaceStyle(color: Colors.white),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(
+      _scalerOf(tester.element(find.byType(EditableText))),
+      scale,
+      reason:
+          'TextField reads MediaQuery. Without ReadingSizeScope the '
+          'composer stays 14px while the slider is at 2.00.',
+    );
+  });
+
+  testWidgets(
+    'edit dialog follows StorageService.textScale when ambient MediaQuery is 1.0',
+    (tester) async {
+      const scale = 2.0;
+      await tester.pumpWidget(
+        MediaQuery(
+          data: const MediaQueryData(textScaler: TextScaler.linear(1.0)),
+          child: ChangeNotifierProvider<StorageService>.value(
+            value: _ReadingStorage(scale),
+            child: MaterialApp(
+              home: Builder(
+                builder: (context) => ElevatedButton(
+                  onPressed: () {
+                    showMessageEditDialog(
+                      context: context,
+                      initialText: 'Hello edit',
+                    );
+                  },
+                  child: const Text('Open'),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('Open'));
+      await tester.pumpAndSettle();
+
+      final body = find.descendant(
+        of: find.byType(AppTextField).last,
+        matching: find.byType(EditableText),
+      );
+      expect(_scalerOf(tester.element(body)), scale);
+    },
+  );
 }

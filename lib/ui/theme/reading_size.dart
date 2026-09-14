@@ -11,17 +11,43 @@
 import 'package:flutter/material.dart';
 
 /// Base font size for reading surfaces: chat bubbles, the composer, and the
-/// message editor. Chat bubbles pass `StorageService.textScale` into
-/// RichText themselves (Flutter's RichText default is noScaling, and the
-/// ambient MediaQuery is what chrome uses — it can sit at 1.0 while the
-/// pref is 2.0). Composer / edit still ride MediaQuery. Never *also*
-/// multiply this base by the pref or you double-apply on Text() paths.
+/// message editor. Never also multiply this by the Reading Size pref —
+/// [readingTextScaler] / [ReadingSizeScope] is the only multiplier.
 const double kReadingFontSize = 14.0;
 
 /// Inclusive range for the Reading Size slider (General Settings and the
 /// in-chat UI sheet share this).
 const double kReadingScaleMin = 0.7;
 const double kReadingScaleMax = 2.0;
+
+/// The Reading Size pref as a [TextScaler]. One value for every reading
+/// surface. Ambient MediaQuery can sit at 1.0 while this is 2.0.
+TextScaler readingTextScaler(double textScale) =>
+    TextScaler.linear(textScale.clamp(kReadingScaleMin, kReadingScaleMax));
+
+/// Pushes Reading Size onto [child] as MediaQuery.textScaler so [Text] and
+/// [TextField] inherit it. [RichText] still needs [readingTextScaler]
+/// passed explicitly — Flutter defaults that widget to noScaling.
+class ReadingSizeScope extends StatelessWidget {
+  const ReadingSizeScope({
+    super.key,
+    required this.textScale,
+    required this.child,
+  });
+
+  final double textScale;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return MediaQuery(
+      data: MediaQuery.of(
+        context,
+      ).copyWith(textScaler: readingTextScaler(textScale)),
+      child: child,
+    );
+  }
+}
 
 /// Sidebar helper / journal preview copy. Contrast is primary text,
 /// not a faint secondary.

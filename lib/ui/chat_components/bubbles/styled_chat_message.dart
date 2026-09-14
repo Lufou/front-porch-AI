@@ -195,7 +195,7 @@ class _StyledChatMessageState extends State<StyledChatMessage> {
     _refreshStyles(storageService);
     // Reading Size is this pref. Do not trust ambient MediaQuery — chrome
     // may scale from it while the transcript sits at 1.0 (or the reverse).
-    final readingScaler = TextScaler.linear(storageService.textScale);
+    final readingScaler = readingTextScaler(storageService.textScale);
 
     // Check for markdown images (cached per source text).
     if (!identical(text, _parseSource)) {

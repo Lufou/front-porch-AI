@@ -12,7 +12,7 @@ Last shipped nightly: `rawhide.20260906.7059c91`. Everything below is unreleased
 
 - 🔎 **Web Search happens in the reply, not a silent extra trip** — the character sees the search tool while they are actually talking. If they look something up, the result lands and they speak; if they already know, they just speak. Same on the phone.
 
-- 🔎 **Reading Size actually grows the chat** — the words in the bubble follow that slider even when the rest of the window already scaled. Quoted lines and *actions* were the ones stuck at 14px. Sidebar stays put.
+- 🔎 **Reading Size is one knob for what you read** — bubbles, the chat input box, and message edit follow that slider. Sidebar stays put.
 
 - 🖥️ **Waifu Coder wrap-up speaks once** — after tools stop, the in-character recap is one spoken bubble, not two copies of the same goodbye.
 

@@ -226,34 +226,40 @@ extension _ChatPageInputActions on _ChatPageState {
               apiReady: apiReady,
               observerMode: chatService.observerMode,
             );
-            return AppTextField(
-              controller: _controller,
-              focusNode: _chatFocusNode,
-              enabled: !chatService.isLoadingSession,
-              maxLines: 10,
-              minLines: _inputMinLines,
-              textInputAction: TextInputAction.newline,
-              style: readingSurfaceStyle(color: AppColors.textPrimary(context)),
-              spellCheckConfiguration: SpellCheckConfiguration.disabled(),
-              decoration: InputDecoration(
-                hintText: hint,
-                hintStyle: TextStyle(
-                  color: !apiReady
-                      ? AppColors.negativeAccentOf(context)
-                      : chatService.observerMode
-                      ? AppColors.porchAmberOf(context).withValues(alpha: 0.7)
-                      : AppColors.textTertiary(context),
+            final storage = Provider.of<StorageService>(context);
+            return ReadingSizeScope(
+              textScale: storage.textScale,
+              child: AppTextField(
+                controller: _controller,
+                focusNode: _chatFocusNode,
+                enabled: !chatService.isLoadingSession,
+                maxLines: 10,
+                minLines: _inputMinLines,
+                textInputAction: TextInputAction.newline,
+                style: readingSurfaceStyle(
+                  color: AppColors.textPrimary(context),
                 ),
-                filled: true,
-                fillColor: AppColors.surfaceContainerOf(context),
-                isDense: true,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(20),
-                  borderSide: BorderSide.none,
-                ),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 10,
+                spellCheckConfiguration: SpellCheckConfiguration.disabled(),
+                decoration: InputDecoration(
+                  hintText: hint,
+                  hintStyle: TextStyle(
+                    color: !apiReady
+                        ? AppColors.negativeAccentOf(context)
+                        : chatService.observerMode
+                        ? AppColors.porchAmberOf(context).withValues(alpha: 0.7)
+                        : AppColors.textTertiary(context),
+                  ),
+                  filled: true,
+                  fillColor: AppColors.surfaceContainerOf(context),
+                  isDense: true,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(20),
+                    borderSide: BorderSide.none,
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 10,
+                  ),
                 ),
               ),
             );

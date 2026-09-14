@@ -8,7 +8,9 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 
+import 'package:front_porch_ai/services/services.dart';
 import 'package:front_porch_ai/ui/theme/theme.dart';
 import 'package:front_porch_ai/ui/widgets/widgets.dart';
 import 'package:front_porch_ai/utils/utils.dart';
@@ -17,15 +19,21 @@ import 'package:front_porch_ai/utils/utils.dart';
 /// `null` if the user cancelled.
 ///
 /// `showDialog` lands in the navigator overlay, which sits *above* the
-/// `home:` MediaQuery that applies the app's reading-size scaler (the same
-/// overlay trap the Stoop detail panel already handles). Capture the
-/// launching scaler and re-apply it.
+/// chat's Reading Size scope. Prefer [StorageService.textScale]; fall back
+/// to the launching MediaQuery when no storage is in the tree (widget tests).
 Future<String?> showMessageEditDialog({
   required BuildContext context,
   required String initialText,
   String title = 'Edit Message',
 }) {
-  final appScaler = MediaQuery.textScalerOf(context);
+  late final TextScaler appScaler;
+  try {
+    appScaler = readingTextScaler(
+      Provider.of<StorageService>(context, listen: false).textScale,
+    );
+  } on ProviderNotFoundException {
+    appScaler = MediaQuery.textScalerOf(context);
+  }
   return showDialog<String>(
     context: context,
     barrierDismissible: false,

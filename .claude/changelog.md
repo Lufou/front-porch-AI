@@ -1,3 +1,9 @@
+## 2026-09-14 — Reading Size is one scaler for bubbles, composer, and edit
+- **Why:** Sit-down: the slider grew chrome; bubbles followed the pref after the last pass; the chat input box stayed 14px. TextField only reads MediaQuery, and that ancestor can sit at 1.0 while the pref is 2.00. Edit overlay had the same trap.
+- **What:** One helper (`readingTextScaler` / `ReadingSizeScope`). Composer sits in that scope. Bubbles still pass the scaler into RichText (Flutter default is noScaling). Edit prefers StorageService.textScale, falls back to launching MediaQuery when tests have no storage. Guards: pref 2.0 + ambient 1.0 for composer and edit.
+- **Files:** `reading_size.dart`, `chat_page.input_actions.dart`, `styled_chat_message.dart`, `message_edit_dialog.dart`, `reading_size_test.dart`, `docs/Rawhide.md`
+- **Commit:** (this commit)
+
 ## 2026-09-14 — Reading Size follows the pref, not the window scaler
 - **Why:** Sit-down after the MediaQuery hand-off: chrome / composer / chips grew with the slider, chat words did not, sidebar stayed put (expected). Ambient MediaQuery in that tree can sit at 1.0 while `StorageService.textScale` is 2.0 — handing `MediaQuery.textScalerOf` into RichText still paints 14px.
 - **What:** Bubbles take `TextScaler.linear(storage.textScale)` on RichText and the empty `Text` path. Guard: pref 2.0 + ambient 1.0 → widget scaler 2.0 (red 1.0 before, green after). Do not bake the pref into fontSize (that double-applies on Text() paths).
