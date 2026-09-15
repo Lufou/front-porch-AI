@@ -43,6 +43,7 @@ export 'recap_injection.dart';
 export 'relationship_injection.dart';
 export 'user_tool_injection.dart';
 export 'search_injection.dart';
+export 'regen_critique_injection.dart';
 export 'speaker_resolution.dart';
 export 'state_zone_frame.dart';
 export 'time_injection.dart';

@@ -24,7 +24,11 @@ part of '../chat_service.dart';
 extension ChatServiceMessageOps on ChatService {
   /// Navigate swipes on a specific message. direction: -1 = left, +1 = right.
   /// If swiping right past the last swipe on the last bot message, regenerates.
-  Future<void> swipeMessage(int messageIndex, int direction) async {
+  Future<void> swipeMessage(
+    int messageIndex,
+    int direction, {
+    String? critique,
+  }) async {
     if (messageIndex < 0 || messageIndex >= _messages.length) return;
     final msg = _messages[messageIndex];
     if (msg.isUser || msg.sender == 'System') return;
@@ -44,7 +48,7 @@ extension ChatServiceMessageOps on ChatService {
       await _commitSwipeIndex(messageIndex, newIndex);
     } else if (messageIndex == _messages.length - 1) {
       // Past last swipe on last message — regenerate (aborts settling evals)
-      await regenerateLastMessage();
+      await regenerateLastMessage(critique: critique);
     }
   }
 

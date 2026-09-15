@@ -414,6 +414,11 @@ extension ChatServiceGenerationPlan on ChatService {
       // completion point has to stay the suffix, not wiki junk.
       // Chance Time / porch_night / item_intro stay AFTER suffix.
       plan.add(id: 'web_search', text: '');
+      plan.add(
+        id: 'regen_critique',
+        label: 'Regen Critique',
+        text: t.regenCritique,
+      );
       plan.add(id: 'suffix', text: t.suffix);
       plan.add(id: 'chance_time', text: chanceTimeBlock);
       // High-recency with Chance Time so the first post-import reply
@@ -529,6 +534,7 @@ extension ChatServiceGenerationPlan on ChatService {
       // twice in one message.
       plan.section('item_intro').text = '';
       plan.section('web_search').text = '';
+      plan.section('regen_critique').text = '';
       // RAG skip is the Continue branch in _retrieveGenerationMemories
       // (zeroing droppedMessages is not enough once tail-open ORs
       // basePosition). Keep this 0 so later budget math does not treat

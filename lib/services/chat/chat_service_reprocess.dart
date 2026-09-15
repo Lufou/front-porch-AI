@@ -43,7 +43,7 @@ extension ChatServiceReprocess on ChatService {
   ///
   /// When the host message is already last (no trailing guests) this simply
   /// delegates to [regenerateLastMessage].
-  Future<void> regenerateMainCharacter() async {
+  Future<void> regenerateMainCharacter({String? critique}) async {
     if (_messages.isEmpty || _sceneGuest.busy) return;
     if (!await _yieldSettlingTurn()) return;
     _memoryPassEpoch++;
@@ -74,7 +74,7 @@ extension ChatServiceReprocess on ChatService {
 
     // Host already last → plain regen (no guests to pop).
     if (hostIndex == _messages.length - 1) {
-      await regenerateLastMessage();
+      await regenerateLastMessage(critique: critique);
       return;
     }
 
@@ -92,11 +92,11 @@ extension ChatServiceReprocess on ChatService {
     _messages.removeRange(hostIndex + 1, _messages.length);
     await _saveChat(replaceAll: true);
     notifyListeners();
-    await regenerateLastMessage();
+    await regenerateLastMessage(critique: critique);
     await _maybeRunSceneGuestChimeIns(userText: userText);
   }
 
-  Future<void> regenerateLastMessage() async {
+  Future<void> regenerateLastMessage({String? critique}) async {
     if (_messages.isEmpty || _sceneGuest.busy) return;
     if (!await _yieldSettlingTurn()) return;
     _memoryPassEpoch++;
@@ -112,13 +112,13 @@ extension ChatServiceReprocess on ChatService {
     // this hold compose without re-indenting the whole flow.
     _isPostGenerating = true;
     try {
-      await _regenerateLastMessageHeld();
+      await _regenerateLastMessageHeld(critique: critique);
     } finally {
       _isPostGenerating = false;
     }
   }
 
-  Future<void> _regenerateLastMessageHeld() async {
+  Future<void> _regenerateLastMessageHeld({String? critique}) async {
     // Backend gate BEFORE the pop below — aborting after removeLast would
     // drop the popped reply (the deep guard in _generateResponse cannot
     // restore it; see _abortIfBackendDown).
@@ -680,6 +680,10 @@ extension ChatServiceReprocess on ChatService {
         forceSpeaker: regenGuest == null && _activeGroup != null
             ? _resolveGroupSpeakerForMessage(lastMsg)
             : null,
+        regenCritique: RegenCritiqueInjection.fragment(
+          spokenText: lastMsg.displayText,
+          reason: critique ?? '',
+        ),
       );
 
       // After generation, merge the new response as a swipe on the original

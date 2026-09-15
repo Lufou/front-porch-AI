@@ -28,6 +28,7 @@ import 'package:front_porch_ai/ui/dialogs/dialogs.dart';
 import 'package:front_porch_ai/ui/theme/app_colors.dart';
 
 import '../widgets/inline_chat_image.dart';
+import '../widgets/regen_critique_field.dart';
 import 'live_thinking_timer.dart';
 import 'styled_chat_message.dart';
 import 'theme_border_resolver.dart';
@@ -83,6 +84,7 @@ class MessageBubble extends StatefulWidget {
 class _MessageBubbleState extends State<MessageBubble> {
   bool _thoughtExpanded = false;
   bool _thoughtPinned = false;
+  String _regenCritique = '';
 
   ChatMessage get message => widget.message;
   File? get characterImage => widget.characterImage;

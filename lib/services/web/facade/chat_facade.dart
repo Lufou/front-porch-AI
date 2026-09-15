@@ -500,8 +500,8 @@ class ChatFacade {
     _notify();
   }
 
-  void regenerate() {
-    _chat.regenerateLastMessage();
+  void regenerate({String? critique}) {
+    _chat.regenerateLastMessage(critique: critique);
     _notify();
   }
 
@@ -557,8 +557,8 @@ class ChatFacade {
     return ok;
   }
 
-  void swipe(int messageIndex, int direction) {
-    _chat.swipeMessage(messageIndex, direction);
+  void swipe(int messageIndex, int direction, {String? critique}) {
+    _chat.swipeMessage(messageIndex, direction, critique: critique);
     _notify();
   }
 

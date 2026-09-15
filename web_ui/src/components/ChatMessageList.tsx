@@ -98,8 +98,8 @@ type TranscriptProps = {
   busy: boolean;
   canSpeak: boolean;
   onBeginEdit: (m: Message) => void;
-  onSwipe: (index: number, direction: number) => void;
-  onRegenerate: () => void;
+  onSwipe: (index: number, direction: number, critique?: string) => void;
+  onRegenerate: (critique?: string) => void;
   onContinue: () => void;
   onFork: (index: number) => void;
   onDelete: (index: number) => void;

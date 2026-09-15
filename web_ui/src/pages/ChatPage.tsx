@@ -473,8 +473,12 @@ export function ChatPage() {
   // The transcript handlers are useCallback-stable so token/processing WS
   // frames (which re-render this page many times a second during a turn)
   // never invalidate the memoized transcript rows — see TranscriptRows.
-  const regenerate = useCallback(async () => {
-    await api.post('/api/chat/regenerate');
+  const regenerate = useCallback(async (critique?: string) => {
+    const trimmed = (critique ?? '').trim();
+    await api.post(
+      '/api/chat/regenerate',
+      trimmed ? { critique: trimmed } : undefined,
+    );
     await refresh();
   }, [refresh]);
   const continueGen = useCallback(async () => {
@@ -492,8 +496,17 @@ export function ChatPage() {
     await api.post('/api/chat/fork', { index });
     await refresh();
   }, [refresh]);
-  const swipe = useCallback(async (messageIndex: number, direction: number) => {
-    await api.post('/api/chat/swipe', { messageIndex, direction });
+  const swipe = useCallback(async (
+    messageIndex: number,
+    direction: number,
+    critique?: string,
+  ) => {
+    const trimmed = (critique ?? '').trim();
+    await api.post('/api/chat/swipe', {
+      messageIndex,
+      direction,
+      ...(trimmed ? { critique: trimmed } : {}),
+    });
     await refresh();
   }, [refresh]);
   const del = useCallback(async (index: number) => {

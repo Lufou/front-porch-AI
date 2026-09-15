@@ -1,3 +1,9 @@
+## 2026-09-15 — Optional regen critique (reject reason)
+- **Why:** Regen was only "try again". Users needed a way to say why this take was wrong without chips or an Ash line in the transcript.
+- **What:** Optional field on last-bot regen chrome (desktop + web). Empty = today's regen. Non-empty injects a one-shot director slip (think-stripped ~800-char clip + ~500-char reason) before `Name:`. Not stored in messages. Continue strips it. Tools/clerk unchanged (`directUserSend: true`); critique does not force a lookup.
+- **Files:** `regen_critique_injection.dart`, `chat_service_reprocess.dart`, `chat_service_generation_plan.dart`, bubble/web MessageActions, `/api/chat/regenerate` body
+- **Commit:** (this commit)
+
 ## 2026-09-15 — Clerk: extra wiki/web trips, then one mouth
 - **Why:** One catalog doorbell left thin Fandom scraps in the prompt, and she could not ask for a second page. A mall of agents was the wrong fix.
 - **What:** After she rings `wiki_search` / `web_search` / a recipe card, a clerk loop on the same LLM dispatches up to 3 advertised tools (same tool+args is not another book). Clerk never writes the bubble. One collated scrap injects (wiki without UNTRUSTED), then `generateStream` without tools. No ring → spoken tools text as today. Continue / guests / autonomous / first_mes stay offline. Wiki HTTP cap 6 so three search+parse lookups fit. No webfetch — not in the Porch catalog.

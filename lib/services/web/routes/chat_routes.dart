@@ -270,8 +270,9 @@ class WebChatRoutes {
     return JsonResponse.ok({'status': 'ok'});
   }
 
-  shelf.Response _regenerate(shelf.Request request) {
-    _facade.regenerate();
+  Future<shelf.Response> _regenerate(shelf.Request request) async {
+    final body = await _json(request);
+    _facade.regenerate(critique: body['critique']?.toString());
     return JsonResponse.ok({'status': 'ok'});
   }
 
@@ -309,7 +310,7 @@ class WebChatRoutes {
     if (index is! int || direction is! int) {
       return JsonResponse.badRequest('messageIndex and direction are required');
     }
-    _facade.swipe(index, direction);
+    _facade.swipe(index, direction, critique: body['critique']?.toString());
     return JsonResponse.ok({'status': 'ok'});
   }
 

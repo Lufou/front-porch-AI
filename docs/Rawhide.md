@@ -7,6 +7,8 @@ Last shipped nightly: `rawhide.20260906.7059c91`. Everything below is unreleased
 
 ## Recent improvements (unreleased — ships in the next build)
 
+- 🔁 **Tell Regen why that take was wrong** — optional box on the last reply. Leave it empty and Regen is the same as today. Type a reason and she sees a short clip of the rejected take plus your note, then writes a new swipe. It is not a chat message and it is gone on the next turn. Same on the phone.
+
 - 📖 **She can look up a second wiki page before she talks** — if the first clip is thin, she may fetch another, then speak once in character. Not a lecture. Same on the phone.
 
 - 📖 **Save as many wikis as you want** — Porch Life keeps a list (Bleach, One Punch Man, …). The chat sidebar Wiki picker chooses which one this chat uses, or none. A 1:1 pick is remembered for that character, so Sophia can default to Bleach and Mirin to One Punch Man.

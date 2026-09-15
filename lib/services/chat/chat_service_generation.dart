@@ -59,6 +59,9 @@ class _GenTurn {
   /// the direct response to a newly appended user message.
   final bool directUserSend;
 
+  /// One-shot regen director slip (clip + reason). Empty on every other path.
+  String regenCritique = '';
+
   // ── entry / speaker pick (shell) ──
   late CharacterCard speakingCharacter;
   late String userName;
@@ -192,6 +195,7 @@ extension ChatServiceGeneration on ChatService {
     bool autonomous = false,
     bool directUserSend = false,
     bool skipSpeakerEval = false,
+    String regenCritique = '',
   }) async {
     if (await _abortIfBackendDown()) {
       // No turn will run — terminate BOTH live streams. The sentence stream
@@ -249,6 +253,7 @@ extension ChatServiceGeneration on ChatService {
       autonomous: autonomous,
       directUserSend: directUserSend,
     );
+    t.regenCritique = regenCritique;
 
     try {
       final userName = _userPersonaService.persona.name;
