@@ -446,6 +446,7 @@ extension ChatServiceChatEntry on ChatService {
           // Seed chat worlds from the character's attached worlds (Living
           // Worlds) — a paired world's climate/setting applies from turn one.
           await _seedChatWorldsForNewSession();
+          await _seedWikiForNewSession();
           await _saveChat();
           _activeObjectives = [];
           _messagesSinceLastCheck = 0;

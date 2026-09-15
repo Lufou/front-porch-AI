@@ -21,7 +21,19 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
+import 'package:front_porch_ai/services/chat/mediawiki_search.dart';
+
 import 'settings_base.dart';
+
+/// Origin (`https://host`) of a pasted wiki URL, or null if unsafe.
+String? canonicalizeWikiUrl(String raw) => parseWikiBaseUrl(raw)?.origin;
+
+/// Host label for a saved wiki row (`bleach.fandom.com`).
+String wikiHostLabel(String url) {
+  final host = parseWikiBaseUrl(url)?.host;
+  if (host != null && host.isNotEmpty) return host;
+  return url.trim();
+}
 
 /// Global default + Tavily API key for model-initiated web search.
 ///
@@ -46,7 +58,9 @@ class WebSearchSettings with SettingsBase {
   bool _webSearchDefault = false;
   String _searchApiKey = '';
   String _wikiBaseUrl = '';
+  final List<String> _savedWikiUrls = [];
   final Map<String, String> _wikiBySession = {};
+  final Map<String, String> _wikiByCharacter = {};
 
   bool get webSearchDefault => _webSearchDefault;
   String get searchApiKey => _searchApiKey;
@@ -55,6 +69,9 @@ class WebSearchSettings with SettingsBase {
   /// Porch Life default wiki URL. Empty = wiki_search off for chats that
   /// have not pasted their own.
   String get wikiBaseUrl => _wikiBaseUrl;
+
+  /// Unlimited library of saved wiki origins. No cap.
+  List<String> get savedWikiUrls => List.unmodifiable(_savedWikiUrls);
 
   /// This chat's wiki URL: session override if one was saved (including
   /// explicit empty = off), otherwise the Porch Life default.
@@ -65,12 +82,50 @@ class WebSearchSettings with SettingsBase {
     return _wikiBaseUrl;
   }
 
+  bool hasSessionWikiOverride(String sessionId) =>
+      _wikiBySession.containsKey(sessionId);
+
+  /// Character default for a **new** 1:1. Null = none stored.
+  String? wikiUrlForCharacter(String characterId) {
+    if (characterId.isEmpty) return null;
+    return _wikiByCharacter[characterId];
+  }
+
+  /// Session seed for a brand-new 1:1. Groups return null (don't guess).
+  String? wikiUrlToSeedForNewChat({
+    required bool isGroup,
+    String? characterId,
+  }) {
+    if (isGroup) return null;
+    if (characterId == null || characterId.isEmpty) return null;
+    final url = _wikiByCharacter[characterId];
+    if (url == null || url.isEmpty) return null;
+    return url;
+  }
+
+  /// Saved library plus [current] if this chat has a URL not in the list.
+  List<String> pickerWikiUrls({String? current}) {
+    final out = List<String>.from(_savedWikiUrls);
+    final cur = canonicalizeWikiUrl(current ?? '') ?? current?.trim() ?? '';
+    if (cur.isNotEmpty && !out.contains(cur)) {
+      out.insert(0, cur);
+    }
+    return out;
+  }
+
   Future<void> load() async {
     _webSearchDefault = prefs?.getBool(k('web_search_default')) ?? false;
     _wikiBaseUrl = prefs?.getString(k('wiki_base_url')) ?? '';
+    _savedWikiUrls
+      ..clear()
+      ..addAll(_decodeUrlList(prefs?.getString(k('wiki_saved_urls'))));
     _wikiBySession
       ..clear()
       ..addAll(_decodeWikiMap(prefs?.getString(k('wiki_urls_by_session'))));
+    _wikiByCharacter
+      ..clear()
+      ..addAll(_decodeWikiMap(prefs?.getString(k('wiki_url_by_character'))));
+    await _migrateDefaultIntoSaved();
     final key = k(_apiKeyName);
     // Null prefs = in-memory sandbox. Never read the live macOS keychain.
     if (prefs == null) {
@@ -131,13 +186,63 @@ class WebSearchSettings with SettingsBase {
   }
 
   Future<void> setWikiBaseUrl(String value) async {
-    _wikiBaseUrl = value.trim();
+    final trimmed = value.trim();
     final key = k('wiki_base_url');
-    if (_wikiBaseUrl.isEmpty) {
+    if (trimmed.isEmpty) {
+      _wikiBaseUrl = '';
       await prefs?.remove(key);
-    } else {
-      await prefs?.setString(key, _wikiBaseUrl);
+      notify();
+      return;
     }
+    final canonical = canonicalizeWikiUrl(trimmed);
+    if (canonical == null) {
+      notify();
+      return;
+    }
+    _wikiBaseUrl = canonical;
+    await prefs?.setString(key, canonical);
+    notify();
+  }
+
+  /// Add one wiki to the unlimited library. Rejects unsafe URLs.
+  Future<bool> addSavedWikiUrl(String raw) async {
+    final canonical = canonicalizeWikiUrl(raw);
+    if (canonical == null) return false;
+    if (!_savedWikiUrls.contains(canonical)) {
+      _savedWikiUrls.add(canonical);
+      await _persistSaved();
+    }
+    if (_wikiBaseUrl.isEmpty) {
+      await setWikiBaseUrl(canonical);
+    } else {
+      notify();
+    }
+    return true;
+  }
+
+  Future<void> removeSavedWikiUrl(String raw) async {
+    final canonical = canonicalizeWikiUrl(raw) ?? raw.trim();
+    if (canonical.isEmpty) return;
+    _savedWikiUrls.removeWhere((u) => u == canonical);
+    await _persistSaved();
+    if (_wikiBaseUrl == canonical) {
+      await setWikiBaseUrl(_savedWikiUrls.isEmpty ? '' : _savedWikiUrls.first);
+    } else {
+      notify();
+    }
+  }
+
+  Future<void> setWikiUrlForCharacter(String characterId, String value) async {
+    if (characterId.isEmpty) return;
+    final canonical = value.trim().isEmpty
+        ? ''
+        : (canonicalizeWikiUrl(value) ?? '');
+    if (canonical.isEmpty) {
+      _wikiByCharacter.remove(characterId);
+    } else {
+      _wikiByCharacter[characterId] = canonical;
+    }
+    await _persistCharacterMap();
     notify();
   }
 
@@ -146,7 +251,12 @@ class WebSearchSettings with SettingsBase {
       await setWikiBaseUrl(value);
       return;
     }
-    _wikiBySession[sessionId] = value.trim();
+    final trimmed = value.trim();
+    if (trimmed.isEmpty) {
+      _wikiBySession[sessionId] = '';
+    } else {
+      _wikiBySession[sessionId] = canonicalizeWikiUrl(trimmed) ?? trimmed;
+    }
     await _persistWikiMap();
     notify();
   }
@@ -166,6 +276,52 @@ class WebSearchSettings with SettingsBase {
       return;
     }
     await prefs?.setString(key, jsonEncode(_wikiBySession));
+  }
+
+  Future<void> _persistCharacterMap() async {
+    final key = k('wiki_url_by_character');
+    if (_wikiByCharacter.isEmpty) {
+      await prefs?.remove(key);
+      return;
+    }
+    await prefs?.setString(key, jsonEncode(_wikiByCharacter));
+  }
+
+  Future<void> _persistSaved() async {
+    final key = k('wiki_saved_urls');
+    if (_savedWikiUrls.isEmpty) {
+      await prefs?.remove(key);
+      return;
+    }
+    await prefs?.setString(key, jsonEncode(_savedWikiUrls));
+  }
+
+  Future<void> _migrateDefaultIntoSaved() async {
+    if (_wikiBaseUrl.isEmpty) return;
+    final canonical = canonicalizeWikiUrl(_wikiBaseUrl);
+    if (canonical == null) return;
+    if (canonical != _wikiBaseUrl) {
+      _wikiBaseUrl = canonical;
+      await prefs?.setString(k('wiki_base_url'), canonical);
+    }
+    if (!_savedWikiUrls.contains(canonical)) {
+      _savedWikiUrls.add(canonical);
+      await _persistSaved();
+    }
+  }
+
+  static List<String> _decodeUrlList(String? raw) {
+    if (raw == null || raw.isEmpty) return [];
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is! List) return [];
+      return [
+        for (final e in decoded)
+          if (e is String && e.trim().isNotEmpty) e.trim(),
+      ];
+    } catch (_) {
+      return [];
+    }
   }
 
   static Map<String, String> _decodeWikiMap(String? raw) {

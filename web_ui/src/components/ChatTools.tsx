@@ -28,6 +28,7 @@ export { TextField } from './SummaryRecapField';
 
 interface ToolsState {
   wikiBaseUrl?: string;
+  wikiSavedUrls?: string[];
   realismEnabled: boolean;
   needsEnabled: boolean;
   realismOneShotEval: boolean;
@@ -157,34 +158,54 @@ function Toggle({ label, value, onChange }: { label: string; value: boolean; onC
   );
 }
 
-function WikiUrlTools({
+function wikiHostLabel(url: string): string {
+  try {
+    const host = new URL(url.includes('://') ? url : `https://${url}`).host;
+    return host || url;
+  } catch {
+    return url;
+  }
+}
+
+function WikiPicker({
   value,
+  saved,
   onSave,
 }: {
   value: string;
+  saved: string[];
   onSave: (url: string) => void;
 }) {
-  const [draft, setDraft] = useState(value);
-  useEffect(() => setDraft(value), [value]);
-  const commit = () => {
-    const next = draft.trim();
-    if (next !== value) onSave(next);
-  };
+  const urls = [...saved];
+  if (value && !urls.includes(value)) urls.unshift(value);
+  if (urls.length === 0 && !value) return null;
   return (
-    <div className="tool-section" data-testid="wiki-url-tools">
-      <label className="tool-num">
-        <span>Wiki URL</span>
-        <input
-          type="url"
-          placeholder="https://bleach.fandom.com/"
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onBlur={commit}
-          onKeyDown={(e) => e.key === 'Enter' && commit()}
-        />
-      </label>
-      <p className="muted small">Looks up this wiki only (MediaWiki / Fandom). Not Google.</p>
-    </div>
+    <details className="tool-section" data-testid="wiki-picker" open>
+      <summary>Wiki</summary>
+      <div className="tool-body">
+        <p className="muted small">Looks up this wiki only (MediaWiki / Fandom). Not Google.</p>
+        <label className="tool-toggle">
+          <span>None (off for this chat)</span>
+          <input
+            type="radio"
+            name="wiki-pick"
+            checked={!value}
+            onChange={() => onSave('')}
+          />
+        </label>
+        {urls.map((url) => (
+          <label key={url} className="tool-toggle">
+            <span>{wikiHostLabel(url)}</span>
+            <input
+              type="radio"
+              name="wiki-pick"
+              checked={value === url}
+              onChange={() => onSave(url)}
+            />
+          </label>
+        ))}
+      </div>
+    </details>
   );
 }
 
@@ -315,8 +336,9 @@ export function ChatTools({
           📊 Context budget — what the model was sent
         </button>
       </div>
-      <WikiUrlTools
+      <WikiPicker
         value={t.wikiBaseUrl ?? ''}
+        saved={t.wikiSavedUrls ?? []}
         onSave={(url) => apply(api.post<ToolsState>(`/api/chat/tools/wiki${q}`, { wikiBaseUrl: url }))}
       />
 

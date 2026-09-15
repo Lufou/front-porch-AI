@@ -1885,6 +1885,16 @@ button.danger:hover { background: rgba(255, 107, 107, 0.12); filter: none; }
 .pl-substitch input { flex: none; width: auto; margin-top: 1px; }
 .pl-away.row-label { margin: 0; gap: 10px; }
 .pl-away select { width: auto; }
+.pl-wiki-acc { margin: 8px 0 4px; }
+.pl-wiki-acc > summary {
+  cursor: pointer; font-size: 0.78rem; font-weight: 600; color: var(--muted);
+}
+.pl-wiki-list { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.pl-wiki-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  font-size: 0.82rem; color: var(--text);
+}
+.pl-wiki-row button { flex: none; }
 .pl-error { margin: 10px 0 0; }
 .pl-note {
   margin-top: 4px; padding: 12px 14px; font-size: 0.78rem; line-height: 1.4;

@@ -47,6 +47,7 @@ interface PorchLifeState {
   webSearchDefault: boolean;
   hasSearchApiKey?: boolean;
   wikiBaseUrl?: string;
+  wikiSavedUrls?: string[];
   sceneGuestDetectionEnabled: boolean;
   adultThemesEnabled: boolean;
   dreamsEnabled: boolean;
@@ -81,6 +82,7 @@ const DEFAULTS: PorchLifeState = {
   webSearchDefault: false,
   hasSearchApiKey: false,
   wikiBaseUrl: '',
+  wikiSavedUrls: [],
   sceneGuestDetectionEnabled: true,
   adultThemesEnabled: false,
   dreamsEnabled: true,
@@ -197,23 +199,57 @@ function AwayThreshold({ value, onChange }: { value: number; onChange: (v: numbe
   );
 }
 
-function WikiUrlRow({
-  value,
+function wikiHostLabel(url: string): string {
+  try {
+    const host = new URL(url.includes('://') ? url : `https://${url}`).host;
+    return host || url;
+  } catch {
+    return url;
+  }
+}
+
+function WikiUrlList({
+  saved,
   onSaved,
 }: {
-  value: string;
-  onSaved: (url: string) => void;
+  saved: string[];
+  onSaved: (urls: string[]) => void;
 }) {
-  const [draft, setDraft] = useState(value);
+  const [draft, setDraft] = useState('');
   const [busy, setBusy] = useState(false);
-  useEffect(() => setDraft(value), [value]);
-  const save = async () => {
+  const [error, setError] = useState('');
+  const reload = async () => {
+    const r = await api.get<{ realism?: { wikiSavedUrls?: string[] } }>('/api/settings');
+    onSaved(r.realism?.wikiSavedUrls ?? []);
+  };
+  const add = async () => {
     const next = draft.trim();
+    if (busy || !next) return;
+    setBusy(true);
+    setError('');
+    try {
+      await api.post('/api/settings', { realism: { wikiSavedUrlAdd: next } });
+      const r = await api.get<{ realism?: { wikiSavedUrls?: string[] } }>('/api/settings');
+      const urls = r.realism?.wikiSavedUrls ?? [];
+      onSaved(urls);
+      const host = wikiHostLabel(next);
+      if (!urls.some((u) => wikiHostLabel(u) === host)) {
+        setError('That is not a MediaWiki / Fandom URL.');
+      } else {
+        setDraft('');
+      }
+    } catch {
+      setError('That is not a MediaWiki / Fandom URL.');
+    } finally {
+      setBusy(false);
+    }
+  };
+  const remove = async (url: string) => {
     if (busy) return;
     setBusy(true);
     try {
-      await api.post('/api/settings', { realism: { wikiBaseUrl: next } });
-      onSaved(next);
+      await api.post('/api/settings', { realism: { wikiSavedUrlRemove: url } });
+      await reload();
     } finally {
       setBusy(false);
     }
@@ -229,16 +265,33 @@ function WikiUrlRow({
           value={draft}
           disabled={busy}
           onChange={(e) => setDraft(e.target.value)}
-          onBlur={() => void save()}
-          onKeyDown={(e) => e.key === 'Enter' && void save()}
+          onKeyDown={(e) => e.key === 'Enter' && void add()}
         />
       </label>
       <p className="muted small">Looks up this wiki only (MediaWiki / Fandom). Not Google.</p>
       <div className="tool-row">
-        <button className="primary" disabled={busy} onClick={() => void save()}>
+        <button className="primary" disabled={busy || !draft.trim()} onClick={() => void add()}>
           {busy ? 'Saving…' : 'Save wiki'}
         </button>
       </div>
+      {error && <p className="error">{error}</p>}
+      <details className="pl-wiki-acc" open data-testid="wiki-url-list">
+        <summary>Saved wikis{saved.length ? ` (${saved.length})` : ''}</summary>
+        {saved.length === 0 ? (
+          <p className="muted small">None saved yet.</p>
+        ) : (
+          <ul className="pl-wiki-list">
+            {saved.map((url) => (
+              <li key={url} className="pl-wiki-row">
+                <span>{wikiHostLabel(url)}</span>
+                <button type="button" disabled={busy} onClick={() => void remove(url)}>
+                  Remove
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </details>
     </div>
   );
 }
@@ -595,9 +648,11 @@ export function PorchLifeSettings() {
             )
           }
         />
-        <WikiUrlRow
-          value={st.wikiBaseUrl ?? ''}
-          onSaved={(url) => setSt((current) => (current ? { ...current, wikiBaseUrl: url } : current))}
+        <WikiUrlList
+          saved={st.wikiSavedUrls ?? []}
+          onSaved={(urls) =>
+            setSt((current) => (current ? { ...current, wikiSavedUrls: urls } : current))
+          }
         />
         <p className="muted small" data-testid="user-tools-folder-note">
           Extra tools are JSON recipe cards in the desktop library <code>tools</code> folder

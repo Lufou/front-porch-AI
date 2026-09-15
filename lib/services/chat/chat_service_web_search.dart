@@ -44,6 +44,45 @@ extension ChatServiceWebSearch on ChatService {
       _currentSessionId,
       url,
     );
+    final canonical = url.trim().isEmpty
+        ? ''
+        : (parseWikiBaseUrl(url)?.origin ?? '');
+    if (_activeGroup == null &&
+        _activeCharacter != null &&
+        canonical.isNotEmpty) {
+      await _storageService.webSearchSettings.setWikiUrlForCharacter(
+        _activeCharacter!.stableGroupId,
+        canonical,
+      );
+    }
     notifyListeners();
+  }
+
+  /// New 1:1 session: seed this chat from the character's last picked wiki.
+  /// Groups stay session-only — do not guess a host character.
+  Future<void> _seedWikiForNewSession() async {
+    final sid = _currentSessionId;
+    if (sid == null || sid.isEmpty) return;
+    final url = _storageService.webSearchSettings.wikiUrlToSeedForNewChat(
+      isGroup: _activeGroup != null,
+      characterId: _activeCharacter?.stableGroupId,
+    );
+    if (url == null) return;
+    await _storageService.webSearchSettings.setChatWikiUrl(sid, url);
+  }
+
+  /// Forks keep the parent's per-chat wiki (including explicit off).
+  Future<void> _copyWikiForForkedSession(String oldSessionId) async {
+    final sid = _currentSessionId;
+    if (sid == null || sid.isEmpty) return;
+    if (!_storageService.webSearchSettings.hasSessionWikiOverride(
+      oldSessionId,
+    )) {
+      return;
+    }
+    await _storageService.webSearchSettings.setChatWikiUrl(
+      sid,
+      _storageService.webSearchSettings.wikiUrlForChat(oldSessionId),
+    );
   }
 }

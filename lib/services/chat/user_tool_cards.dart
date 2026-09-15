@@ -44,6 +44,34 @@ typedef UserToolHttpSend =
       required String body,
     });
 
+/// Copy `.json` files into [toolsDir]. Other extensions are skipped.
+/// Overwrites a same-named card. Returns how many files landed.
+int copyJsonFilesIntoTools(Directory toolsDir, Iterable<String> sourcePaths) {
+  try {
+    toolsDir.createSync(recursive: true);
+  } catch (e) {
+    debugPrint('[Tools] could not create ${toolsDir.path}: $e');
+    return 0;
+  }
+  var copied = 0;
+  for (final rawPath in sourcePaths) {
+    final src = File(rawPath);
+    final name = src.uri.pathSegments.isEmpty ? '' : src.uri.pathSegments.last;
+    if (name.isEmpty || !name.toLowerCase().endsWith('.json')) continue;
+    if (name.contains('..') || name.contains('/') || name.contains('\\')) {
+      continue;
+    }
+    if (!src.existsSync()) continue;
+    try {
+      src.copySync('${toolsDir.path}/$name');
+      copied++;
+    } catch (e) {
+      debugPrint('[Tools] copy $name failed: $e');
+    }
+  }
+  return copied;
+}
+
 /// Load enabled HTTP recipe cards from `<library>/tools/`. Creates the
 /// folder if it is missing. Junk files are skipped, never executed.
 List<UserToolCard> loadUserToolCards(Directory toolsDir) {

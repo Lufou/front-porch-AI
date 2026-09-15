@@ -246,6 +246,7 @@ class SettingsFacade {
         'webSearchDefault': _storage.webSearchSettings.webSearchDefault,
         'hasSearchApiKey': _storage.webSearchSettings.hasApiKey,
         'wikiBaseUrl': _storage.webSearchSettings.wikiBaseUrl,
+        'wikiSavedUrls': _storage.webSearchSettings.savedWikiUrls,
         'sceneGuestDetectionEnabled':
             _storage.realismSettings.sceneGuestDetectionEnabled,
         'adultThemesEnabled': _storage.realismSettings.adultThemesEnabled,
@@ -368,6 +369,17 @@ class SettingsFacade {
       final wikiUrl = realism['wikiBaseUrl']?.toString();
       if (wikiUrl != null) {
         await _storage.webSearchSettings.setWikiBaseUrl(wikiUrl);
+        if (wikiUrl.trim().isNotEmpty) {
+          await _storage.webSearchSettings.addSavedWikiUrl(wikiUrl);
+        }
+      }
+      final wikiAdd = realism['wikiSavedUrlAdd']?.toString();
+      if (wikiAdd != null) {
+        await _storage.webSearchSettings.addSavedWikiUrl(wikiAdd);
+      }
+      final wikiRemove = realism['wikiSavedUrlRemove']?.toString();
+      if (wikiRemove != null) {
+        await _storage.webSearchSettings.removeSavedWikiUrl(wikiRemove);
       }
       final guests = realism['sceneGuestDetectionEnabled'];
       if (guests is bool) {

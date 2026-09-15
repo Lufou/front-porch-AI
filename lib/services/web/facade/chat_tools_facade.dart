@@ -64,6 +64,7 @@ class ChatToolsFacade {
         focused != null && !focused.isHost && focused.realismEnabled;
     return {
       'wikiBaseUrl': _chat.wikiBaseUrl,
+      'wikiSavedUrls': _storage.webSearchSettings.savedWikiUrls,
       'realismEnabled': _chat.realismEnabled,
       'needsEnabled': _chat.needsSimEnabled,
       // Global One-Shot Eval setting (fuses the multi-call realism evals into

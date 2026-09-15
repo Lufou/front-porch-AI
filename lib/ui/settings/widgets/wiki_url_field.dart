@@ -24,19 +24,15 @@ import 'package:front_porch_ai/ui/theme/app_colors.dart';
 const String kWikiUrlBlurb =
     'Looks up this wiki only (MediaWiki / Fandom). Not Google.';
 
-/// Wiki base URL box for Porch Life (default) and chat tools (this chat).
+/// Add-URL field for the Porch Life wiki library.
 class WikiUrlField extends StatefulWidget {
   const WikiUrlField({
     super.key,
     required this.storage,
-    this.chat,
-    this.sessionId,
     this.fieldKey = 'wiki-url-field',
   });
 
   final StorageService storage;
-  final ChatService? chat;
-  final String? sessionId;
   final String fieldKey;
 
   @override
@@ -45,25 +41,12 @@ class WikiUrlField extends StatefulWidget {
 
 class _WikiUrlFieldState extends State<WikiUrlField> {
   late final TextEditingController _controller;
-
-  String get _current {
-    if (widget.chat != null) return widget.chat!.wikiBaseUrl;
-    return widget.storage.webSearchSettings.wikiUrlForChat(widget.sessionId);
-  }
+  String? _error;
 
   @override
   void initState() {
     super.initState();
-    _controller = TextEditingController(text: _current);
-  }
-
-  @override
-  void didUpdateWidget(covariant WikiUrlField oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    final next = _current;
-    if (_controller.text != next && !_controller.value.composing.isValid) {
-      _controller.text = next;
-    }
+    _controller = TextEditingController();
   }
 
   @override
@@ -74,16 +57,16 @@ class _WikiUrlFieldState extends State<WikiUrlField> {
 
   Future<void> _save() async {
     final url = _controller.text.trim();
-    final chat = widget.chat;
-    if (chat != null) {
-      await chat.setWikiBaseUrl(url);
-    } else {
-      await widget.storage.webSearchSettings.applyWikiUrlForSession(
-        widget.sessionId,
-        url,
-      );
+    if (url.isEmpty) {
+      setState(() => _error = null);
+      return;
     }
-    if (mounted) setState(() {});
+    final ok = await widget.storage.webSearchSettings.addSavedWikiUrl(url);
+    if (!mounted) return;
+    setState(() {
+      _error = ok ? null : 'That is not a MediaWiki / Fandom URL.';
+      if (ok) _controller.clear();
+    });
   }
 
   @override
@@ -126,6 +109,16 @@ class _WikiUrlFieldState extends State<WikiUrlField> {
               color: AppColors.textSecondary(context),
             ),
           ),
+          if (_error != null) ...[
+            const SizedBox(height: 6),
+            Text(
+              _error!,
+              style: TextStyle(
+                fontSize: 12,
+                color: AppColors.negativeAccentOf(context),
+              ),
+            ),
+          ],
           const SizedBox(height: 8),
           Align(
             alignment: Alignment.centerLeft,

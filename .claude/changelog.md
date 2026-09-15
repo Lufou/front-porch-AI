@@ -1,3 +1,9 @@
+## 2026-09-15 — Unlimited saved wikis, chat picker, JSON tools copy
+- **Why:** One URL box could not hold Bleach and One Punch Man. Recipe cards were "drop a file in tools/" with no picker.
+- **What:** Porch Life library (`wiki_saved_urls`) with add/remove, no cap. Chat sidebar Wiki picker sets this session (`setChatWikiUrl`) and, in 1:1, `wiki_url_by_character`. New 1:1 chats seed from that. Groups stay session-only. Choose files copies `.json` into `toolsDir`. Web Porch Life list + ChatTools picker; no web tools upload.
+- **Files:** `web_search_settings.dart`, `WikiUrlList` / `WikiPanel` / `ToolsFolderNote`, chat seed in `chat_service_web_search.dart`, facades, `web_ui` Porch Life + ChatTools
+- **Commit:** (this commit)
+
 ## 2026-09-14 — wiki_search: this chat's MediaWiki/Fandom, not Google
 - **Why:** Sosuke wanted one built-in catalog tool that searches the wiki pasted on the chat (Neokosmos is just the first URL). Recipe cards stay for HTTP extras; Journal/Worlds stay campaign scars; do not RAG the wiki or scrape it every turn.
 - **What:** Per-chat/default wiki URL in Porch Life + chat tools (desktop and web). Empty = `wiki_search` off the menu. Advertised on the same catalog round as `web_search`, same Continue/regen/guest/follow-up/Dynamic Responses gate. MediaWiki REST for Wikipedia hosts, Action API for Fandom and other MW. Inject before `Name:`. Receipt `source: wiki` + `wikiReceipt` in headless JSON. Honest miss injects "do not invent".

@@ -34,6 +34,7 @@ import 'porch_accordion.dart';
 import 'sidebar_tokens.dart';
 import 'story_tools/story_tools.dart';
 import 'tool_calling_pill.dart';
+import 'wiki_panel.dart';
 
 /// The scrolling body of the warm-porch chat sidebar: the lite-NPC banner
 /// plus accordion groups (Author's Note · Character State · Journal ·
@@ -177,6 +178,14 @@ class _SidebarBodyState extends State<SidebarBody> {
               onExpansionChanged: (v) =>
                   ui.setSidebarGroupExpanded('author_note', v),
               child: AuthorNoteSection(chatService: chat),
+            ),
+            WikiPanel(
+              chatService: chat,
+              initiallyExpanded: ui.sidebarGroupExpanded(
+                'wiki',
+                fallback: true,
+              ),
+              onExpansionChanged: (v) => ui.setSidebarGroupExpanded('wiki', v),
             ),
             if (!isLite)
               CharacterStateGroup(

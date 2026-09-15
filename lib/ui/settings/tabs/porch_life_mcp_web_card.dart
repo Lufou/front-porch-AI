@@ -21,7 +21,6 @@ import 'package:provider/provider.dart';
 
 import 'package:front_porch_ai/services/services.dart';
 import 'package:front_porch_ai/ui/settings/widgets/widgets.dart';
-import 'package:front_porch_ai/ui/theme/app_colors.dart';
 
 /// Web Search plus a dummy-proof note about the library `tools/` folder.
 class PorchLifeMcpWebCard extends StatelessWidget {
@@ -30,9 +29,6 @@ class PorchLifeMcpWebCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final storage = context.watch<StorageService>();
-    final toolsPath = storage.rootPath == null
-        ? 'tools'
-        : storage.toolsDir.path;
     return FeatureGroupCard(
       title: 'Web Search and extra tools',
       subtitle: 'looking things up, and recipe cards from your library',
@@ -56,39 +52,8 @@ class PorchLifeMcpWebCard extends StatelessWidget {
           showChildWhenOff: true,
           child: WebSearchKeyField(storage: storage),
         ),
-        WikiUrlField(storage: storage),
-        Padding(
-          key: const Key('user-tools-folder-note'),
-          padding: const EdgeInsets.only(top: 4, bottom: 8),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: const EdgeInsets.only(top: 2),
-                child: Icon(
-                  Icons.folder_outlined,
-                  size: 18,
-                  color: AppColors.iconSecondary(context),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  'Extra tools are JSON recipe cards you drop in the tools '
-                  'folder next to chats and worlds — not programs, and not '
-                  'a Docker server. Each card is a name, a short description, '
-                  'and an HTTP address. Disabled or broken cards are skipped. '
-                  'That folder is:\n$toolsPath',
-                  style: TextStyle(
-                    fontSize: 13,
-                    height: 1.35,
-                    color: AppColors.textSecondary(context),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
+        const WikiUrlList(),
+        const ToolsFolderNote(),
       ],
     );
   }
