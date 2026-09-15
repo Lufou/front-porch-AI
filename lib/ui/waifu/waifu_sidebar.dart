@@ -183,6 +183,3 @@ class WaifuSidebar extends StatelessWidget {
     }
   }
 }
-
-/// One line for the MCP accordion. Chat MCP servers are gone.
-String? waifuMcpStatusLine(BuildContext context) => null;
