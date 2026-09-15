@@ -65,7 +65,6 @@ class _WaifuPageState extends State<WaifuPage> {
   Uint8List? _pendingImage;
   bool? _pendingVisionOk;
   String? _pendingBlindReason;
-  String? _lastMcpLine;
 
   @override
   void initState() {
@@ -272,13 +271,6 @@ class _WaifuPageState extends State<WaifuPage> {
     final amber = AppColors.porchAmberOf(context);
     final harness = _harnessOf(context);
     final coworker = session.coworker.name;
-    final mcpLine = waifuMcpStatusLine(context);
-    if (mcpLine != _lastMcpLine) {
-      _lastMcpLine = mcpLine;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) (widget.harness ?? _created)?.refreshMeter();
-      });
-    }
     return Scaffold(
       backgroundColor: AppColors.backgroundOf(context),
       appBar: AppBar(
@@ -361,17 +353,6 @@ class _WaifuPageState extends State<WaifuPage> {
             child: WaifuSidebar(
               session: session,
               portrait: waifuCoworkerFace(context, session.coworker),
-              mcpOptIn: session.mcpOptIn,
-              onMcpOptIn: (v) {
-                setState(() {
-                  session.mcpOptIn = v;
-                  final h = widget.harness ?? _created ?? _harnessOf(context);
-                  if (h != null) {
-                    h.mcpOptIn = v;
-                    h.refreshMeter();
-                  }
-                });
-              },
               onMode: _setMode,
               onPathMode: _setPathMode,
               onPreserveThinking: (v) {
@@ -380,7 +361,6 @@ class _WaifuPageState extends State<WaifuPage> {
                 unawaited(_storeOf(context)?.saveLast(session));
               },
               harness: harness,
-              mcpLine: mcpLine,
               onThemeChanged: _onThemeChanged,
               onCompact: harness == null
                   ? null

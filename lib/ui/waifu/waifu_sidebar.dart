@@ -23,7 +23,6 @@ import 'package:flutter/material.dart';
 import 'package:front_porch_ai/services/waifu/waifu.dart';
 import 'package:front_porch_ai/ui/chat_components/chat_components.dart';
 import 'package:front_porch_ai/ui/waifu/waifu_context_bar.dart';
-import 'package:front_porch_ai/ui/waifu/waifu_mcp_panel.dart';
 import 'package:front_porch_ai/ui/waifu/waifu_opencode_status.dart';
 import 'package:front_porch_ai/ui/waifu/waifu_mode_bar.dart';
 import 'package:front_porch_ai/ui/waifu/waifu_todo_list.dart';
@@ -38,27 +37,21 @@ class WaifuSidebar extends StatelessWidget {
     super.key,
     required this.session,
     required this.portrait,
-    required this.mcpOptIn,
-    required this.onMcpOptIn,
     required this.onMode,
     this.onPathMode,
     this.onPreserveThinking,
     this.harness,
-    this.mcpLine,
     this.onThemeChanged,
     this.onCompact,
   });
 
   final WaifuSession session;
   final File? portrait;
-  final bool mcpOptIn;
-  final ValueChanged<bool> onMcpOptIn;
   final ValueChanged<WaifuMode> onMode;
   final ValueChanged<WaifuPathMode>? onPathMode;
   final ValueChanged<bool>? onPreserveThinking;
   final WaifuHarness? harness;
   WaifuTodos? get todos => harness?.todos;
-  final String? mcpLine;
   final VoidCallback? onThemeChanged;
   final VoidCallback? onCompact;
 
@@ -140,21 +133,6 @@ class WaifuSidebar extends StatelessWidget {
                       onPathMode: onPathMode,
                       preserveThinking: session.preserveThinking,
                       onPreserveThinking: onPreserveThinking,
-                    ),
-                  ),
-                  const SizedBox(height: SidebarTokens.sectionGap),
-                  PorchAccordion(
-                    id: 'waifu_mcp',
-                    emoji: '🔌',
-                    title: 'MCP',
-                    subtitle: mcpLine ?? 'off',
-                    accent: amber,
-                    initiallyExpanded: true,
-                    child: WaifuMcpPanel(
-                      session: session,
-                      mcpOptIn: mcpOptIn,
-                      onMcpOptIn: onMcpOptIn,
-                      mcpLine: mcpLine,
                     ),
                   ),
                   if (todos != null && todos!.items.isNotEmpty) ...[

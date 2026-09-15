@@ -392,7 +392,7 @@ class ChatFacade {
         out['searchOk'] = search['ok'] == true;
       }
     }
-    final toolReceipt = md['tool_receipt'] ?? md['mcp_receipt'];
+    final toolReceipt = md['tool_receipt'];
     if (toolReceipt is Map) {
       final tool = (toolReceipt['tool'] as String?)?.trim() ?? '';
       if (tool.isNotEmpty) {

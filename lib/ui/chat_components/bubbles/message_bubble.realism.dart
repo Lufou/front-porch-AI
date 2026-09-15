@@ -40,9 +40,7 @@ extension _BubbleRealism on _MessageBubbleState {
     final searchReceipt = metadata['search_receipt'] as Map<String, dynamic>?;
     final searchQuery = (searchReceipt?['query'] as String?)?.trim() ?? '';
     final searchOk = searchReceipt?['ok'] == true;
-    final toolReceipt =
-        (metadata['tool_receipt'] ?? metadata['mcp_receipt'])
-            as Map<String, dynamic>?;
+    final toolReceipt = metadata['tool_receipt'] as Map<String, dynamic>?;
     final toolName = (toolReceipt?['tool'] as String?)?.trim() ?? '';
     final toolOk = toolReceipt?['ok'] == true;
     final needsDeltas = metadata['needs_deltas'] as Map<String, dynamic>?;

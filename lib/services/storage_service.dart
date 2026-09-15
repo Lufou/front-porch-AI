@@ -758,6 +758,63 @@ class StorageService extends ChangeNotifier {
     _init();
   }
 
+  /// Headless agent-test storage: [rootPath] is the only data dir. Never
+  /// calls [SharedPreferences.getInstance] or
+  /// [getApplicationDocumentsDirectory].
+  StorageService.sandbox(String rootPath) {
+    if (rootPath.contains('FrontPorchAI')) {
+      throw ArgumentError(
+        'StorageService.sandbox refuses a live FrontPorchAI path: $rootPath',
+      );
+    }
+    _prefs = null;
+    _rootPath = rootPath;
+    _binDir = Directory(path.join(rootPath, 'koboldcpp_bin'));
+    for (final dir in [
+      chatsDir,
+      modelsDir,
+      worldsDir,
+      charactersDir,
+      groupsDir,
+      customBackgroundDir,
+      toolsDir,
+    ]) {
+      try {
+        dir.createSync(recursive: true);
+      } catch (e) {
+        rootDirectoriesUnavailable = true;
+        debugPrint('[Storage] sandbox could not create "${dir.path}" ($e).');
+      }
+    }
+    _generationSettings.initializeBase(null, notifyListeners);
+    _backendSettings.initializeBase(null, notifyListeners);
+    _uiSettings.initializeBase(null, notifyListeners);
+    _ttsSettings.initializeBase(null, notifyListeners);
+    _sttSettings.initializeBase(null, notifyListeners);
+    _imageGenSettings.initializeBase(null, notifyListeners);
+    _expressionSettings.initializeBase(null, notifyListeners);
+    _webServerSettings.initializeBase(null, notifyListeners);
+    _realismSettings.initializeBase(null, notifyListeners);
+    _webSearchSettings.initializeBase(null, notifyListeners);
+    _memorySettings.initializeBase(null, notifyListeners);
+    _presetSettings.initializeBase(null, notifyListeners);
+    _lorebookSettings.initializeBase(null, notifyListeners);
+    _generationSettings.load();
+    _backendSettings.load();
+    _uiSettings.load();
+    _ttsSettings.load();
+    _sttSettings.load();
+    _imageGenSettings.load();
+    _expressionSettings.load();
+    _webServerSettings.load();
+    _realismSettings.load();
+    unawaited(_webSearchSettings.load());
+    _memorySettings.load();
+    _presetSettings.load();
+    _lorebookSettings.load();
+    if (!_initCompleter.isCompleted) _initCompleter.complete();
+  }
+
   // ── Beta / stable isolation ────────────────────────────────────────────────
   //
   // ALL of the logic below is driven by [isPreRelease] from app_version.dart.

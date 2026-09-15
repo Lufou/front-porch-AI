@@ -133,13 +133,10 @@ void main() {
       },
     );
 
-    test('home view and MCP opt-in stay they/them', () {
+    test('home view stays they/them', () {
       final home = File('lib/ui/waifu/waifu_home_view.dart').readAsStringSync();
       expect(home, contains('They code in character.'));
       expect(home, isNot(contains('She codes in character.')));
-      final mcp = File('lib/ui/waifu/waifu_mcp_opt_in.dart').readAsStringSync();
-      expect(mcp, contains('Let them use MCP'));
-      expect(mcp, isNot(contains('Let her use MCP')));
     });
   });
 }
