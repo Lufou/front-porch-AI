@@ -72,8 +72,9 @@ class WebSearchRound {
 }
 
 /// Porch Life global on + direct user send + tools-capable → advertise
-/// `web_search`. Continue, autonomous, regen, guest, cast, and group follow-up
-/// turns fail closed. Read [globalDefault] at check time so flipping the
+/// `web_search`. Continue, autonomous, guest, cast, and group follow-up
+/// turns fail closed. Regen of a bot bubble is a new try — advertise.
+/// Read [globalDefault] at check time so flipping the
 /// setting applies to the chat already open. No per-chat flag.
 bool shouldAdvertiseWebSearch({
   required bool globalDefault,

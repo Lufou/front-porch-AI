@@ -147,7 +147,7 @@ Future<CatalogRound> _dispatchWiki(
   debugPrint('[Tools] dispatch in-process wiki_search query="$query"');
   final outcome = await wiki.lookup(query);
   final injection = outcome.ok
-      ? SearchInjection.resultFragment(outcome.snippet)
+      ? SearchInjection.wikiResultFragment(outcome.snippet)
       : SearchInjection.emptyResultFragment(outcome.query);
   final base = parseWikiBaseUrl(wiki.getBaseUrl());
   final receipt = <String, dynamic>{

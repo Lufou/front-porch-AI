@@ -43,11 +43,7 @@ void main() {
     expect(text.toLowerCase(), isNot(contains('http')));
     expect(kWebSearchCharacterLine, contains('react to it as yourself'));
     expect(kWebSearchCharacterLine, contains("Don't break character"));
-    expect(
-      kWebSearchCharacterLine,
-      contains("Don't list, lecture, or catalogue"),
-    );
-    expect(kWebSearchCharacterLine, contains('not a roster'));
+    expect(kWebSearchCharacterLine.toLowerCase(), isNot(contains('lecture')));
   });
 
   test('result fragment is facts, not a calendar, and forbids invention', () {

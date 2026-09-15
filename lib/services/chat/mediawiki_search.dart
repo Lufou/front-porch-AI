@@ -23,7 +23,11 @@ import 'package:front_porch_ai/utils/utils.dart';
 
 /// Cap on a wiki HTTP body before we refuse to parse it. Honest miss beats
 /// stuffing a dump into the prompt.
-const int kMediaWikiMaxBodyBytes = 256 * 1024;
+const int kMediaWikiMaxBodyBytes = 2 * 1024 * 1024;
+
+/// Lore clip. Web search stays at [kSearchSnippetCharCap] (800). Wiki
+/// pages need a real extract or she only gets a Fandom search blurb.
+const int kWikiExtractCharCap = 3500;
 
 /// Origin of a pasted MediaWiki / Fandom / Wikipedia URL, or null if the
 /// string is empty, not http(s), or otherwise unsafe to fetch.
@@ -71,6 +75,134 @@ Uri mediawikiSearchUri(Uri wikiBase, String query) {
   return Uri.parse(
     '${wikiBase.origin}/w/rest.php/v1/search/page',
   ).replace(queryParameters: {'q': query, 'limit': '3'});
+}
+
+/// Top titles from an Action API search (or REST `pages`).
+List<String> parseMediaWikiSearchTitles(String body) {
+  final dynamic json;
+  try {
+    json = jsonDecode(body);
+  } catch (_) {
+    return const [];
+  }
+  if (json is! Map) return const [];
+  final titles = <String>[];
+  void take(Object? pages, {String titleKey = 'title'}) {
+    if (pages is! List) return;
+    for (final page in pages) {
+      if (page is! Map) continue;
+      final t = page[titleKey]?.toString().trim() ?? '';
+      if (t.isEmpty) continue;
+      final lower = t.toLowerCase();
+      if (lower.contains('image gallery') || lower.contains('/gallery')) {
+        continue;
+      }
+      titles.add(t);
+      if (titles.length >= 2) return;
+    }
+  }
+
+  take(json['pages']);
+  final query = json['query'];
+  if (query is Map) take(query['search']);
+  return titles;
+}
+
+/// Plain-text extracts for [titles] on an Action API wiki.
+Uri mediawikiExtractUri(Uri wikiBase, List<String> titles) {
+  final joined = titles.where((t) => t.trim().isNotEmpty).take(2).join('|');
+  return Uri.parse('${wikiBase.origin}/api.php').replace(
+    queryParameters: {
+      'action': 'query',
+      'prop': 'extracts',
+      'explaintext': '1',
+      'redirects': '1',
+      'titles': joined,
+      'format': 'json',
+    },
+  );
+}
+
+/// `query.pages.*.extract` joined and clipped.
+String parseMediaWikiExtracts(String body) {
+  final dynamic json;
+  try {
+    json = jsonDecode(body);
+  } catch (_) {
+    return '';
+  }
+  if (json is! Map) return '';
+  final query = json['query'];
+  if (query is! Map) return '';
+  final pages = query['pages'];
+  if (pages is! Map) return '';
+  final buf = StringBuffer();
+  for (final page in pages.values) {
+    if (page is! Map) continue;
+    final title = page['title']?.toString().trim() ?? '';
+    final extract = page['extract']?.toString().trim() ?? '';
+    if (extract.isEmpty) continue;
+    if (buf.isNotEmpty) buf.write('\n\n');
+    if (title.isNotEmpty) buf.write('$title\n');
+    buf.write(extract);
+    if (buf.length >= kWikiExtractCharCap) break;
+  }
+  final s = buf.toString().trim();
+  if (s.length <= kWikiExtractCharCap) return s;
+  return s.substring(0, kWikiExtractCharCap).trim();
+}
+
+/// Fandom (and many MW farms) have no TextExtracts. Parse HTML instead.
+Uri mediawikiParseUri(Uri wikiBase, String title) {
+  return Uri.parse('${wikiBase.origin}/api.php').replace(
+    queryParameters: {
+      'action': 'parse',
+      'page': title,
+      'prop': 'text',
+      'redirects': '1',
+      'format': 'json',
+    },
+  );
+}
+
+final _scriptRe = RegExp(r'<script[\s\S]*?</script>', caseSensitive: false);
+final _styleRe = RegExp(r'<style[\s\S]*?</style>', caseSensitive: false);
+final _tagRe = RegExp(r'<[^>]+>');
+final _wsRe = RegExp(r'\s+');
+
+/// `parse.text.*` HTML → clipped plain text.
+String parseMediaWikiParseHtml(String body) {
+  final dynamic json;
+  try {
+    json = jsonDecode(body);
+  } catch (_) {
+    return '';
+  }
+  if (json is! Map) return '';
+  final parse = json['parse'];
+  if (parse is! Map) return '';
+  final title = parse['title']?.toString().trim() ?? '';
+  var html = '';
+  final text = parse['text'];
+  if (text is Map) {
+    html = text['*']?.toString() ?? '';
+  } else if (text is String) {
+    html = text;
+  }
+  if (html.trim().isEmpty) return '';
+  var plain = html
+      .replaceAll(_scriptRe, ' ')
+      .replaceAll(_styleRe, ' ')
+      .replaceAll(_tagRe, ' ')
+      .replaceAll('&nbsp;', ' ')
+      .replaceAll('&quot;', '"')
+      .replaceAll('&#8212;', '—')
+      .replaceAll(_wsRe, ' ')
+      .trim();
+  if (plain.isEmpty) return '';
+  if (title.isNotEmpty) plain = '$title\n$plain';
+  if (plain.length <= kWikiExtractCharCap) return plain;
+  return plain.substring(0, kWikiExtractCharCap).trim();
 }
 
 /// REST `pages` or Action API `query.search`. Empty on junk JSON.

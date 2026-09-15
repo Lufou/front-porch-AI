@@ -675,6 +675,7 @@ extension ChatServiceReprocess on ChatService {
       final preGenLen = _messages.length;
       await _generateResponse(
         GenerationMode.normal,
+        directUserSend: true,
         guestSpeaker: regenGuest,
         forceSpeaker: regenGuest == null && _activeGroup != null
             ? _resolveGroupSpeakerForMessage(lastMsg)

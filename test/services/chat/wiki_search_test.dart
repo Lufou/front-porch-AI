@@ -208,6 +208,36 @@ void main() {
         getBaseUrl: () => 'https://bleach.fandom.com/wiki/Aizen',
         sendRequest: (request) async {
           fetched.add(request.url);
+          if (request.url.queryParameters['action'] == 'parse') {
+            return http.Response(
+              jsonEncode({
+                'parse': {
+                  'title': 'Sosuke Aizen',
+                  'text': {
+                    '*':
+                        '<p>Kyoka Suigetsu, his shikai. Complete Hypnosis.</p>',
+                  },
+                },
+              }),
+              200,
+            );
+          }
+          if (request.url.queryParameters['prop'] == 'extracts') {
+            return http.Response(
+              jsonEncode({
+                'query': {
+                  'pages': {
+                    '1': {
+                      'title': 'Sosuke Aizen',
+                      'extract':
+                          'Kyoka Suigetsu, his shikai. Complete Hypnosis.',
+                    },
+                  },
+                },
+              }),
+              200,
+            );
+          }
           return http.Response(
             jsonEncode({
               'query': {
@@ -224,8 +254,10 @@ void main() {
         },
       );
       final hit = await wiki.lookup('Sosuke Aizen shikai');
-      expect(fetched, hasLength(1));
-      expect(fetched.single.host, 'bleach.fandom.com');
+      expect(fetched, hasLength(2));
+      expect(fetched.first.host, 'bleach.fandom.com');
+      expect(fetched.first.queryParameters['list'], 'search');
+      expect(fetched.last.queryParameters['action'], 'parse');
       expect(hit.ok, isTrue);
       expect(hit.snippet, contains('Kyoka Suigetsu'));
 
@@ -237,7 +269,7 @@ void main() {
         },
       );
       final miss = await junk.lookup('Aizen');
-      expect(fetched, hasLength(1), reason: 'junk URL must not HTTP');
+      expect(fetched, hasLength(2), reason: 'junk URL must not HTTP');
       expect(miss.ok, isFalse);
       expect(miss.httpAttempted, isFalse);
     });
@@ -260,6 +292,32 @@ void main() {
       final wiki = WikiSearchService(
         getBaseUrl: () => 'https://bleach.fandom.com/',
         sendRequest: (request) async {
+          if (request.url.queryParameters['action'] == 'parse') {
+            return http.Response(
+              jsonEncode({
+                'parse': {
+                  'title': 'Kyoka Suigetsu',
+                  'text': {'*': '<p>complete hypnosis</p>'},
+                },
+              }),
+              200,
+            );
+          }
+          if (request.url.queryParameters['prop'] == 'extracts') {
+            return http.Response(
+              jsonEncode({
+                'query': {
+                  'pages': {
+                    '1': {
+                      'title': 'Kyoka Suigetsu',
+                      'extract': 'complete hypnosis',
+                    },
+                  },
+                },
+              }),
+              200,
+            );
+          }
           return http.Response(
             jsonEncode({
               'query': {
@@ -295,7 +353,8 @@ void main() {
       );
       expect(_toolNames(llm.lastTools!), contains(kWikiSearchToolName));
       expect(round.injection, contains('complete hypnosis'));
-      expect(round.injection, contains('UNTRUSTED EXTERNAL SEARCH DATA'));
+      expect(round.injection, contains("this chat's wiki"));
+      expect(round.injection!.toLowerCase(), isNot(contains('untrusted')));
       expect(round.searchReceipt?['source'], 'wiki');
       expect(round.searchReceipt?['query'], 'Aizen shikai');
       expect(round.searchReceipt?['ok'], isTrue);
@@ -347,7 +406,7 @@ void main() {
   });
 
   group('path-complete pins', () {
-    test('Continue / regen still skip the catalog the same as search', () {
+    test('Continue skips catalog; regen is a new try', () {
       final request = File(
         'lib/services/chat/chat_service_generation_request.dart',
       ).readAsStringSync();
@@ -360,6 +419,10 @@ void main() {
       expect(request, contains('inProcessWikiSearchTool'));
       expect(request, isNot(contains("tool_choice': 'required'")));
       expect(request, isNot(contains('tool_choice: required')));
+      final regen = File(
+        'lib/services/chat/chat_service_reprocess.dart',
+      ).readAsStringSync();
+      expect(regen, contains('directUserSend: true'));
     });
   });
 }

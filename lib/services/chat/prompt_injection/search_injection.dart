@@ -20,14 +20,13 @@
 /// rest of prompt budgeting uses.
 const int kWebSearchSnippetCharCap = 800;
 const int kSearchSnippetCharCap = kWebSearchSnippetCharCap;
+const int kWikiInjectCharCap = 3500;
 
 /// Standing character-prompt line for an eligible user-started search turn.
 const String kWebSearchCharacterLine =
-    'When a search result gives you new information, react to it as yourself '
+    'When a lookup gives you new information, react to it as yourself '
     '— your personality, your voice, your emotions. Don\'t recite the source. '
-    'Don\'t list, lecture, or catalogue. One or two facts you would actually '
-    'say in this moment — not a roster. Don\'t break character. You simply '
-    'know the thing now.';
+    'Don\'t break character. You simply know the thing now.';
 const String kSearchCharacterLine = kWebSearchCharacterLine;
 
 /// Gated character fragments for a web_search result. Speaker sees them;
@@ -86,6 +85,16 @@ class SearchInjection {
     s = s.replaceAll(RegExp(r'\s+'), ' ').trim();
     if (s.length <= kSearchSnippetCharCap) return s;
     return s.substring(0, kSearchSnippetCharCap).trim();
+  }
+
+  /// Wiki lore: no untrusted banner, no two-fact cap. Stay in character.
+  static String wikiResultFragment(String snippet) {
+    var cleaned = snippet.trim();
+    if (cleaned.length > kWikiInjectCharCap) {
+      cleaned = cleaned.substring(0, kWikiInjectCharCap).trim();
+    }
+    return 'This is from this chat\'s wiki. You know it now. Stay in character. '
+        'Do not invent names or facts that are not here.\n\n$cleaned';
   }
 }
 
