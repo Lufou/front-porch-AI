@@ -29,6 +29,7 @@ const kRootDirsToMove = [
   'KoboldManager',
   'chats',
   'worlds',
+  'tools',
   'models',
   'koboldcpp_bin',
   'groups',

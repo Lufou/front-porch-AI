@@ -27,7 +27,6 @@
 import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { api, ApiError } from '../api/client';
-import { McpSettings } from './McpSettings';
 
 interface PorchLifeState {
   realismDefault: boolean;
@@ -529,8 +528,8 @@ export function PorchLifeSettings() {
       </FeatureGroup>
 
       <FeatureGroup
-        title="MCP and Web"
-        subtitle="tools from outside the porch, and looking things up"
+        title="Web Search and extra tools"
+        subtitle="looking things up, and recipe cards from your library"
       >
         <FeatureRow
           icon="🔎"
@@ -548,7 +547,11 @@ export function PorchLifeSettings() {
             )
           }
         />
-        <McpSettings />
+        <p className="muted small" data-testid="user-tools-folder-note">
+          Extra tools are JSON recipe cards in the desktop library <code>tools</code> folder
+          (same place as chats and worlds). Phone and browser use built-in web search —
+          there is no file picker here.
+        </p>
       </FeatureGroup>
 
       {error && <p className="error pl-error">{error}</p>}

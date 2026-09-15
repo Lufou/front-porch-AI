@@ -442,7 +442,6 @@ extension ChatServiceSessionLoad on ChatService {
     );
     _needsSimEnabled = s.needsSimEnabled;
     _objectivesEnabled = s.objectivesEnabled;
-    _restoreMcpForSession(s.id);
     if (_needsSimEnabled) {
       // Seed defaults first, then overlay the saved vector ONLY when it has
       // values. A blank saved vector (e.g. needs was toggled on mid-chat before

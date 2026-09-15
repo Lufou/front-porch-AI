@@ -7,6 +7,8 @@ Last shipped nightly: `rawhide.20260906.7059c91`. Everything below is unreleased
 
 ## Recent improvements (unreleased — ships in the next build)
 
+- 🧰 **Extra tools are recipe cards, not Docker MCP** — drop a JSON file in the `tools` folder next to `chats` and `worlds` in your library. Each card is a name, a description, and an HTTP address. The character can call it the same way they look things up on the web (first reply to a message you send). Phone and browser keep built-in web search; there is no file picker there. Connect Docker MCP is gone.
+
 - 🔎 **Search results no longer steal the reply** — after a lookup, the character still starts talking at their own `Name:` line. Wiki text sits above that, not after it.
 - 🕐 **Clock chevrons work with Realism off** — if you turned on the standalone story clock in Porch Life, the ±30 minute arrows and Story Calendar work on desktop and phone. They used to look paused whenever the engine was off.
 
@@ -33,7 +35,7 @@ Last shipped nightly: `rawhide.20260906.7059c91`. Everything below is unreleased
 
 - 💬 **Add Greeting works again** — editing a character (or group) that had no alternate greetings used to crash the moment you tapped Add.
 
-- 🔑 **Tavily key stays after a restart** — it is saved with the rest of Settings (same place as OpenRouter keys and MCP URLs). The macOS keychain copy was vanishing on relaunch.
+- 🔑 **Tavily key stays after a restart** — it is saved with the rest of Settings (same place as OpenRouter keys). The macOS keychain copy was vanishing on relaunch.
 
 - 🎭 **Realism still runs when a model will not turn thinking off** — if an eval gets a 400 while asking for thinking off (GLM 5.3, Kimi, or the next host's wording), we keep going the Kimi way: let it think, salvage the JSON, don't drop bond/needs. Remembered for that model so the next judge is not two wasted 400s.
 
@@ -47,4 +49,3 @@ Last shipped nightly: `rawhide.20260906.7059c91`. Everything below is unreleased
 
 - 💭 **Thoughts stay folded** — live and finished Thought chips stay shut until you tap the chevron, including while they are still thinking. A new reply does not pop old think blocks open. Same on the phone.
 
-- 🔌 **Connect Docker MCP / stdio add cannot stick disabled** — if the handshake throws, the button comes back. Same on Settings → Porch Life.

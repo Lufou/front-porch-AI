@@ -22,7 +22,6 @@ import 'package:front_porch_ai/services/services.dart';
 import 'package:front_porch_ai/services/chat/chat.dart';
 import 'package:front_porch_ai/services/story/faithful_mode.dart';
 import 'package:front_porch_ai/services/web/facade/journal_web_surface.dart';
-import 'package:front_porch_ai/services/web/facade/mcp_facade.dart';
 import 'package:front_porch_ai/services/web/streaming/stream_hub.dart';
 
 /// Thin adapter for the chat *tools* sidebar — the memory/summary/chaos/NSFW/
@@ -111,7 +110,6 @@ class ChatToolsFacade {
         'pressure': chaos.chaosPressure,
         'hasPendingEvent': chaos.hasPendingChaosEvent,
       },
-      'mcp': McpFacade(_storage, _chat).chatBlock(),
       'nsfw': {
         'cooldownEnabled': _chat.activeGroup != null
             ? _chat.isGroupNsfwEnabled
@@ -598,11 +596,6 @@ class ChatToolsFacade {
 
   Future<void> setChaosEnabled(bool v) async {
     await _chat.setChaosModeEnabled(v);
-    _notify();
-  }
-
-  Future<void> setMcpServerEnabled(String id, bool v) async {
-    await _chat.setMcpServerEnabledForChat(id, v);
     _notify();
   }
 

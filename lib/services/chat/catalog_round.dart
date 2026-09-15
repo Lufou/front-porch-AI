@@ -19,25 +19,24 @@
 import 'package:flutter/foundation.dart';
 
 import 'package:front_porch_ai/services/chat/prompt_injection/prompt_injection.dart';
+import 'package:front_porch_ai/services/chat/tool_catalog.dart';
+import 'package:front_porch_ai/services/chat/user_tool_cards.dart';
 import 'package:front_porch_ai/services/chat/web_search_service.dart';
 import 'package:front_porch_ai/services/chat/web_search_tools.dart';
 import 'package:front_porch_ai/services/llm_service.dart';
-import 'package:front_porch_ai/services/mcp/mcp_catalog.dart';
-import 'package:front_porch_ai/services/mcp/mcp_hub.dart';
-import 'package:front_porch_ai/services/mcp/mcp_models.dart';
 
 /// Outcome of the one tools round-trip over the unified catalog.
 class CatalogRound {
   const CatalogRound({
     this.injection,
     this.searchReceipt,
-    this.mcpReceipt,
+    this.toolReceipt,
     this.spokenText,
   });
 
   final String? injection;
   final Map<String, dynamic>? searchReceipt;
-  final Map<String, dynamic>? mcpReceipt;
+  final Map<String, dynamic>? toolReceipt;
 
   /// Spoken character text from `generateWithTools` when no advertised
   /// tool fired. Dispatch may use this as the bubble instead of a second
@@ -46,19 +45,22 @@ class CatalogRound {
 }
 
 /// One `generateWithTools` with the flat catalog. Dispatches by source:
-/// in-process `web_search` vs MCP `tools/call`. A name that is not in the
+/// in-process `web_search` vs a user recipe card. A name that is not in the
 /// advertised catalog is a no-op. Cap: first advertised call only.
 Future<CatalogRound> runCatalogRound({
   required LLMService llm,
   required GenerationParams params,
   required CatalogBuildResult catalog,
   required WebSearchService search,
-  required McpHub hub,
-  required Set<String> enabledForChat,
+  Future<UserToolHttpResult> Function(
+    CatalogTool entry,
+    Map<String, dynamic> arguments,
+  )?
+  executeUserTool,
 }) async {
   final tools = catalog.toOpenAiTools();
   debugPrint(
-    '[MCP] catalog round backend=${llm.backendName} '
+    '[Tools] catalog round backend=${llm.backendName} '
     'tools=${[for (final t in catalog.tools) t.name]} '
     'reasoning=${params.reasoningEnabled}',
   );
@@ -66,15 +68,15 @@ Future<CatalogRound> runCatalogRound({
   try {
     resp = await llm.generateWithTools(params, tools);
   } catch (e) {
-    debugPrint('[MCP] generateWithTools THREW: $e');
+    debugPrint('[Tools] generateWithTools THREW: $e');
     return const CatalogRound();
   }
   if (resp == null) {
-    debugPrint('[MCP] generateWithTools returned null (tools unsupported)');
+    debugPrint('[Tools] generateWithTools returned null (tools unsupported)');
     return const CatalogRound();
   }
   debugPrint(
-    '[MCP] think calls=${resp.calls.map((c) => c.name).toList()} '
+    '[Tools] think calls=${resp.calls.map((c) => c.name).toList()} '
     'textChars=${resp.text.length}',
   );
 
@@ -88,31 +90,30 @@ Future<CatalogRound> runCatalogRound({
       break;
     }
     debugPrint(
-      '[MCP] ignoring unadvertised call name=${c.name} (no-op, not in catalog)',
+      '[Tools] ignoring unadvertised call name=${c.name} (no-op, not in catalog)',
     );
   }
   if (call == null || entry == null) {
     final text = resp.text.trim();
     debugPrint(
-      '[MCP] no advertised tool call — '
+      '[Tools] no advertised tool call — '
       '${text.isEmpty ? 'will stream in-character reply' : 'using spoken tools text'}',
     );
     return CatalogRound(spokenText: text.isEmpty ? null : text);
   }
 
-  if (entry.source == McpToolSource.inProcess &&
+  if (entry.source == ToolSource.inProcess &&
       entry.name == kWebSearchToolName) {
     return _dispatchSearch(call, search);
   }
-  if (entry.source == McpToolSource.mcp && entry.serverId != null) {
-    return _dispatchMcp(
+  if (entry.source == ToolSource.userCard) {
+    return _dispatchUserCard(
       call: call,
       entry: entry,
-      hub: hub,
-      enabledForChat: enabledForChat,
+      executeUserTool: executeUserTool,
     );
   }
-  debugPrint('[MCP] no-op: catalog entry ${entry.name} has no dispatcher');
+  debugPrint('[Tools] no-op: catalog entry ${entry.name} has no dispatcher');
   return const CatalogRound();
 }
 
@@ -123,7 +124,7 @@ Future<CatalogRound> _dispatchSearch(
   final query = WebSearchService.prepareQuery(
     call.arguments['query']?.toString() ?? '',
   );
-  debugPrint('[MCP] dispatch in-process web_search query="$query"');
+  debugPrint('[Tools] dispatch in-process web_search query="$query"');
   final outcome = await search.lookup(query);
   final injection = outcome.ok
       ? SearchInjection.resultFragment(outcome.snippet)
@@ -138,30 +139,32 @@ Future<CatalogRound> _dispatchSearch(
   );
 }
 
-Future<CatalogRound> _dispatchMcp({
+Future<CatalogRound> _dispatchUserCard({
   required LlmToolCall call,
   required CatalogTool entry,
-  required McpHub hub,
-  required Set<String> enabledForChat,
+  Future<UserToolHttpResult> Function(
+    CatalogTool entry,
+    Map<String, dynamic> arguments,
+  )?
+  executeUserTool,
 }) async {
-  debugPrint(
-    '[MCP] dispatch MCP tool=${entry.name} server="${entry.serverDisplayName}"',
-  );
-  final result = await hub.callTool(
-    serverId: entry.serverId!,
-    toolName: entry.name,
-    arguments: call.arguments,
-    enabledForChat: enabledForChat,
-  );
+  debugPrint('[Tools] dispatch user card tool=${entry.name}');
+  UserToolHttpResult result;
+  if (executeUserTool != null) {
+    result = await executeUserTool(entry, call.arguments);
+  } else {
+    final card = entry.card;
+    if (card == null) {
+      result = const UserToolHttpResult(ok: false, text: '');
+    } else {
+      result = await executeUserToolCard(card, call.arguments);
+    }
+  }
   final injection = result.ok
-      ? McpInjection.resultFragment(result.text)
-      : McpInjection.emptyResultFragment;
+      ? UserToolInjection.resultFragment(result.text)
+      : UserToolInjection.emptyResultFragment;
   return CatalogRound(
     injection: injection,
-    mcpReceipt: {
-      'server': entry.serverDisplayName ?? '',
-      'tool': entry.name,
-      'ok': result.ok,
-    },
+    toolReceipt: {'tool': entry.name, 'ok': result.ok},
   );
 }

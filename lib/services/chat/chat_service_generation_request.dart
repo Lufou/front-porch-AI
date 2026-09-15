@@ -194,12 +194,11 @@ extension ChatServiceGenerationRequest on ChatService {
 
     var genParams = paramsOf(prompt);
 
-    // Unified tools catalog: in-process web_search plus MCP tools enabled
-    // for this chat. Continue / autonomous / xml-only skip the round-trip.
-    // Search still requires a direct user send; MCP also runs on regen and
-    // group follow-ups. Tools ride the *character* prompt (no silent
-    // lookup/think-to-call cue). Call → inject → stream without tools.
-    // Spoken tools text with no call is the bubble (no second trip).
+    // Unified tools catalog: in-process web_search plus user recipe cards
+    // from <library>/tools/. Continue / autonomous / xml-only skip the
+    // round-trip. First user send only. Tools ride the *character* prompt
+    // (no silent lookup/think-to-call cue). Call → inject → stream without
+    // tools. Spoken tools text with no call is the bubble (no second trip).
     final globalDefault = _storageService.webSearchSettings.webSearchDefault;
     final xmlOnly = _toolProbe.isXmlOnly(_evalBackendIdentity);
     final includeSearch = shouldAdvertiseWebSearch(
@@ -209,12 +208,13 @@ extension ChatServiceGenerationRequest on ChatService {
       toolsUnsupported: xmlOnly,
       autonomousMode: t.autonomous,
     );
-    final includeMcp = shouldAdvertiseMcp(
-      enabledServerIds: _mcpEnabledServerIds,
+    final userCards = t.userToolCards;
+    final includeUser = shouldAdvertiseUserTools(
+      hasCards: userCards.isNotEmpty,
+      directUserSend: t.directUserSend,
       continueMode: t.mode == GenerationMode.continue_,
       toolsUnsupported: xmlOnly,
       autonomousMode: t.autonomous,
-      guestTurn: t.guestSpeaker != null,
     );
     debugPrint(
       '[WebSearch] gate advertise=$includeSearch global=$globalDefault '
@@ -224,15 +224,16 @@ extension ChatServiceGenerationRequest on ChatService {
       'backend=${llmService.backendName}',
     );
     debugPrint(
-      '[MCP] gate advertise=$includeMcp enabled=${_mcpEnabledServerIds.toList()} '
+      '[Tools] gate advertise=$includeUser cards=${userCards.length} '
       'continue=${t.mode == GenerationMode.continue_} '
-      'autonomous=${t.autonomous} guest=${t.guestSpeaker != null} '
-      'xmlOnly=$xmlOnly',
+      'autonomous=${t.autonomous} xmlOnly=$xmlOnly',
     );
-    final catalog = buildMcpCatalog(
+    final catalog = buildToolCatalog(
       inProcess: [if (includeSearch) inProcessWebSearchTool()],
-      servers: includeMcp ? _mcpHub.snapshots() : const [],
-      enabledForChat: _mcpEnabledServerIds,
+      userCards: [
+        if (includeUser)
+          for (final c in userCards) c.toCatalogTool(),
+      ],
     );
     if (catalog.tools.isNotEmpty) {
       final round = await runCatalogRound(
@@ -240,23 +241,23 @@ extension ChatServiceGenerationRequest on ChatService {
         params: genParams,
         catalog: catalog,
         search: _webSearchService,
-        hub: _mcpHub,
-        enabledForChat: _mcpEnabledServerIds,
       );
       t.searchReceipt = round.searchReceipt;
-      t.mcpReceipt = round.mcpReceipt;
+      t.toolReceipt = round.toolReceipt;
       final injection = round.injection;
       final spoken = round.spokenText;
       if (injection != null && injection.isNotEmpty) {
         t.plan.section('web_search').text = injection;
         genParams = paramsOf(t.plan.userText);
-        debugPrint('[MCP] dispatch inject+stream (in-character reply)');
+        debugPrint('[Tools] dispatch inject+stream (in-character reply)');
         t.stream = llmService.generateStream(genParams);
       } else if (spoken != null && spoken.isNotEmpty) {
-        debugPrint('[MCP] dispatch spoken tools text (no second trip)');
+        debugPrint('[Tools] dispatch spoken tools text (no second trip)');
         t.stream = Stream<String>.value(spoken);
       } else {
-        debugPrint('[MCP] dispatch no tool result — stream in-character reply');
+        debugPrint(
+          '[Tools] dispatch no tool result — stream in-character reply',
+        );
         t.stream = llmService.generateStream(genParams);
       }
     } else {

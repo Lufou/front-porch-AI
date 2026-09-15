@@ -31,7 +31,6 @@ import 'package:front_porch_ai/models/models.dart';
 import 'desktop_spell_check_service.dart';
 import 'reasoning_effort_store.dart';
 import 'storage/storage.dart';
-import 'mcp/mcp_settings.dart';
 
 class StorageService extends ChangeNotifier {
   final Completer<void> _initCompleter = Completer<void>();
@@ -65,7 +64,6 @@ class StorageService extends ChangeNotifier {
   late final MemorySettings _memorySettings = MemorySettings();
   late final PresetSettings _presetSettings = PresetSettings();
   late final LorebookSettings _lorebookSettings = LorebookSettings();
-  late final McpSettings _mcpSettings = McpSettings();
 
   // Directories lifted to directories.dart (Stage 7); thin god owns root state for setRootPath.
   // Getter ensures live values after setRootPath / setCustomModelsPath.
@@ -78,6 +76,7 @@ class StorageService extends ChangeNotifier {
   Directory get modelsDir => directories.modelsDir;
   Directory get chatsDir => directories.chatsDir;
   Directory get worldsDir => directories.worldsDir;
+  Directory get toolsDir => directories.toolsDir;
 
   Directory get charactersDir => directories.charactersDir;
 
@@ -119,7 +118,6 @@ class StorageService extends ChangeNotifier {
   MemorySettings get memorySettings => _memorySettings;
   PresetSettings get presetSettings => _presetSettings;
   LorebookSettings get lorebookSettings => _lorebookSettings;
-  McpSettings get mcpSettings => _mcpSettings;
 
   // --- COMPATIBILITY FLAT ACCESSORS (corrective bridge after incomplete "final shim migration" in 29bbf59d) ---
   // The excision of flat shims happened before all call sites across lib/ (settings tabs, dialogs, model_settings,
@@ -823,6 +821,7 @@ class StorageService extends ChangeNotifier {
       chatsDir,
       modelsDir,
       worldsDir,
+      toolsDir,
       charactersDir,
       groupsDir,
       customBackgroundDir,
@@ -855,7 +854,6 @@ class StorageService extends ChangeNotifier {
     _memorySettings.initializeBase(_prefs, notifyListeners);
     _presetSettings.initializeBase(_prefs, notifyListeners);
     _lorebookSettings.initializeBase(_prefs, notifyListeners);
-    _mcpSettings.initializeBase(_prefs, notifyListeners);
 
     // Nothing between here and the completer may escape. _init is
     // fire-and-forget, so one throw (a corrupt prefs value) would leave
@@ -876,7 +874,6 @@ class StorageService extends ChangeNotifier {
       _memorySettings.load();
       _presetSettings.load();
       _lorebookSettings.load();
-      await _mcpSettings.load();
       attachReasoningEffortMenuStore(_prefs);
 
       // Ensure default immersive prompt (was in god init; now on preset)
@@ -949,6 +946,7 @@ class StorageService extends ChangeNotifier {
     await chatsDir.create(recursive: true);
     await modelsDir.create(recursive: true);
     await worldsDir.create(recursive: true);
+    await toolsDir.create(recursive: true);
     await charactersDir.create(recursive: true);
     await groupsDir.create(recursive: true);
     await customBackgroundDir.create(recursive: true);

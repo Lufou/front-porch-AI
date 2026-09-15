@@ -19,10 +19,8 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
 import 'package:front_porch_ai/services/waifu/waifu.dart';
-import 'package:front_porch_ai/services/services.dart';
 import 'package:front_porch_ai/ui/chat_components/chat_components.dart';
 import 'package:front_porch_ai/ui/waifu/waifu_context_bar.dart';
 import 'package:front_porch_ai/ui/waifu/waifu_mcp_panel.dart';
@@ -208,31 +206,5 @@ class WaifuSidebar extends StatelessWidget {
   }
 }
 
-/// One line for the MCP accordion: connected servers and tool count.
-String? waifuMcpStatusLine(BuildContext context) {
-  try {
-    final chat = Provider.of<ChatService>(context);
-    final snaps = chat.mcpHub.snapshots();
-    final connected = [
-      for (final s in snaps)
-        if (s.config.enabledGlobal && s.status == McpConnectionStatus.connected)
-          s,
-    ];
-    if (connected.isEmpty) {
-      final configured = [
-        for (final s in snaps)
-          if (s.config.enabledGlobal) s,
-      ];
-      if (configured.isEmpty) return 'No servers in Settings';
-      return 'Not connected';
-    }
-    final names = <String>[
-      for (final s in connected)
-        for (final t in s.tools) t.name,
-    ];
-    final servers = connected.map((s) => s.config.displayName).join(', ');
-    return '$servers — ${mcpToolsPhrase(names)}';
-  } on ProviderNotFoundException {
-    return null;
-  }
-}
+/// One line for the MCP accordion. Chat MCP servers are gone.
+String? waifuMcpStatusLine(BuildContext context) => null;

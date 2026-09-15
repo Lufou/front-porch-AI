@@ -121,20 +121,7 @@ class _WaifuPageState extends State<WaifuPage> {
     if (mounted) setState(() {});
   }
 
-  int _mcpToolCount(BuildContext context) {
-    if (!widget.session.mcpOptIn) return 0;
-    try {
-      final chat = Provider.of<ChatService>(context, listen: false);
-      return [
-        for (final s in chat.mcpHub.snapshots())
-          if (s.config.enabledGlobal &&
-              s.status == McpConnectionStatus.connected)
-            ...s.tools,
-      ].length;
-    } catch (_) {
-      return 0;
-    }
-  }
+  int _mcpToolCount(BuildContext _) => 0;
 
   void _syncToolsSupported(BuildContext context) {
     try {

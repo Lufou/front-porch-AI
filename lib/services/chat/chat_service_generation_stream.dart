@@ -122,9 +122,9 @@ extension ChatServiceGenerationStream on ChatService {
       t.streamTarget.activeMetadata ??= {};
       t.streamTarget.activeMetadata!['search_receipt'] = t.searchReceipt;
     }
-    if (t.mcpReceipt != null) {
+    if (t.toolReceipt != null) {
       t.streamTarget.activeMetadata ??= {};
-      t.streamTarget.activeMetadata!['mcp_receipt'] = t.mcpReceipt;
+      t.streamTarget.activeMetadata!['tool_receipt'] = t.toolReceipt;
     }
     final streamTarget = t.streamTarget;
 

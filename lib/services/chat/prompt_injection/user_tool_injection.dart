@@ -18,18 +18,17 @@
 
 import 'package:front_porch_ai/services/chat/prompt_injection/search_injection.dart';
 
-/// Standing character-prompt line whenever any MCP server is enabled for
-/// the chat. The character is the interface; the tool is plumbing.
-const String kMcpCharacterLine =
+/// Standing character-prompt line when a user recipe card is on the catalog.
+const String kUserToolCharacterLine =
     'You understand the result, even if the character wouldn\'t historically '
     'know the word. React as yourself — your personality, your voice, your '
     'emotions. Don\'t recite the JSON. Don\'t break character. You simply '
     'know the thing now.';
 
-/// Gated character fragments for an MCP tool result. Speaker sees them;
-/// they are not written into the bubble.
-class McpInjection {
-  McpInjection._();
+/// Gated character fragments for a recipe-card HTTP result. Speaker sees
+/// them; they are not written into the bubble.
+class UserToolInjection {
+  UserToolInjection._();
 
   static const String emptyResultFragment =
       'The tool returned nothing useful. You do not know this. Do not invent. '
@@ -55,8 +54,3 @@ class McpInjection {
         'not know it. Do not invent.]';
   }
 }
-
-String mcpEmptyResultFragment() => McpInjection.emptyResultFragment;
-
-String mcpResultFragment(String snippet) =>
-    McpInjection.resultFragment(snippet);

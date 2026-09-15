@@ -1,3 +1,9 @@
+## 2026-09-14 — Rip MCP client; in-app tools + library recipe cards
+- **Why:** Character chat was hanging Docker Desktop MCP, bearer tokens, and stdio servers. Users should not need a toolkit process. Extra tools should be JSON recipe cards in the library, HTTP only.
+- **What:** Deleted the MCP transport/hub/stdio/docker client, Porch Life server UI, web `/api/mcp` routes, and sidebar per-chat MCP switches. Catalog round stays: advertise `web_search` plus enabled cards from `<library>/tools/` on the character mouth, first user send, inject before `Name:`, second stream without tools. Invalid/disabled cards skipped. No script runner. Waifu compile-fixed (Docker MCP connect gone; OpenCode mcp map empty).
+- **Files:** `tool_catalog.dart`, `user_tool_cards.dart`, `catalog_round.dart`, `chat_service_generation_request.dart`, Porch Life + `web_ui` Porch Life/ChatTools, deleted `lib/services/mcp/`, `mcp_facade.dart`, `mcp_routes.dart`
+- **Commit:** 6afdd02d
+
 ## 2026-09-14 — GLM 5.3 tools 400 was max_tokens:0, not "can't tools"
 - **Why:** Journal/Growth on Nano GLM 5.3: HTTP 400 "always thinks and does not support disabling reasoning", then "falling back to text", then XML 400 twice, empty eval. GLM can tools. We already strip `enabled:false` after the first 400, but evals still send `reasoning.max_tokens: 0` — GLM treats a think budget of 0 as Off and 400s again. Second 400 skips salvage (`already mandatory`) and dumps tools.
 - **What:** On a remembered always-thinks model, omit `max_tokens: 0`. Retry keeps tools. Fake 400s on 0 now, so the old payload goes red.

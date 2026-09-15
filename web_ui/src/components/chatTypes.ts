@@ -16,8 +16,9 @@ export interface Chips {
   chanceTimeEvent?: string;
   searchQuery?: string;
   searchOk?: boolean;
+  toolName?: string;
+  toolOk?: boolean;
   mcpTool?: string;
-  mcpServer?: string;
   mcpOk?: boolean;
   // Tolerate the legacy int shape and the new {delta, reason} shape so a
   // frontend rebuild doesn't blank the Needs chips before the backend restarts.

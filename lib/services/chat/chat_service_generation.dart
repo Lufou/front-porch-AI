@@ -117,8 +117,11 @@ class _GenTurn {
   /// Stamped as `search_receipt` when this turn ran a web_search lookup.
   Map<String, dynamic>? searchReceipt;
 
-  /// Stamped as `mcp_receipt` when this turn ran an external MCP tool.
-  Map<String, dynamic>? mcpReceipt;
+  /// Stamped as `tool_receipt` when this turn ran a user recipe card.
+  Map<String, dynamic>? toolReceipt;
+
+  /// Recipe cards loaded for this turn from `<library>/tools/`.
+  List<UserToolCard> userToolCards = const [];
 
   // ── request phase → stream/postgen phases ──
   late List<String> stopList;

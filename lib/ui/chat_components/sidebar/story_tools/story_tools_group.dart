@@ -27,7 +27,6 @@ import 'package:front_porch_ai/ui/theme/app_colors.dart';
 import '../porch_accordion.dart';
 import 'afk_panel.dart';
 import 'chaos_panel.dart';
-import 'mcp_panel.dart';
 import 'chat_places_panel.dart';
 import 'lorebook_chat_book.dart';
 import 'lorebook_panel.dart';
@@ -80,9 +79,6 @@ class StoryToolsGroup extends StatelessWidget {
           Consumer<ChatService>(
             builder: (context, chat, _) =>
                 ChaosPanel(chat: chat, onSpinRequested: onSpinRequested),
-          ),
-          Consumer<ChatService>(
-            builder: (context, chat, _) => McpPanel(chat: chat),
           ),
           const SizedBox(height: 12),
           // Dynamic Responses (AFK) sits directly under Chaos Mode. 1:1 only —

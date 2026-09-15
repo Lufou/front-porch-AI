@@ -43,7 +43,9 @@ export function ChipsRow({
   if (chips.timeSkipTo) realism.push({ key: 'time', label: `⏱ ${chips.timeSkipTo}`, cls: 'time' });
   if (chips.chanceTimeEvent) realism.push({ key: 'chance', label: '🎲 Chance Time', cls: 'time', reason: chips.chanceTimeEvent });
   if (chips.searchQuery) realism.push({ key: 'search', label: chips.searchOk === false ? '🔎 Looked up — nothing' : '🔎 Looked up', cls: 'time', reason: chips.searchQuery });
-  if (chips.mcpTool) realism.push({ key: 'mcp', label: chips.mcpOk === false ? `${chips.mcpTool} — nothing` : chips.mcpTool, cls: 'time', reason: chips.mcpServer ? `${chips.mcpServer}: ${chips.mcpTool}` : chips.mcpTool });
+  const toolName = chips.toolName || chips.mcpTool;
+  const toolOk = chips.toolOk ?? chips.mcpOk;
+  if (toolName) realism.push({ key: 'tool', label: toolOk === false ? `${toolName} — nothing` : toolName, cls: 'time', reason: toolName });
 
   const needs: Pill[] = [];
   for (const [k, v] of Object.entries(chips.needsDeltas ?? {})) {

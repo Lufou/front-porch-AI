@@ -148,7 +148,6 @@ extension ChatServiceSessionManage on ChatService {
     _messages.addAll(forkedMessages);
     _history.reset();
     _currentSessionId = DateTime.now().millisecondsSinceEpoch.toString();
-    _seedMcpForFreshChat();
     _computeAbsenceGap(
       const [],
     ); // fresh session — no real-world gap (Living Time §2)
@@ -396,7 +395,6 @@ extension ChatServiceSessionManage on ChatService {
 
     // Create new session ID for the new chat
     _currentSessionId = DateTime.now().millisecondsSinceEpoch.toString();
-    _seedMcpForFreshChat();
     _computeAbsenceGap(
       const [],
     ); // fresh session — no real-world gap (Living Time §2)
@@ -740,7 +738,6 @@ extension ChatServiceSessionManage on ChatService {
     }
 
     _currentSessionId = DateTime.now().millisecondsSinceEpoch.toString();
-    _seedMcpForFreshChat();
     _computeAbsenceGap(
       const [],
     ); // fresh session — no real-world gap (Living Time §2)

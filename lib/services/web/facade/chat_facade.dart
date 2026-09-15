@@ -392,13 +392,15 @@ class ChatFacade {
         out['searchOk'] = search['ok'] == true;
       }
     }
-    final mcp = md['mcp_receipt'];
-    if (mcp is Map) {
-      final tool = (mcp['tool'] as String?)?.trim() ?? '';
+    final toolReceipt = md['tool_receipt'] ?? md['mcp_receipt'];
+    if (toolReceipt is Map) {
+      final tool = (toolReceipt['tool'] as String?)?.trim() ?? '';
       if (tool.isNotEmpty) {
+        out['toolName'] = tool;
+        out['toolOk'] = toolReceipt['ok'] == true;
+        // Older phone bundles read mcpTool; keep the keys until they age out.
         out['mcpTool'] = tool;
-        out['mcpServer'] = (mcp['server'] as String?)?.trim() ?? '';
-        out['mcpOk'] = mcp['ok'] == true;
+        out['mcpOk'] = toolReceipt['ok'] == true;
       }
     }
     return out.isEmpty ? null : out;

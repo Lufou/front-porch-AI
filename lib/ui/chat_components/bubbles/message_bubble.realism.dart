@@ -40,10 +40,11 @@ extension _BubbleRealism on _MessageBubbleState {
     final searchReceipt = metadata['search_receipt'] as Map<String, dynamic>?;
     final searchQuery = (searchReceipt?['query'] as String?)?.trim() ?? '';
     final searchOk = searchReceipt?['ok'] == true;
-    final mcpReceipt = metadata['mcp_receipt'] as Map<String, dynamic>?;
-    final mcpTool = (mcpReceipt?['tool'] as String?)?.trim() ?? '';
-    final mcpServer = (mcpReceipt?['server'] as String?)?.trim() ?? '';
-    final mcpOk = mcpReceipt?['ok'] == true;
+    final toolReceipt =
+        (metadata['tool_receipt'] ?? metadata['mcp_receipt'])
+            as Map<String, dynamic>?;
+    final toolName = (toolReceipt?['tool'] as String?)?.trim() ?? '';
+    final toolOk = toolReceipt?['ok'] == true;
     final needsDeltas = metadata['needs_deltas'] as Map<String, dynamic>?;
 
     // Pockets & Wardrobe receipts, read BEFORE the early return below: Pockets
@@ -78,7 +79,7 @@ extension _BubbleRealism on _MessageBubbleState {
         verifStatus.isEmpty &&
         pocketReceipts.isEmpty &&
         searchQuery.isEmpty &&
-        mcpTool.isEmpty) {
+        toolName.isEmpty) {
       return const SizedBox.shrink();
     }
 
@@ -415,9 +416,9 @@ extension _BubbleRealism on _MessageBubbleState {
       );
     }
 
-    if (mcpTool.isNotEmpty) {
+    if (toolName.isNotEmpty) {
       final amber = AppColors.porchAmberOf(context);
-      final label = mcpOk ? mcpTool : '$mcpTool — nothing';
+      final label = toolOk ? toolName : '$toolName — nothing';
       chips.add(
         maybeTooltip(
           Row(
@@ -435,9 +436,7 @@ extension _BubbleRealism on _MessageBubbleState {
               ),
             ],
           ),
-          mcpOk
-              ? '${mcpServer.isEmpty ? 'Tool' : mcpServer}: $mcpTool'
-              : '${mcpServer.isEmpty ? mcpTool : '$mcpServer · $mcpTool'} returned nothing useful',
+          toolOk ? 'Tool: $toolName' : '$toolName returned nothing useful',
         ),
       );
     }

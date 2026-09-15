@@ -76,10 +76,15 @@ extension ChatServiceGenerationBlocks on ChatService {
         t.mode != GenerationMode.continue_) {
       t.systemPrompt += '\n\n$kSearchCharacterLine';
     }
-    if (_mcpEnabledServerIds.isNotEmpty &&
-        !t.autonomous &&
-        t.mode != GenerationMode.continue_) {
-      t.systemPrompt += '\n\n$kMcpCharacterLine';
+    t.userToolCards = loadUserToolCards(_storageService.toolsDir);
+    if (shouldAdvertiseUserTools(
+      hasCards: t.userToolCards.isNotEmpty,
+      directUserSend: t.directUserSend,
+      continueMode: t.mode == GenerationMode.continue_,
+      toolsUnsupported: _toolProbe.isXmlOnly(_evalBackendIdentity),
+      autonomousMode: t.autonomous,
+    )) {
+      t.systemPrompt += '\n\n$kUserToolCharacterLine';
     }
 
     // Lorebook injection: positioned buckets from the injector (group

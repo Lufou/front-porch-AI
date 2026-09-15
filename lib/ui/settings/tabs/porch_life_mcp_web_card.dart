@@ -21,18 +21,21 @@ import 'package:provider/provider.dart';
 
 import 'package:front_porch_ai/services/services.dart';
 import 'package:front_porch_ai/ui/settings/widgets/widgets.dart';
+import 'package:front_porch_ai/ui/theme/app_colors.dart';
 
-/// MCP servers + Tavily/Wikipedia web search — their own Porch Life group
-/// so they are not mixed in with Chaos / recap / absence.
+/// Web Search plus a dummy-proof note about the library `tools/` folder.
 class PorchLifeMcpWebCard extends StatelessWidget {
   const PorchLifeMcpWebCard({super.key});
 
   @override
   Widget build(BuildContext context) {
     final storage = context.watch<StorageService>();
+    final toolsPath = storage.rootPath == null
+        ? 'tools'
+        : storage.toolsDir.path;
     return FeatureGroupCard(
-      title: 'MCP and Web',
-      subtitle: 'tools from outside the porch, and looking things up',
+      title: 'Web Search and extra tools',
+      subtitle: 'looking things up, and recipe cards from your library',
       rows: [
         FeatureRow(
           icon: Icons.travel_explore,
@@ -53,19 +56,37 @@ class PorchLifeMcpWebCard extends StatelessWidget {
           showChildWhenOff: true,
           child: WebSearchKeyField(storage: storage),
         ),
-        FeatureRow(
-          icon: Icons.extension_outlined,
-          label: 'MCP tools',
-          need: FeatureNeed.alone,
-          blurb:
-              'Tools from MCP servers you run (Docker, weather, a '
-              'calendar). Connecting a server is not consent: each chat '
-              'has its own sidebar switches. This only seeds new chats. '
-              'Off by default. Tap Docker or Find local servers, then '
-              'Check connection. Front Porch does not spawn servers.',
-          value: storage.mcpSettings.mcpDefault,
-          onChanged: storage.mcpSettings.setMcpDefault,
-          child: const McpServersPanel(),
+        Padding(
+          key: const Key('user-tools-folder-note'),
+          padding: const EdgeInsets.only(top: 4, bottom: 8),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(top: 2),
+                child: Icon(
+                  Icons.folder_outlined,
+                  size: 18,
+                  color: AppColors.iconSecondary(context),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Extra tools are JSON recipe cards you drop in the tools '
+                  'folder next to chats and worlds — not programs, and not '
+                  'a Docker server. Each card is a name, a short description, '
+                  'and an HTTP address. Disabled or broken cards are skipped. '
+                  'That folder is:\n$toolsPath',
+                  style: TextStyle(
+                    fontSize: 13,
+                    height: 1.35,
+                    color: AppColors.textSecondary(context),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ],
     );
