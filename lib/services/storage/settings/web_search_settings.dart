@@ -16,6 +16,8 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Front Porch AI. If not, see <https://www.gnu.org/licenses/>.
 
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
@@ -43,14 +45,38 @@ class WebSearchSettings with SettingsBase {
   final FlutterSecureStorage _secureStorage;
   bool _webSearchDefault = false;
   String _searchApiKey = '';
+  String _wikiBaseUrl = '';
+  final Map<String, String> _wikiBySession = {};
 
   bool get webSearchDefault => _webSearchDefault;
   String get searchApiKey => _searchApiKey;
   bool get hasApiKey => _searchApiKey.trim().isNotEmpty;
 
+  /// Porch Life default wiki URL. Empty = wiki_search off for chats that
+  /// have not pasted their own.
+  String get wikiBaseUrl => _wikiBaseUrl;
+
+  /// This chat's wiki URL: session override if one was saved (including
+  /// explicit empty = off), otherwise the Porch Life default.
+  String wikiUrlForChat(String? sessionId) {
+    if (sessionId != null && _wikiBySession.containsKey(sessionId)) {
+      return _wikiBySession[sessionId]!;
+    }
+    return _wikiBaseUrl;
+  }
+
   Future<void> load() async {
     _webSearchDefault = prefs?.getBool(k('web_search_default')) ?? false;
+    _wikiBaseUrl = prefs?.getString(k('wiki_base_url')) ?? '';
+    _wikiBySession
+      ..clear()
+      ..addAll(_decodeWikiMap(prefs?.getString(k('wiki_urls_by_session'))));
     final key = k(_apiKeyName);
+    // Null prefs = in-memory sandbox. Never read the live macOS keychain.
+    if (prefs == null) {
+      _searchApiKey = '';
+      return;
+    }
     final fromPrefs = prefs?.getString(key)?.trim() ?? '';
     if (fromPrefs.isNotEmpty) {
       _searchApiKey = fromPrefs;
@@ -82,6 +108,11 @@ class WebSearchSettings with SettingsBase {
   Future<void> setSearchApiKey(String value) async {
     final key = k(_apiKeyName);
     final trimmed = value.trim();
+    _searchApiKey = trimmed;
+    if (prefs == null) {
+      notify();
+      return;
+    }
     if (trimmed.isEmpty) {
       await prefs?.remove(key);
     } else {
@@ -96,7 +127,58 @@ class WebSearchSettings with SettingsBase {
     } catch (e, st) {
       debugPrint('[WebSearch] keychain write failed (prefs kept): $e\n$st');
     }
-    _searchApiKey = trimmed;
     notify();
+  }
+
+  Future<void> setWikiBaseUrl(String value) async {
+    _wikiBaseUrl = value.trim();
+    final key = k('wiki_base_url');
+    if (_wikiBaseUrl.isEmpty) {
+      await prefs?.remove(key);
+    } else {
+      await prefs?.setString(key, _wikiBaseUrl);
+    }
+    notify();
+  }
+
+  Future<void> setChatWikiUrl(String sessionId, String value) async {
+    if (sessionId.isEmpty) {
+      await setWikiBaseUrl(value);
+      return;
+    }
+    _wikiBySession[sessionId] = value.trim();
+    await _persistWikiMap();
+    notify();
+  }
+
+  Future<void> applyWikiUrlForSession(String? sessionId, String url) async {
+    if (sessionId == null || sessionId.isEmpty) {
+      await setWikiBaseUrl(url);
+    } else {
+      await setChatWikiUrl(sessionId, url);
+    }
+  }
+
+  Future<void> _persistWikiMap() async {
+    final key = k('wiki_urls_by_session');
+    if (_wikiBySession.isEmpty) {
+      await prefs?.remove(key);
+      return;
+    }
+    await prefs?.setString(key, jsonEncode(_wikiBySession));
+  }
+
+  static Map<String, String> _decodeWikiMap(String? raw) {
+    if (raw == null || raw.isEmpty) return {};
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is! Map) return {};
+      return {
+        for (final e in decoded.entries)
+          if (e.key is String) e.key as String: '${e.value ?? ''}',
+      };
+    } catch (_) {
+      return {};
+    }
   }
 }

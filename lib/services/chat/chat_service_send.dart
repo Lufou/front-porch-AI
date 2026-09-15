@@ -163,6 +163,7 @@ extension ChatServiceSend on ChatService {
 
     _toolProbe.beginUserSend();
     _webSearchService.beginUserSend();
+    _wikiSearchService.beginUserSend();
     try {
       // Sending a real message ends the /exit undo window. A pending full-member
       // exit commits now (real removal + any collapse to a 1:1) so this turn runs

@@ -7,6 +7,8 @@ Last shipped nightly: `rawhide.20260906.7059c91`. Everything below is unreleased
 
 ## Recent improvements (unreleased — ships in the next build)
 
+- 📖 **This chat can look up its own wiki** — paste a MediaWiki or Fandom URL in Porch Life or the chat tools box. The character can search that wiki only (not Google) on the first reply to a message you send. Empty URL means the wiki tool stays off; web search is unchanged.
+
 - 🧰 **Extra tools are recipe cards, not Docker MCP** — drop a JSON file in the `tools` folder next to `chats` and `worlds` in your library. Each card is a name, a description, and an HTTP address. The character can call it the same way they look things up on the web (first reply to a message you send). Phone and browser keep built-in web search; there is no file picker there. Connect Docker MCP is gone.
 
 - 🔎 **Search results no longer steal the reply** — after a lookup, the character still starts talking at their own `Name:` line. Wiki text sits above that, not after it.

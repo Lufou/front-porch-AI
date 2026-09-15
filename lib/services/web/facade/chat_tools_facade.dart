@@ -63,6 +63,7 @@ class ChatToolsFacade {
     final focusedIsMember =
         focused != null && !focused.isHost && focused.realismEnabled;
     return {
+      'wikiBaseUrl': _chat.wikiBaseUrl,
       'realismEnabled': _chat.realismEnabled,
       'needsEnabled': _chat.needsSimEnabled,
       // Global One-Shot Eval setting (fuses the multi-call realism evals into
@@ -986,6 +987,11 @@ class ChatToolsFacade {
     await action(match);
     _notify();
     return true;
+  }
+
+  Future<void> setWikiBaseUrl(String url) async {
+    await _chat.setWikiBaseUrl(url);
+    _notify();
   }
 
   void _notify() => _hub?.broadcastChatUpdate();

@@ -47,6 +47,15 @@ afterEach(() => {
   container.remove();
 });
 
+describe('Porch Life wiki URL', () => {
+  it('shows the wiki box with dummy-proof copy', () => {
+    expect(container.textContent).toContain(
+      'Looks up this wiki only (MediaWiki / Fandom). Not Google.',
+    );
+    expect(container.querySelector('[data-testid="wiki-url-field"]')).toBeTruthy();
+  });
+});
+
 describe('Porch Life web-search key', () => {
   it('persists the complete key only when Save is pressed', async () => {
     const input = container.querySelector(

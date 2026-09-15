@@ -46,6 +46,7 @@ interface PorchLifeState {
   chaosModeDefault: boolean;
   webSearchDefault: boolean;
   hasSearchApiKey?: boolean;
+  wikiBaseUrl?: string;
   sceneGuestDetectionEnabled: boolean;
   adultThemesEnabled: boolean;
   dreamsEnabled: boolean;
@@ -79,6 +80,7 @@ const DEFAULTS: PorchLifeState = {
   chaosModeDefault: false,
   webSearchDefault: false,
   hasSearchApiKey: false,
+  wikiBaseUrl: '',
   sceneGuestDetectionEnabled: true,
   adultThemesEnabled: false,
   dreamsEnabled: true,
@@ -192,6 +194,52 @@ function AwayThreshold({ value, onChange }: { value: number; onChange: (v: numbe
         ))}
       </select>
     </label>
+  );
+}
+
+function WikiUrlRow({
+  value,
+  onSaved,
+}: {
+  value: string;
+  onSaved: (url: string) => void;
+}) {
+  const [draft, setDraft] = useState(value);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => setDraft(value), [value]);
+  const save = async () => {
+    const next = draft.trim();
+    if (busy) return;
+    setBusy(true);
+    try {
+      await api.post('/api/settings', { realism: { wikiBaseUrl: next } });
+      onSaved(next);
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <div className="pl-search-key" data-testid="wiki-url-field">
+      <label>
+        Wiki URL
+        <input
+          type="url"
+          autoComplete="off"
+          placeholder="https://bleach.fandom.com/"
+          value={draft}
+          disabled={busy}
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={() => void save()}
+          onKeyDown={(e) => e.key === 'Enter' && void save()}
+        />
+      </label>
+      <p className="muted small">Looks up this wiki only (MediaWiki / Fandom). Not Google.</p>
+      <div className="tool-row">
+        <button className="primary" disabled={busy} onClick={() => void save()}>
+          {busy ? 'Saving…' : 'Save wiki'}
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -546,6 +594,10 @@ export function PorchLifeSettings() {
               current ? { ...current, hasSearchApiKey: stored } : current,
             )
           }
+        />
+        <WikiUrlRow
+          value={st.wikiBaseUrl ?? ''}
+          onSaved={(url) => setSt((current) => (current ? { ...current, wikiBaseUrl: url } : current))}
         />
         <p className="muted small" data-testid="user-tools-folder-note">
           Extra tools are JSON recipe cards in the desktop library <code>tools</code> folder

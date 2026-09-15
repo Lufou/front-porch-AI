@@ -19,6 +19,7 @@
 import 'package:flutter/foundation.dart';
 
 import 'package:front_porch_ai/services/chat/web_search_tools.dart';
+import 'package:front_porch_ai/services/chat/wiki_search_tools.dart';
 
 /// Where a catalog entry came from. Never shown to the model.
 enum ToolSource { inProcess, userCard }
@@ -82,6 +83,7 @@ class CatalogBuildResult {
 
   bool get isEmpty => tools.isEmpty;
   bool get hasSearch => tools.any((t) => t.name == kWebSearchToolName);
+  bool get hasWiki => tools.any((t) => t.name == kWikiSearchToolName);
 }
 
 /// In-process `web_search` as a catalog entry. Source is never shown to the model.
@@ -89,6 +91,18 @@ CatalogTool inProcessWebSearchTool() {
   final fn = kWebSearchTools.first['function'] as Map<String, dynamic>;
   return CatalogTool(
     name: kWebSearchToolName,
+    description: fn['description']?.toString() ?? '',
+    parameters: Map<String, dynamic>.from(fn['parameters'] as Map),
+    source: ToolSource.inProcess,
+  );
+}
+
+/// In-process `wiki_search`. Same catalog round as web_search; only advertised
+/// when this chat has a wiki URL.
+CatalogTool inProcessWikiSearchTool() {
+  final fn = kWikiSearchTools.first['function'] as Map<String, dynamic>;
+  return CatalogTool(
+    name: kWikiSearchToolName,
     description: fn['description']?.toString() ?? '',
     parameters: Map<String, dynamic>.from(fn['parameters'] as Map),
     source: ToolSource.inProcess,

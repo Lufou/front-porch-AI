@@ -18,8 +18,8 @@
 
 part of '../chat_service.dart';
 
-/// Model-initiated `web_search` — builder. On/off is the Porch Life
-/// global, read live. The tools round-trip lives in `_dispatchGeneration`.
+/// Model-initiated `web_search` / `wiki_search` — builders. Web search on/off
+/// is the Porch Life global, read live. Wiki search is this chat's URL.
 extension ChatServiceWebSearch on ChatService {
   WebSearchService _buildWebSearchService() {
     return WebSearchService(
@@ -27,5 +27,23 @@ extension ChatServiceWebSearch on ChatService {
       getGlobalDefault: () =>
           _storageService.webSearchSettings.webSearchDefault,
     );
+  }
+
+  WikiSearchService _buildWikiSearchService() {
+    return WikiSearchService(
+      getBaseUrl: () =>
+          _storageService.webSearchSettings.wikiUrlForChat(_currentSessionId),
+    );
+  }
+
+  String get _wikiBaseUrlImpl =>
+      _storageService.webSearchSettings.wikiUrlForChat(_currentSessionId);
+
+  Future<void> _setWikiBaseUrlImpl(String url) async {
+    await _storageService.webSearchSettings.applyWikiUrlForSession(
+      _currentSessionId,
+      url,
+    );
+    notifyListeners();
   }
 }

@@ -19,3 +19,4 @@ export 'spell_check_language_row.dart';
 export 'thinking_settings_block.dart';
 export 'thinking_strength_control.dart';
 export 'web_login_section.dart';
+export 'wiki_url_field.dart';

@@ -56,6 +56,7 @@ class PorchLifeMcpWebCard extends StatelessWidget {
           showChildWhenOff: true,
           child: WebSearchKeyField(storage: storage),
         ),
+        WikiUrlField(storage: storage),
         Padding(
           key: const Key('user-tools-folder-note'),
           padding: const EdgeInsets.only(top: 4, bottom: 8),

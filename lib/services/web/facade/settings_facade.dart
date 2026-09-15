@@ -245,6 +245,7 @@ class SettingsFacade {
         'chaosModeDefault': _storage.realismSettings.chaosModeDefault,
         'webSearchDefault': _storage.webSearchSettings.webSearchDefault,
         'hasSearchApiKey': _storage.webSearchSettings.hasApiKey,
+        'wikiBaseUrl': _storage.webSearchSettings.wikiBaseUrl,
         'sceneGuestDetectionEnabled':
             _storage.realismSettings.sceneGuestDetectionEnabled,
         'adultThemesEnabled': _storage.realismSettings.adultThemesEnabled,
@@ -363,6 +364,10 @@ class SettingsFacade {
       final searchKey = realism['searchApiKey']?.toString();
       if (searchKey != null) {
         await _storage.webSearchSettings.setSearchApiKey(searchKey);
+      }
+      final wikiUrl = realism['wikiBaseUrl']?.toString();
+      if (wikiUrl != null) {
+        await _storage.webSearchSettings.setWikiBaseUrl(wikiUrl);
       }
       final guests = realism['sceneGuestDetectionEnabled'];
       if (guests is bool) {

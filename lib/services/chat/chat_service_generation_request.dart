@@ -216,6 +216,13 @@ extension ChatServiceGenerationRequest on ChatService {
       toolsUnsupported: xmlOnly,
       autonomousMode: t.autonomous,
     );
+    final includeWiki = shouldAdvertiseWikiSearch(
+      wikiUrl: _wikiBaseUrlImpl,
+      directUserSend: t.directUserSend,
+      continueMode: t.mode == GenerationMode.continue_,
+      toolsUnsupported: xmlOnly,
+      autonomousMode: t.autonomous,
+    );
     debugPrint(
       '[WebSearch] gate advertise=$includeSearch global=$globalDefault '
       'directUserSend=${t.directUserSend} '
@@ -229,7 +236,10 @@ extension ChatServiceGenerationRequest on ChatService {
       'autonomous=${t.autonomous} xmlOnly=$xmlOnly',
     );
     final catalog = buildToolCatalog(
-      inProcess: [if (includeSearch) inProcessWebSearchTool()],
+      inProcess: [
+        if (includeSearch) inProcessWebSearchTool(),
+        if (includeWiki) inProcessWikiSearchTool(),
+      ],
       userCards: [
         if (includeUser)
           for (final c in userCards) c.toCatalogTool(),
@@ -241,6 +251,7 @@ extension ChatServiceGenerationRequest on ChatService {
         params: genParams,
         catalog: catalog,
         search: _webSearchService,
+        wiki: _wikiSearchService,
       );
       t.searchReceipt = round.searchReceipt;
       t.toolReceipt = round.toolReceipt;

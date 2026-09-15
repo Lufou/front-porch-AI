@@ -1,0 +1,108 @@
+// Copyright (C) 2026 Front Porch AI
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// This file is part of Front Porch AI.
+//
+// Front Porch AI is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Front Porch AI is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with Front Porch AI. If not, see <https://www.gnu.org/licenses/>.
+
+import 'dart:convert';
+
+import 'package:front_porch_ai/services/chat/prompt_injection/prompt_injection.dart';
+import 'package:front_porch_ai/utils/utils.dart';
+
+/// Cap on a wiki HTTP body before we refuse to parse it. Honest miss beats
+/// stuffing a dump into the prompt.
+const int kMediaWikiMaxBodyBytes = 256 * 1024;
+
+/// Origin of a pasted MediaWiki / Fandom / Wikipedia URL, or null if the
+/// string is empty, not http(s), or otherwise unsafe to fetch.
+final _hostOnly = RegExp(r'^[A-Za-z0-9][A-Za-z0-9.-]*\.[A-Za-z0-9.-]+(/.*)?$');
+
+Uri? parseWikiBaseUrl(String raw) {
+  var s = raw.trim();
+  if (s.isEmpty) return null;
+  if (!s.contains('://')) {
+    if (!_hostOnly.hasMatch(s)) return null;
+    s = 'https://$s';
+  }
+  final uri = Uri.tryParse(s);
+  if (uri == null || !isSafeOutboundUrl(uri)) return null;
+  if (uri.host.contains(' ') || uri.host.contains('%20')) return null;
+  return Uri(
+    scheme: uri.scheme,
+    host: uri.host,
+    port: uri.hasPort ? uri.port : null,
+  );
+}
+
+/// Wikipedia-family hosts keep the REST search the app already uses.
+/// Everyone else (Fandom, wiki.gg, self-hosted MW) uses Action API —
+/// Fandom's REST sits behind Cloudflare and 403s.
+bool usesMediaWikiActionApi(Uri wikiBase) {
+  final host = wikiBase.host.toLowerCase();
+  return host != 'wikipedia.org' && !host.endsWith('.wikipedia.org');
+}
+
+/// Search URI against [wikiBase]'s host. Query is already prepared.
+Uri mediawikiSearchUri(Uri wikiBase, String query) {
+  if (usesMediaWikiActionApi(wikiBase)) {
+    return Uri.parse('${wikiBase.origin}/api.php').replace(
+      queryParameters: {
+        'action': 'query',
+        'list': 'search',
+        'srsearch': query,
+        'srlimit': '3',
+        'srprop': 'snippet',
+        'format': 'json',
+      },
+    );
+  }
+  return Uri.parse(
+    '${wikiBase.origin}/w/rest.php/v1/search/page',
+  ).replace(queryParameters: {'q': query, 'limit': '3'});
+}
+
+/// REST `pages` or Action API `query.search`. Empty on junk JSON.
+String parseMediaWikiBody(String body) {
+  final dynamic json;
+  try {
+    json = jsonDecode(body);
+  } catch (_) {
+    return '';
+  }
+  if (json is! Map) return '';
+  final rest = _parsePages(json['pages']);
+  if (rest.isNotEmpty) return rest;
+  final query = json['query'];
+  if (query is Map) {
+    return _parsePages(query['search'], excerptKey: 'snippet');
+  }
+  return '';
+}
+
+String _parsePages(Object? pages, {String excerptKey = 'excerpt'}) {
+  if (pages is! List) return '';
+  final buf = StringBuffer();
+  for (final page in pages) {
+    if (page is! Map) continue;
+    final title = page['title']?.toString() ?? '';
+    final excerpt = page[excerptKey]?.toString() ?? '';
+    if (title.trim().isEmpty && excerpt.trim().isEmpty) continue;
+    if (buf.isNotEmpty) buf.write(' ');
+    if (title.trim().isNotEmpty) buf.write('$title — ');
+    buf.write(SearchInjection.clipSnippet(excerpt));
+    if (buf.length >= kSearchSnippetCharCap) break;
+  }
+  return SearchInjection.clipSnippet(buf.toString());
+}

@@ -1,3 +1,9 @@
+## 2026-09-14 — wiki_search: this chat's MediaWiki/Fandom, not Google
+- **Why:** Sosuke wanted one built-in catalog tool that searches the wiki pasted on the chat (Neokosmos is just the first URL). Recipe cards stay for HTTP extras; Journal/Worlds stay campaign scars; do not RAG the wiki or scrape it every turn.
+- **What:** Per-chat/default wiki URL in Porch Life + chat tools (desktop and web). Empty = `wiki_search` off the menu. Advertised on the same catalog round as `web_search`, same Continue/regen/guest/follow-up/Dynamic Responses gate. MediaWiki REST for Wikipedia hosts, Action API for Fandom and other MW. Inject before `Name:`. Receipt `source: wiki` + `wikiReceipt` in headless JSON. Honest miss injects "do not invent".
+- **Files:** `mediawiki_search.dart`, `wiki_search_service.dart`, `wiki_search_tools.dart`, `catalog_round.dart`, `tool_catalog.dart`, Porch Life + `WikiUrlField`, `web_ui` Porch Life/ChatTools, CLI JSON
+- **Commit:** (this commit)
+
 ## 2026-09-14 — Rip MCP client; in-app tools + library recipe cards
 - **Why:** Character chat was hanging Docker Desktop MCP, bearer tokens, and stdio servers. Users should not need a toolkit process. Extra tools should be JSON recipe cards in the library, HTTP only.
 - **What:** Deleted the MCP transport/hub/stdio/docker client, Porch Life server UI, web `/api/mcp` routes, and sidebar per-chat MCP switches. Catalog round stays: advertise `web_search` plus enabled cards from `<library>/tools/` on the character mouth, first user send, inject before `Name:`, second stream without tools. Invalid/disabled cards skipped. No script runner. Waifu compile-fixed (Docker MCP connect gone; OpenCode mcp map empty).

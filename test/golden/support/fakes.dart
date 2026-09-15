@@ -45,6 +45,7 @@ import 'package:front_porch_ai/services/character_repository.dart';
 import 'package:front_porch_ai/services/chat_service.dart';
 import 'package:front_porch_ai/services/chat/chaos_mode_service.dart';
 import 'package:front_porch_ai/services/chat/web_search_service.dart';
+import 'package:front_porch_ai/services/chat/wiki_search_service.dart';
 import 'package:front_porch_ai/services/chat/needs_simulation.dart';
 import 'package:front_porch_ai/services/chat/nsfw_service.dart';
 import 'package:front_porch_ai/services/chat/relationship_service.dart';
@@ -161,6 +162,7 @@ class FakeChatService extends ChangeNotifier implements ChatService {
       onSetPendingRealismMetadata: (_, _) {},
     );
     _webSearch = WebSearchService(getApiKey: () => '');
+    _wikiSearch = WikiSearchService(getBaseUrl: () => '');
     _needs = NeedsSimulation(
       onNotify: () {},
       onSaveChat: () async {},
@@ -220,6 +222,7 @@ class FakeChatService extends ChangeNotifier implements ChatService {
   late final NsfwService _nsfw;
   late final ChaosModeService _chaos;
   late final WebSearchService _webSearch;
+  late final WikiSearchService _wikiSearch;
   late final NeedsSimulation _needs;
   late final RelationshipService _relationship;
 
@@ -333,6 +336,12 @@ class FakeChatService extends ChangeNotifier implements ChatService {
   WebSearchService get webSearchService => _webSearch;
   @override
   bool get webSearchEnabled => _webSearch.isActive;
+  @override
+  WikiSearchService get wikiSearchService => _wikiSearch;
+  @override
+  String get wikiBaseUrl => '';
+  @override
+  Future<void> setWikiBaseUrl(String url) async {}
   @override
   NeedsSimulation get needsSimulation => _needs;
   @override

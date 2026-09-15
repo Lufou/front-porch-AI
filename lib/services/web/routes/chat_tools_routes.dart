@@ -29,6 +29,7 @@ class WebChatToolsRoutes {
   WebChatToolsRoutes(this._facade, Router router) {
     router.get('/api/chat/tools', _state);
     router.post('/api/chat/tools/settings', _settings);
+    router.post('/api/chat/tools/wiki', _wiki);
     router.post('/api/chat/tools/toggle', _toggle);
     router.post('/api/chat/tools/time', _time);
     router.get('/api/chat/tools/calendar', _calendar);
@@ -61,6 +62,12 @@ class WebChatToolsRoutes {
   /// Tools snapshot scoped to the focused cast participant (`?participant=<id>`).
   Map<String, dynamic> _snapshot(shelf.Request request) =>
       _facade.state(participantId: request.url.queryParameters['participant']);
+
+  Future<shelf.Response> _wiki(shelf.Request request) async {
+    final body = await _json(request);
+    await _facade.setWikiBaseUrl(body['wikiBaseUrl']?.toString() ?? '');
+    return JsonResponse.ok(_snapshot(request));
+  }
 
   /// Apply global memory/summary settings (only keys present are changed).
   Future<shelf.Response> _settings(shelf.Request request) async {

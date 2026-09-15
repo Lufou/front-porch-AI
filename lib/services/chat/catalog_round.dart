@@ -18,11 +18,14 @@
 
 import 'package:flutter/foundation.dart';
 
+import 'package:front_porch_ai/services/chat/mediawiki_search.dart';
 import 'package:front_porch_ai/services/chat/prompt_injection/prompt_injection.dart';
 import 'package:front_porch_ai/services/chat/tool_catalog.dart';
 import 'package:front_porch_ai/services/chat/user_tool_cards.dart';
 import 'package:front_porch_ai/services/chat/web_search_service.dart';
 import 'package:front_porch_ai/services/chat/web_search_tools.dart';
+import 'package:front_porch_ai/services/chat/wiki_search_service.dart';
+import 'package:front_porch_ai/services/chat/wiki_search_tools.dart';
 import 'package:front_porch_ai/services/llm_service.dart';
 
 /// Outcome of the one tools round-trip over the unified catalog.
@@ -30,12 +33,14 @@ class CatalogRound {
   const CatalogRound({
     this.injection,
     this.searchReceipt,
+    this.wikiReceipt,
     this.toolReceipt,
     this.spokenText,
   });
 
   final String? injection;
   final Map<String, dynamic>? searchReceipt;
+  final Map<String, dynamic>? wikiReceipt;
   final Map<String, dynamic>? toolReceipt;
 
   /// Spoken character text from `generateWithTools` when no advertised
@@ -52,6 +57,7 @@ Future<CatalogRound> runCatalogRound({
   required GenerationParams params,
   required CatalogBuildResult catalog,
   required WebSearchService search,
+  WikiSearchService? wiki,
   Future<UserToolHttpResult> Function(
     CatalogTool entry,
     Map<String, dynamic> arguments,
@@ -106,6 +112,10 @@ Future<CatalogRound> runCatalogRound({
       entry.name == kWebSearchToolName) {
     return _dispatchSearch(call, search);
   }
+  if (entry.source == ToolSource.inProcess &&
+      entry.name == kWikiSearchToolName) {
+    return _dispatchWiki(call, wiki);
+  }
   if (entry.source == ToolSource.userCard) {
     return _dispatchUserCard(
       call: call,
@@ -115,6 +125,43 @@ Future<CatalogRound> runCatalogRound({
   }
   debugPrint('[Tools] no-op: catalog entry ${entry.name} has no dispatcher');
   return const CatalogRound();
+}
+
+Future<CatalogRound> _dispatchWiki(
+  LlmToolCall call,
+  WikiSearchService? wiki,
+) async {
+  if (wiki == null || !wiki.isActive) {
+    final query = WebSearchService.prepareQuery(
+      call.arguments['query']?.toString() ?? '',
+    );
+    return CatalogRound(
+      injection: SearchInjection.emptyResultFragment(query),
+      searchReceipt: {'query': query, 'ok': false, 'source': 'wiki'},
+      wikiReceipt: {'query': query, 'ok': false, 'source': 'wiki'},
+    );
+  }
+  final query = WebSearchService.prepareQuery(
+    call.arguments['query']?.toString() ?? '',
+  );
+  debugPrint('[Tools] dispatch in-process wiki_search query="$query"');
+  final outcome = await wiki.lookup(query);
+  final injection = outcome.ok
+      ? SearchInjection.resultFragment(outcome.snippet)
+      : SearchInjection.emptyResultFragment(outcome.query);
+  final base = parseWikiBaseUrl(wiki.getBaseUrl());
+  final receipt = <String, dynamic>{
+    'query': outcome.query,
+    'ok': outcome.ok,
+    'cached': outcome.fromCache,
+    'source': 'wiki',
+    if (base != null) 'url': base.origin,
+  };
+  return CatalogRound(
+    injection: injection,
+    searchReceipt: receipt,
+    wikiReceipt: receipt,
+  );
 }
 
 Future<CatalogRound> _dispatchSearch(

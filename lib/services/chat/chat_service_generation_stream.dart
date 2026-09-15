@@ -121,6 +121,9 @@ extension ChatServiceGenerationStream on ChatService {
     if (t.searchReceipt != null) {
       t.streamTarget.activeMetadata ??= {};
       t.streamTarget.activeMetadata!['search_receipt'] = t.searchReceipt;
+      if (t.searchReceipt!['source'] == 'wiki') {
+        t.streamTarget.activeMetadata!['wiki_receipt'] = t.searchReceipt;
+      }
     }
     if (t.toolReceipt != null) {
       t.streamTarget.activeMetadata ??= {};

@@ -522,6 +522,7 @@ class ChatService extends ChangeNotifier with ChatServiceTodaySentence {
   late final _timeService = _buildTimeService();
   late final _chaosModeService = _buildChaosModeService();
   late final _webSearchService = _buildWebSearchService();
+  late final _wikiSearchService = _buildWikiSearchService();
   late final _nsfwService = _buildNsfwService();
 
   // ── Lorebook scanner / injector (builders in
@@ -911,6 +912,9 @@ class ChatService extends ChangeNotifier with ChatServiceTodaySentence {
   ChaosModeService get chaosModeService => _chaosModeService;
   WebSearchService get webSearchService => _webSearchService;
   bool get webSearchEnabled => _webSearchService.isActive;
+  WikiSearchService get wikiSearchService => _wikiSearchService;
+  String get wikiBaseUrl => _wikiBaseUrlImpl;
+  Future<void> setWikiBaseUrl(String url) => _setWikiBaseUrlImpl(url);
   NeedsSimulation get needsSimulation => _needsSimulation;
 
   bool get realismEnabled => _realismEnabled;

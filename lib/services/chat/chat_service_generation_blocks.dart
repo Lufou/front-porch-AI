@@ -70,7 +70,7 @@ extension ChatServiceGenerationBlocks on ChatService {
           '\n\n[Voice Call Mode] ${_storageService.sttSettings.callSystemPrompt}';
     }
 
-    if (_webSearchService.isActive &&
+    if ((_webSearchService.isActive || _wikiSearchService.isActive) &&
         t.directUserSend &&
         !t.autonomous &&
         t.mode != GenerationMode.continue_) {

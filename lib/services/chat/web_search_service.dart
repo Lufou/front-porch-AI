@@ -22,6 +22,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
+import 'package:front_porch_ai/services/chat/mediawiki_search.dart';
 import 'package:front_porch_ai/services/chat/prompt_injection/prompt_injection.dart';
 import 'package:front_porch_ai/services/chat/web_search_tools.dart';
 import 'package:front_porch_ai/services/llm_service.dart';
@@ -322,11 +323,13 @@ class WebSearchService {
   }
 
   /// Keyless Wikipedia search. Returns page titles + excerpts as text.
+  /// Uses the shared MediaWiki REST seam (same parser wiki_search uses).
   Future<String> _wikipediaLookup(String query) async {
     httpCalls++;
-    final uri = Uri.parse(
-      kWikipediaSearchEndpoint,
-    ).replace(queryParameters: {'q': query, 'limit': '3'});
+    final uri = mediawikiSearchUri(
+      Uri.parse('https://en.wikipedia.org'),
+      query,
+    );
     try {
       final request = http.Request('GET', uri)
         ..headers['Accept'] = 'application/json';
@@ -336,7 +339,7 @@ class WebSearchService {
         'bodyChars=${response.body.length}',
       );
       if (response.statusCode != 200) return '';
-      return _parseWikipedia(response.body);
+      return parseMediaWikiBody(response.body);
     } catch (e) {
       debugPrint('[WebSearch] Wikipedia THREW: $e');
       return '';
@@ -360,30 +363,6 @@ class WebSearchService {
     } finally {
       client.close();
     }
-  }
-
-  static String _parseWikipedia(String body) {
-    final dynamic json;
-    try {
-      json = jsonDecode(body);
-    } catch (_) {
-      return '';
-    }
-    if (json is! Map) return '';
-    final pages = json['pages'];
-    if (pages is! List) return '';
-    final buf = StringBuffer();
-    for (final page in pages) {
-      if (page is! Map) continue;
-      final title = page['title']?.toString() ?? '';
-      final excerpt = page['excerpt']?.toString() ?? '';
-      if (title.trim().isEmpty && excerpt.trim().isEmpty) continue;
-      if (buf.isNotEmpty) buf.write(' ');
-      if (title.trim().isNotEmpty) buf.write('$title — ');
-      buf.write(SearchInjection.clipSnippet(excerpt));
-      if (buf.length >= kSearchSnippetCharCap) break;
-    }
-    return SearchInjection.clipSnippet(buf.toString());
   }
 
   static String _parseSnippets(String body) {

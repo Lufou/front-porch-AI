@@ -27,6 +27,7 @@ import { ObjectivesPanel, type ObjectiveView } from './ObjectivesPanel';
 export { TextField } from './SummaryRecapField';
 
 interface ToolsState {
+  wikiBaseUrl?: string;
   realismEnabled: boolean;
   needsEnabled: boolean;
   realismOneShotEval: boolean;
@@ -153,6 +154,37 @@ function Toggle({ label, value, onChange }: { label: string; value: boolean; onC
       <span>{label}</span>
       <input type="checkbox" checked={value} onChange={(e) => onChange(e.target.checked)} />
     </label>
+  );
+}
+
+function WikiUrlTools({
+  value,
+  onSave,
+}: {
+  value: string;
+  onSave: (url: string) => void;
+}) {
+  const [draft, setDraft] = useState(value);
+  useEffect(() => setDraft(value), [value]);
+  const commit = () => {
+    const next = draft.trim();
+    if (next !== value) onSave(next);
+  };
+  return (
+    <div className="tool-section" data-testid="wiki-url-tools">
+      <label className="tool-num">
+        <span>Wiki URL</span>
+        <input
+          type="url"
+          placeholder="https://bleach.fandom.com/"
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={commit}
+          onKeyDown={(e) => e.key === 'Enter' && commit()}
+        />
+      </label>
+      <p className="muted small">Looks up this wiki only (MediaWiki / Fandom). Not Google.</p>
+    </div>
   );
 }
 
@@ -283,6 +315,10 @@ export function ChatTools({
           📊 Context budget — what the model was sent
         </button>
       </div>
+      <WikiUrlTools
+        value={t.wikiBaseUrl ?? ''}
+        onSave={(url) => apply(api.post<ToolsState>(`/api/chat/tools/wiki${q}`, { wikiBaseUrl: url }))}
+      />
 
       <details className="tool-section">
         <summary>Realism performance</summary>
