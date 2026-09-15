@@ -95,7 +95,9 @@ class WikiSearchService {
         httpAttempted: false,
       );
     }
-    if (_httpThisSend >= 4) {
+    // 3 clerk lookups × (search + parse). Extract fallback is extra and
+    // may starve the last lookup; parse-first is the live Fandom path.
+    if (_httpThisSend >= 6) {
       return WebSearchResult(
         query: raw,
         snippet: '',

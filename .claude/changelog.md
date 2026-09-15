@@ -1,3 +1,9 @@
+## 2026-09-15 — Clerk: extra wiki/web trips, then one mouth
+- **Why:** One catalog doorbell left thin Fandom scraps in the prompt, and she could not ask for a second page. A mall of agents was the wrong fix.
+- **What:** After she rings `wiki_search` / `web_search` / a recipe card, a clerk loop on the same LLM dispatches up to 3 advertised tools (same tool+args is not another book). Clerk never writes the bubble. One collated scrap injects (wiki without UNTRUSTED), then `generateStream` without tools. No ring → spoken tools text as today. Continue / guests / autonomous / first_mes stay offline. Wiki HTTP cap 6 so three search+parse lookups fit. No webfetch — not in the Porch catalog.
+- **Files:** `catalog_clerk.dart`, `catalog_round.dart`, `chat_service_generation_request.dart`, `wiki_search_service.dart`, `catalog_clerk_test.dart`
+- **Commit:** (this commit)
+
 ## 2026-09-15 — Unlimited saved wikis, chat picker, JSON tools copy
 - **Why:** One URL box could not hold Bleach and One Punch Man. Recipe cards were "drop a file in tools/" with no picker.
 - **What:** Porch Life library (`wiki_saved_urls`) with add/remove, no cap. Chat sidebar Wiki picker sets this session (`setChatWikiUrl`) and, in 1:1, `wiki_url_by_character`. New 1:1 chats seed from that. Groups stay session-only. Choose files copies `.json` into `toolsDir`. Web Porch Life list + ChatTools picker; no web tools upload.

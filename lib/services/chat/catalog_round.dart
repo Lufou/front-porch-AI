@@ -16,8 +16,11 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Front Porch AI. If not, see <https://www.gnu.org/licenses/>.
 
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 
+import 'package:front_porch_ai/services/chat/catalog_clerk.dart';
 import 'package:front_porch_ai/services/chat/mediawiki_search.dart';
 import 'package:front_porch_ai/services/chat/prompt_injection/prompt_injection.dart';
 import 'package:front_porch_ai/services/chat/tool_catalog.dart';
@@ -28,7 +31,7 @@ import 'package:front_porch_ai/services/chat/wiki_search_service.dart';
 import 'package:front_porch_ai/services/chat/wiki_search_tools.dart';
 import 'package:front_porch_ai/services/llm_service.dart';
 
-/// Outcome of the one tools round-trip over the unified catalog.
+/// Outcome of the catalog tools trip (doorbell plus optional clerk loop).
 class CatalogRound {
   const CatalogRound({
     this.injection,
@@ -36,6 +39,8 @@ class CatalogRound {
     this.wikiReceipt,
     this.toolReceipt,
     this.spokenText,
+    this.scrap = '',
+    this.dispatchRounds = 0,
   });
 
   final String? injection;
@@ -43,15 +48,24 @@ class CatalogRound {
   final Map<String, dynamic>? wikiReceipt;
   final Map<String, dynamic>? toolReceipt;
 
-  /// Spoken character text from `generateWithTools` when no advertised
-  /// tool fired. Dispatch may use this as the bubble instead of a second
-  /// empty completion.
+  /// Spoken character text from the doorbell `generateWithTools` when no
+  /// advertised tool fired. After a ring the clerk's text is discarded.
   final String? spokenText;
+
+  /// Unwrapped clip for the clerk's tool-result row. Empty on a miss.
+  final String scrap;
+
+  /// Advertised tool dispatches this turn. 0 = she never rang.
+  final int dispatchRounds;
 }
 
-/// One `generateWithTools` with the flat catalog. Dispatches by source:
-/// in-process `web_search` vs a user recipe card. A name that is not in the
-/// advertised catalog is a no-op. Cap: first advertised call only.
+/// Doorbell `generateWithTools` plus a clerk loop after she rings.
+///
+/// No advertised call → spoken tools text (the bubble) and zero extra
+/// trips. A ring dispatches (wiki parse / Tavily / recipe card), then up
+/// to [kClerkMaxDispatchRounds] advertised dispatches total. Clerk
+/// follow-ups never become the bubble: collate one scrap and the mouth
+/// streams without tools.
 Future<CatalogRound> runCatalogRound({
   required LLMService llm,
   required GenerationParams params,
@@ -70,44 +84,131 @@ Future<CatalogRound> runCatalogRound({
     'tools=${[for (final t in catalog.tools) t.name]} '
     'reasoning=${params.reasoningEnabled}',
   );
-  LlmToolResponse? resp;
-  try {
-    resp = await llm.generateWithTools(params, tools);
-  } catch (e) {
-    debugPrint('[Tools] generateWithTools THREW: $e');
-    return const CatalogRound();
-  }
-  if (resp == null) {
-    debugPrint('[Tools] generateWithTools returned null (tools unsupported)');
-    return const CatalogRound();
-  }
-  debugPrint(
-    '[Tools] think calls=${resp.calls.map((c) => c.name).toList()} '
-    'textChars=${resp.text.length}',
-  );
 
-  LlmToolCall? call;
-  CatalogTool? entry;
-  for (final c in resp.calls) {
-    final found = catalog.lookup(c.name);
-    if (found != null) {
-      call = c;
-      entry = found;
+  final messages = <Map<String, Object>>[
+    if (params.chatMessages != null && params.chatMessages!.isNotEmpty)
+      ...params.chatMessages!
+    else
+      {'role': 'user', 'content': params.prompt},
+  ];
+  final injections = <String>[];
+  Map<String, dynamic>? searchReceipt;
+  Map<String, dynamic>? wikiReceipt;
+  Map<String, dynamic>? toolReceipt;
+  var dispatchRounds = 0;
+  String? spokenText;
+  final seenCalls = <String>{};
+
+  for (var trip = 0; trip < kClerkMaxDispatchRounds; trip++) {
+    final tripParams = trip == 0
+        ? params
+        : clerkFollowupParams(params, messages);
+    if (trip > 0) {
+      debugPrint('[Clerk] follow-up trip=$trip dispatches=$dispatchRounds');
+    }
+    LlmToolResponse? resp;
+    try {
+      resp = await llm.generateWithTools(tripParams, tools);
+    } catch (e) {
+      debugPrint('[Tools] generateWithTools THREW: $e');
+      break;
+    }
+    if (resp == null) {
+      debugPrint('[Tools] generateWithTools returned null (tools unsupported)');
       break;
     }
     debugPrint(
-      '[Tools] ignoring unadvertised call name=${c.name} (no-op, not in catalog)',
+      '[Tools] think calls=${resp.calls.map((c) => c.name).toList()} '
+      'textChars=${resp.text.length}',
     );
-  }
-  if (call == null || entry == null) {
-    final text = resp.text.trim();
-    debugPrint(
-      '[Tools] no advertised tool call — '
-      '${text.isEmpty ? 'will stream in-character reply' : 'using spoken tools text'}',
+
+    LlmToolCall? call;
+    CatalogTool? entry;
+    for (final c in resp.calls) {
+      final found = catalog.lookup(c.name);
+      if (found != null) {
+        call = c;
+        entry = found;
+        break;
+      }
+      debugPrint(
+        '[Tools] ignoring unadvertised call name=${c.name} '
+        '(no-op, not in catalog)',
+      );
+    }
+    if (call == null || entry == null) {
+      final text = resp.text.trim();
+      if (dispatchRounds == 0) {
+        debugPrint(
+          '[Tools] no advertised tool call — '
+          '${text.isEmpty ? 'will stream in-character reply' : 'using spoken tools text'}',
+        );
+        spokenText = text.isEmpty ? null : text;
+      } else {
+        debugPrint(
+          '[Clerk] no further tool — discard clerk text, stream the mouth',
+        );
+      }
+      break;
+    }
+    final sig = '${call.name}|${jsonEncode(call.arguments)}';
+    if (!seenCalls.add(sig)) {
+      debugPrint('[Clerk] repeat $sig — not another book, stop');
+      break;
+    }
+
+    final round = await _dispatchCall(
+      call: call,
+      entry: entry,
+      search: search,
+      wiki: wiki,
+      executeUserTool: executeUserTool,
     );
-    return CatalogRound(spokenText: text.isEmpty ? null : text);
+    dispatchRounds++;
+    final injection = round.injection;
+    if (injection != null && injection.isNotEmpty) {
+      injections.add(injection);
+    }
+    if (round.searchReceipt != null) searchReceipt = round.searchReceipt;
+    if (round.wikiReceipt != null) wikiReceipt = round.wikiReceipt;
+    if (round.toolReceipt != null) toolReceipt = round.toolReceipt;
+
+    if (dispatchRounds >= kClerkMaxDispatchRounds) {
+      debugPrint('[Clerk] dispatch cap $kClerkMaxDispatchRounds — stop');
+      break;
+    }
+    final id = clerkCallId(call, dispatchRounds);
+    final clip = round.scrap.trim().isNotEmpty
+        ? round.scrap
+        : (round.injection ?? '');
+    messages
+      ..add(
+        clerkAssistantToolCallMessage(call: call, callId: id, text: resp.text),
+      )
+      ..add(clerkToolResultMessage(callId: id, clip: clip));
   }
 
+  return CatalogRound(
+    injection: collateCatalogInjections(injections),
+    searchReceipt: searchReceipt,
+    wikiReceipt: wikiReceipt,
+    toolReceipt: toolReceipt,
+    spokenText: spokenText,
+    dispatchRounds: dispatchRounds,
+  );
+}
+
+Future<CatalogRound> _dispatchCall({
+  required LlmToolCall call,
+  required CatalogTool entry,
+  required WebSearchService search,
+  WikiSearchService? wiki,
+  Future<UserToolHttpResult> Function(
+    CatalogTool entry,
+    Map<String, dynamic> arguments,
+  )?
+  executeUserTool,
+}) async {
   if (entry.source == ToolSource.inProcess &&
       entry.name == kWebSearchToolName) {
     return _dispatchSearch(call, search);
@@ -161,6 +262,8 @@ Future<CatalogRound> _dispatchWiki(
     injection: injection,
     searchReceipt: receipt,
     wikiReceipt: receipt,
+    scrap: outcome.ok ? outcome.snippet : '',
+    dispatchRounds: 1,
   );
 }
 
@@ -183,6 +286,8 @@ Future<CatalogRound> _dispatchSearch(
       'ok': outcome.ok,
       'cached': outcome.fromCache,
     },
+    scrap: outcome.ok ? outcome.snippet : '',
+    dispatchRounds: 1,
   );
 }
 
@@ -213,5 +318,7 @@ Future<CatalogRound> _dispatchUserCard({
   return CatalogRound(
     injection: injection,
     toolReceipt: {'tool': entry.name, 'ok': result.ok},
+    scrap: result.ok ? result.text : '',
+    dispatchRounds: 1,
   );
 }

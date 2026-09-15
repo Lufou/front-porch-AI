@@ -194,11 +194,13 @@ extension ChatServiceGenerationRequest on ChatService {
 
     var genParams = paramsOf(prompt);
 
-    // Unified tools catalog: in-process web_search plus user recipe cards
-    // from <library>/tools/. Continue / autonomous / xml-only skip the
-    // round-trip. Regen is a new try (directUserSend). Tools ride the
-    // *character* prompt (no silent lookup/think-to-call cue). Call → inject
-    // → stream without tools. Spoken tools text with no call is the bubble.
+    // Unified tools catalog: in-process web_search / wiki_search plus user
+    // recipe cards from <library>/tools/. Continue / autonomous / xml-only
+    // skip the round-trip. Regen is a new try (directUserSend). Tools ride
+    // the *character* prompt. No call → spoken tools text is the bubble
+    // (clerk does not run). A ring → clerk loop (cap 3 dispatches), one
+    // collated scrap, then stream without tools. Clerk never writes the
+    // bubble.
     final globalDefault = _storageService.webSearchSettings.webSearchDefault;
     final xmlOnly = _toolProbe.isXmlOnly(_evalBackendIdentity);
     final includeSearch = shouldAdvertiseWebSearch(
