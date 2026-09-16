@@ -23,6 +23,17 @@
 - **Files:** `worker_gpu_swap.dart`, `worker_gpu_hosts.dart`, `worker_backend.dart`, `llm_provider.dart` + worker part, ChatService lanes/evals/postgen/catalog, Settings + web card, new swap tests
 - **Commit:** 85ccdbf4, a6d31871
 
+## 2026-09-16 — Settings chrome: Realism evals
+- **Why:** User-facing "Side jobs" was the wrong name for the worker lane.
+- **What:** Settings Backend / web WorkerBackendCard headers, helper copy, dual-local and unready banners now say **Realism evals**. Keys and `side-jobs-*` test ids stay. PWA bundle rebuilt.
+- **Files:** `worker_backend_section.dart`, `worker_backend.dart`, `WorkerBackendCard.tsx`, `workerBackend.ts`, widget/vitest pins, `docs/Rawhide.md`, `assets/web_app`
+
+## 2026-09-16 — Settings: subordinate Side jobs chrome
+- **Why:** UIC HOLD H0–H7. Worker sat between Backend Mode and API Configuration as a second provider+key stack; the worker model was a text box + Browse. User rejected the twin form.
+- **What:** One Chat speech stack (chips → URL → key → check → model, then host extras). Side jobs below, default Same as chat. Different host shows delta fields only; same host is model-picker only (shared RemoteModelPickerField / web ModelPicker). Dual-local banner unchanged.
+- **Files:** `backend_tab.dart`, `backend_mode_selector.dart`, `remote_api_section.dart`, `worker_backend_section.dart`, `worker_backend.dart`, `WorkerBackendCard.tsx`, `SettingsPage.tsx`, tests
+- **Commit:** d9c199ab
+
 ## 2026-09-16 — Worker lane is an LLMProvider instance contract
 - **Why:** FakeLLMProvider and Settings/idle doubles crashed: extension getters read library-private `_storageService`.
 - **What:** Worker service / side lane / unready / dual-local refuse are instance getters on LLMProvider. Fakes default to worker-off. Unready copy is a pure helper.

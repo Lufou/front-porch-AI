@@ -19,6 +19,7 @@
 import 'package:front_porch_ai/services/chat/chat.dart';
 import 'package:front_porch_ai/services/reasoning_effort.dart';
 import 'package:front_porch_ai/services/storage/settings/remote_api_key_vault.dart';
+import 'package:front_porch_ai/services/storage/settings/remote_provider.dart';
 import 'package:front_porch_ai/services/storage_service.dart';
 
 /// Worker fields without growing [StorageService] past the 1000-line ratchet.
@@ -39,13 +40,47 @@ extension WorkerBackendStorage on StorageService {
 
 /// Dual-local is refused when this pair has no unload/swap lever.
 const kWorkerDualLocalMessage =
-    'Chat speech and side jobs can\'t both use a local engine at the same '
+    'Chat speech and Realism evals can\'t both use a local engine at the same '
     'time — they would fight over the GPU. Use a cloud/API host for one of '
     'them, or turn the worker off.';
 
 /// Empty [workerBackendType] means today's single-backend behavior.
 bool workerBackendIsOff(String workerBackendType) =>
     workerBackendType.trim().isEmpty;
+
+/// Same provider/URL family as chat speech. Empty worker inherits the mouth.
+bool workerHostMatchesChat({
+  required String mouthType,
+  required String mouthUrl,
+  required String workerType,
+  required String workerUrl,
+}) {
+  if (workerBackendIsOff(workerType)) return true;
+  final mouthKind = resolveRemoteProviderKind(
+    backendType: mouthType,
+    url: mouthUrl,
+  );
+  final workerKind = resolveRemoteProviderKind(
+    backendType: workerType,
+    url: workerUrl,
+  );
+  if (mouthKind != workerKind) return false;
+  if (mouthKind == RemoteProviderKind.kobold) return true;
+  return resolvedLaneApiUrl(workerType, workerUrl) ==
+      resolvedLaneApiUrl(mouthType, mouthUrl);
+}
+
+/// Second API key only when the worker host differs and that host has no vault
+/// key yet. Same-host reuses the chat key.
+bool workerShowsApiKeyField({
+  required bool sameHost,
+  required RemoteProviderKind workerKind,
+  required bool vaultHasKey,
+}) {
+  if (sameHost) return false;
+  if (!remoteProviderNeedsApiKey(workerKind)) return false;
+  return !vaultHasKey;
+}
 
 /// URL used for locality and identity. oMLX is a fixed localhost host;
 /// Kobold is not a URL backend.
@@ -96,12 +131,13 @@ bool workerPairAllowed({
 String? workerLaneUnreadyMessage(String workerType) {
   return switch (workerType.trim()) {
     'kobold' =>
-      'Side jobs are waiting for KoboldCPP to start. Open Models '
+      'Realism evals are waiting for KoboldCPP to start. Open Models '
           'and make sure a file is loaded.',
     'omlx' =>
-      'Side jobs need oMLX running (omlx serve). Chat speech stays '
+      'Realism evals need oMLX running (omlx serve). Chat speech stays '
           'on your main model.',
-    'openRouter' => 'Side jobs need a working URL and key for the worker host.',
+    'openRouter' =>
+      'Realism evals need a working URL and key for the worker host.',
     _ => null,
   };
 }
