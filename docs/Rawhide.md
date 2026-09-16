@@ -7,9 +7,18 @@ Last shipped nightly: `rawhide.20260906.7059c91`. Everything below is unreleased
 
 ## Recent improvements (unreleased — ships in the next build)
 
+- 🌍 **World from Wiki** — a studio wizard that scouts a saved wiki (Fandom or Tiddly) and proposes a short shelf of cards — era, hub, leaf, crown — instead of one card per page. You sign the ones to write. Climate stays off unless you turn it on; if climate write misses, it stays off (no stock Temperate). Stop is on the write step. Needs a tool-calling model. Same on the phone.
+
+- 📖 **Neokosmos works in the same Wiki picker as Bleach** — paste a TiddlyWiki URL (GitHub Pages path is kept). She can search, then open a named page. Fandom / MediaWiki is unchanged.
+- 🪟 **Mac title bar is a real bar again** — after Flutter 3.47 the traffic lights were sitting on the same charcoal as the page. The native title strip is opaque. Windows and Linux stay a normal window.
+
 - 🔁 **Tell Regen why that take was wrong** — optional box on the last reply. Leave it empty and Regen is the same as today. Type a reason and she sees a short clip of the rejected take plus your note, then writes a new swipe. It is not a chat message and it is gone on the next turn. Same on the phone.
 
 - 📖 **She can look up a second wiki page before she talks** — if the first clip is thin, she may fetch another, then speak once in character. Not a lecture. Same on the phone.
+
+- 📖 **Looking something up does not spend her spoken thinking budget** — wiki and web tool picks use the same short, careful settings as Realism checks (not your max-gen or thinking sliders). Her actual line still uses those sliders. Same on the phone.
+
+- 🎭 **Thinking models no longer freeze the Realism spinner** — if a fused check starts rambling, we cut it and still update bond, trust, and mood. Same on the phone.
 
 - 📖 **Save as many wikis as you want** — Porch Life keeps a list (Bleach, One Punch Man, …). The chat sidebar Wiki picker chooses which one this chat uses, or none. A 1:1 pick is remembered for that character, so Sophia can default to Bleach and Mirin to One Punch Man.
 
@@ -22,7 +31,7 @@ Last shipped nightly: `rawhide.20260906.7059c91`. Everything below is unreleased
 
 - 🛠️ **GLM 5.3 Journal and Growth keep their tools** — a think-budget of 0 is Off, and that model refuses Off. We stop sending 0 after it says so, instead of dumping tools and getting an empty XML round.
 
-- 🌳 **Growth Rings grow again on a hot scene** — a bond spike used to re-check every turn and only water the same two rings. Checks wait for the slider (or a real kick) so new rings can land and old ones can fade. Journal is unchanged.
+- 🌳 **Growth Rings grow again on a hot scene** — a bond spike used to re-check every turn and only water the same two rings. Checks wait for the slider (or a real kick) so new rings can land and old ones can fade. Journal is unchanged. A scored bond/trust spike now actually arms that kick — Growth was waiting the full slider because the flag never got set.
 
 - 🔎 **Reading Size is one knob for what you read** — bubbles, the chat input box, and message edit follow that slider. Sidebar stays put.
 

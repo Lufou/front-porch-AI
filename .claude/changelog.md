@@ -1,3 +1,70 @@
+## 2026-09-16 — Fused one-shot: tools retry + tight recovery (still apply deltas)
+- **Why:** Nano + Kimi thinking fused `report_realism` often returned prose, then the text salvage path sent max_tokens 4000+16000. The model wrote a think novel; the between-chunk hang guard never tripped; the Realism spinner sat for 5+ minutes. Skipping deltas is not acceptable.
+- **What:** One-shot uses `fireFusedRealismEval`: tools, forced tools retry, then tight no-headroom text that stops at the first complete JSON. Think-dump / wall-clock abort that stream and recover with tools then JSON-only text. 75s fused budget. OneShot Done/fail logs ms. Clerk / mouth params unchanged.
+- **Files:** `fused_eval_fire.dart`, `eval_stream_guards.dart`, `llm_eval_engine.dart`, `realism_evals.one_shot.dart`, wiring, tests
+- **Commit:** 91e9e0e4
+
+## 2026-09-16 — Clerk / doorbell uses eval-lane GenerationParams
+- **Why:** Catalogue tool trips were inheriting the character's max-gen / thinking sliders (or a "clerk-ish" cap). That burns the spoken turn's budget and lets the retrieval sub-agent sample like creative speech — it invents facts. Doorbell text was also becoming the bubble when she did not ring, so Thought chips never attached.
+- **What:** Shared `evalLaneParams` (`kEvalLaneMaxLength` 4000, temp 0.1, top-P 0.5, no reasoning, empty stop). `fireLLMEval` and doorbell/clerk both use it. Clerk sets `salvageReasoning: false`. No resolveMaxLength / user samplers on the clerk lane. No-tool path discards doorbell speech and always mouth-streams with full character params.
+- **Files:** `eval_lane_params.dart`, `llm_eval_engine.dart`, `catalog_clerk.dart`, `catalog_round.dart`, `chat_service_generation_request.dart`, catalog/web-search tests
+- **Commit:** e9cdcdb7
+
+## 2026-09-16 — Session-reload prefs harness + Growth salience kick
+- **Why:** `database_rebind_session_reload_test` constructed a real `StorageService` with no SharedPreferences mock; `_init` is fire-and-forget and threw `MissingPluginException` after the test completed. Growth Rings E2E waited 8 minutes at `growthPassRequests=0` — Journal still fires from `hasSalientEvent` on the stamped message, but Growth only reads `eventKickPending`, and bond/trust/repair/chance writes never armed that flag.
+- **What:** Session-reload uses `SharedPreferences.setMockInitialValues` plus `StorageService.sandbox` and awaits `initialized`. Pending realism writes go through `_writePendingRealismMetadata` → `_requestSalienceKick` (same gate quests/promises already used). Regen critique confirm untouched.
+- **Files:** `database_rebind_session_reload_test.dart`, `journal_physics.dart`, `chat_service_growth.dart`, wiring evals/memory/realism, `chat_service_realism_evals.dart`, `salience_kick_from_pending_test.dart`
+- **Commit:** f678046c
+
+## 2026-09-16 — Regen E2E dialog + SetupStep golden hang
+- **Why:** Tapping Regenerate opened a note dialog and never called the backend — E2E waited 8 minutes. SetupStep goldens still constructed a real StorageService, which awaits secure-storage on init and hung 10 minutes on CI.
+- **What:** E2E driver confirms a blank regen note (same as Chance Time). SetupStep golden uses FakeStorageService. Confirm button keyed. Mac opaque title bar already on this branch.
+- **Files:** `chat_driver.dart`, `regen_critique_field.dart`, `warm_dialog.dart`, `creator_steps_remaining_golden_test.dart`, `regen_critique_field_test.dart`
+- **Commit:** (this commit)
+
+## 2026-09-16 — World from wiki goldens + linear jump
+- **Why:** Empty Worlds goldens still lacked the From Wiki header button. Phone step dots could jump to Review/Write without a scout or a signed shelf.
+- **What:** Regenerated world_management dark/light goldens. Jump helper now requires scouted cards for Review and signed cards for Write (Preview gate unchanged). Write Next stays disabled until something is signed.
+- **Files:** `world_management.*.png`, `worldFromWiki.ts` + page, `world_from_wiki_page.dart`, web bundle
+- **Commit:** (this commit)
+
+## 2026-09-16 — World from wiki Hold punch list
+- **Why:** Climate-on miss still saved climateEnabled with no biome (Temperate fallback). Stop/abort existed on the engine but the write UI never called it. Abort test was a stub. Path-hosted MediaWiki never reached the Action API. Web step jump/save could persist an empty unsigned shelf.
+- **What:** Fail-closed climate (no biome → climate off). Stop on desktop write + AppBar and web write; abort discards the shelf. Real canSave receipt. MediaWiki `api.php` under the pasted path. Web jump/save gated on a written shelf. Name-miss leftover no longer force-picked. Web write rejects unsigned/ToC card lists.
+- **Files:** `world_from_wiki_ops.dart`, engine, write UI, facade, `mediawiki_search.dart`, `wiki_search_service.dart`, `WorldFromWikiPage.tsx`, focused tests
+- **Commit:** (this commit)
+
+## 2026-09-15 — World from wiki is wiki-agnostic (scout / review / write)
+- **Why:** One lorebook card per ticked wiki page made a 200-row checklist and a table of contents, not a cast list. The studio must run on any saved wiki (MediaWiki/Fandom and Tiddly), not a series-specific schema.
+- **What:** Book (name, premise, saved wiki, climate off) → Scout sees index titles and proposes 20–40 cards (name, keys, role era/hub/leaf/crown, 1–3 sourceTitles, optional group slug from this book) → Review signs a shelf (default unchecked, no select-all) → Write signed cards only (`getArticleFull` on sources, 160–330 chars, alias keys) → role mechanics in `world_craft_mechanics.dart` (not chargen `assignLoreMechanics`) → Preview/Save with recursiveScanning, scanDepth 10, tokenBudget 2800. Tools gate stays. Desktop + web.
+- **Files:** `lib/services/world_from_wiki/`, wizard steps, `WorldFromWikiFacade`, `web_ui` WorldFromWikiPage
+- **Commit:** (uncommitted — human commit)
+
+## 2026-09-15 — World from wiki (creator suite)
+- **Why:** Chargen drops a card on home. Wiki lookup in chat is a 3-trip postcard, not a world builder. Sosuke wanted a studio wizard that scans a saved wiki, ticks pages, bakes full articles into lorebook cards, and saves a real World.
+- **What:** Setup (chargen backend/model + tools gate) → Book (name, premise, Porch Life wiki picker, lorebooks on, climate off) → checklist from Tiddly index / MediaWiki allpages (skip `$:/`, media, galleries; list is the cap) → bake each tick with `wiki_page` full article (not 3500 clip) → one lorebook tool card → Preview → `WorldRepository.saveWorld`. Pause/abort does not save. Chat clerk cap stays 3. Desktop + web. `debugPrint('[World]')` scan counts, each title baked, abort.
+- **Files:** `lib/services/world_from_wiki/`, `wiki_search_service.studio.dart`, wizard under `lib/ui/character_creator/world_from_wiki/`, web `/worlds/from-wiki`, `WorldFromWikiFacade`
+- **Commit:** (uncommitted — human commit)
+
+## 2026-09-15 — TiddlyWiki adapter + wiki_page
+- **Why:** wiki_search was MediaWiki `api.php` only. Neokosmos is a TiddlyWiki on GH Pages (~4.1MB notebook, path `/NeokosmosWiki/`), not Fandom. Origin-only canonicalize fetched the GitHub user site. Same picker, two backends; not a lore cloud and not a special `neokosmos_search` tool.
+- **What:** Detect MW host vs Tiddly tiddler store after `parseWikiBaseUrl`. Session-cached tiddler index. `wiki_search` still search; new `wiki_page` (title or page) opens the article, clipped to 3500, `wikiResultFragment`. Fandom `wiki_page` uses parse URI. Skip `$:/`, images, mp3, Media Library. 8MB Tiddly fetch cap. User-Agent `FrontPorchAI/wiki`. Debug `[Wiki]` / `[Tiddly]` / `[WikiPage]`. Catalog advertises `wiki_page` when a wiki URL is set.
+- **Files:** `tiddly_wiki.dart`, `wiki_search_service.dart`, `wiki_search_tools.dart`, `mediawiki_search.dart`, `catalog_round.dart`, `tool_catalog.dart`, `chat_service_generation_request.dart`, `web_search_settings.dart`, `wiki_page_tiddly_test.dart`, web picker labels
+## 2026-09-16 — fix(macos): opaque title bar after Flutter 3.47
+- **Why:** After the 3.47 Impeller/wide-gamut desktop default, the Mac title
+  bar went clear. Traffic lights sat on the same charcoal as the body.
+  `TitleBarStyle.normal` was already set; `WindowOptions.backgroundColor`
+  was `Colors.transparent`, and window_manager's macOS `setTitleBarStyle`
+  always writes `isOpaque = false`. Together that made AppKit treat the
+  title bar as a clear strip.
+- **What:** Opaque porch background + `TitleBarStyle.normal` via
+  `mainWindowOptions`. Native `MainFlutterWindow` refuses transparent
+  title bar / `fullSizeContentView`. Windows/Linux keep the same decorated
+  options. Not a sidebar-glow or wiki change.
+- **Files:** `lib/ui/window_chrome.dart`, `lib/main.startup.dart`,
+  `macos/Runner/MainFlutterWindow.swift`, `test/ui/window_chrome_test.dart`
+- **Commit:** (this commit)
+
 ## 2026-09-15 — Optional regen critique (reject reason)
 - **Why:** Regen was only "try again". Users needed a way to say why this take was wrong without chips or an Ash line in the transcript.
 - **What:** Optional field on last-bot regen chrome (desktop + web). Empty = today's regen. Non-empty injects a one-shot director slip (think-stripped ~800-char clip + ~500-char reason) before `Name:`. Not stored in messages. Continue strips it. Tools/clerk unchanged (`directUserSend: true`); critique does not force a lookup.

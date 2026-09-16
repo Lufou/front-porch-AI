@@ -68,7 +68,7 @@ extension ChatServiceWiringEvals on ChatService {
       getRealismEvalCancelled: () =>
           _realismEvalCancelled || _isStaleGreetingEval(),
       getPendingRealismMetadata: () => _pendingRealismMetadata ?? {},
-      setPendingRealismMetadata: (v) => _pendingRealismMetadata = v,
+      setPendingRealismMetadata: _writePendingRealismMetadata,
       captureRealismState: _captureRealismState,
       getCharacterEmotion: () => _characterEmotion,
       setCharacterEmotion: (v) => _characterEmotion = v,
@@ -257,7 +257,7 @@ extension ChatServiceWiringEvals on ChatService {
         label: 'needs',
       ),
       getPendingRealismMetadata: () => _pendingRealismMetadata ?? {},
-      setPendingRealismMetadata: (v) => _pendingRealismMetadata = v,
+      setPendingRealismMetadata: _writePendingRealismMetadata,
       getActiveCharacter: () => _activeCharacter,
       getActiveGroup: () => _activeGroup,
       getIsObserverMode: () => _observerMode,
@@ -289,6 +289,30 @@ extension ChatServiceWiringEvals on ChatService {
         repeatPenalty: kScalarEvalRepeatPenalty,
         label: 'realism',
       ),
+      fireTightEval: (prompt, {onChunk, wallClockTimeout}) async {
+        var aborted = false;
+        final raw = await _fireLLMEval(
+          prompt,
+          onChunk: onChunk,
+          repeatPenalty: kScalarEvalRepeatPenalty,
+          label: 'realism-fused',
+          salvageReasoning: false,
+          maxLength: kEvalRecoveryMaxLength,
+          wallClockTimeout: wallClockTimeout,
+          abortClientOnStop: true,
+          onGuardAbort: () => aborted = true,
+          stopWhen: (acc) =>
+              usableEvalJsonText(
+                _stripThinkBlocks(acc),
+                tools: kOneShotEvalTools,
+                toolChoice: kOneShotTool,
+                callToText: (resp) =>
+                    realismToolCallToJson(kOneShotTool, resp.calls),
+              ) !=
+              null,
+        );
+        return fusedTextFromRaw(raw, aborted: aborted);
+      },
       // Tools transport (realism_tools.dart): same door + probe memory the
       // Journal and Growth passes use, so a backend answers the "can you speak
       // tools?" question at most once per run across all three systems.
@@ -311,7 +335,7 @@ extension ChatServiceWiringEvals on ChatService {
       getObjectivesEnabled: () => objectivesActive,
       getMessages: () => _messages,
       getPendingRealismMetadata: () => _pendingRealismMetadata ?? {},
-      setPendingRealismMetadata: (v) => _pendingRealismMetadata = v,
+      setPendingRealismMetadata: _writePendingRealismMetadata,
       captureRealismState: _captureRealismState,
       getCharacterEmotion: () => _characterEmotion,
       setCharacterEmotion: (v) => _characterEmotion = v,
@@ -475,23 +499,7 @@ extension ChatServiceWiringEvals on ChatService {
       // The completion check runs pre-generation; the flags are consumed by
       // _maybeRunJournalPass/_maybeRunGrowthPass post-generation (a finished
       // quest is a story beat worth journaling AND a moment characters grow).
-      onObjectiveCompleted: () {
-        // Same shared rate limiter as onSalienceKick (salience_kick_gate.dart)
-        // — a completed quest in the middle of an emotionally hot scene must
-        // not stack a second immediate double-pass on the one just fired.
-        if (!_growthService.salienceKickGate.allow(
-          sessionId: _currentSessionId,
-          messageCount: _messages.length,
-        )) {
-          debugPrint(
-            '[Journal] objective-completed kick suppressed — within '
-            '$kSalienceKickMinGapMessages messages of the last one',
-          );
-          return;
-        }
-        _journalMaintenance.eventKickPending = true;
-        _growthService.eventKickPending = true;
-      },
+      onObjectiveCompleted: () => _requestSalienceKick(),
       // Ambitions (Living Time §6): a whole quest finishing is the ONE moment
       // ambition progress can move. Fire-and-forget; owner resolved from the
       // objective row's characterId (per-character in groups by construction).
