@@ -249,13 +249,15 @@ extension ChatServiceGenerationRequest on ChatService {
       ],
     );
     if (catalog.tools.isNotEmpty) {
-      final round = await runCatalogRound(
-        llm: sideLaneLlm,
-        params: genParams,
-        catalog: catalog,
-        search: _webSearchService,
-        wiki: _wikiSearchService,
-        backendIdentity: _evalBackendIdentity,
+      final round = await _withWorkerLane(
+        () => runCatalogRound(
+          llm: sideLaneLlm,
+          params: genParams,
+          catalog: catalog,
+          search: _webSearchService,
+          wiki: _wikiSearchService,
+          backendIdentity: _evalBackendIdentity,
+        ),
       );
       t.searchReceipt = round.searchReceipt;
       t.toolReceipt = round.toolReceipt;
@@ -269,10 +271,12 @@ extension ChatServiceGenerationRequest on ChatService {
           '[Tools] dispatch no tool result — stream in-character reply',
         );
       }
-      t.stream = llmService.generateStream(genParams);
-    } else {
-      t.stream = llmService.generateStream(genParams);
     }
+    // Occupancy wait is load-bearing: catalog `_withWorkerLane` can nest
+    // under a journal hold, and releasing the catalog depth must not let
+    // speech start while the mouth is still unloaded.
+    await _llmProvider?.waitForWorkerLaneIdle();
+    t.stream = llmService.generateStream(genParams);
 
     // ── Phase: Prefilling ──
     // The HTTP request is now in flight. For KoboldCPP, the model is

@@ -31,8 +31,10 @@ import 'package:front_porch_ai/services/kobold_service.dart';
 import 'package:front_porch_ai/services/omlx_status_poller.dart';
 import 'package:front_porch_ai/services/open_router_service.dart';
 import 'package:front_porch_ai/services/remote_reachability.dart';
+import 'package:front_porch_ai/services/storage/settings/remote_api_key_vault.dart';
 import 'package:front_porch_ai/services/storage_service.dart';
 import 'package:front_porch_ai/services/worker_backend.dart';
+import 'package:front_porch_ai/services/worker_gpu_swap.dart';
 
 part 'llm_provider.worker.dart';
 
@@ -173,17 +175,11 @@ class LLMProvider extends ChangeNotifier {
         mouthUrl: _storageService.remoteApiUrl,
         workerType: _storageService.workerBackendType,
         workerUrl: _storageService.workerRemoteApiUrl,
+        gpuSwapAvailable: workerGpuSwapAvailable,
       );
 
   /// Side-lane service when the worker is on and the pair is allowed.
-  LLMService? get workerService {
-    if (!workerConfigured || workerRefusedDualLocal) return null;
-    return switch (workerBackend) {
-      BackendType.kobold => _koboldService,
-      BackendType.openRouter || BackendType.omlx => _workerRemote,
-      null => null,
-    };
-  }
+  LLMService? get workerService => _liveWorkerService();
 
   /// Evals / clerk / journal / growth. Mouth stays [activeService].
   LLMService get sideLaneService => workerService ?? activeService;
@@ -242,16 +238,19 @@ class LLMProvider extends ChangeNotifier {
   /// True when the managed process is currently running.
   bool get hasAnyManagedProcessRunning => _koboldService.isRunning;
 
-  /// Ensures the local Kobold backend is running when the user enters a chat —
-  /// including when a .kcpps preset owns the model, and when Kobold is the
-  /// worker while chat speech stays on a remote host.
-  Future<void> ensureManagedBackendIsRunning() async {
+  /// Start Kobold on chat entry, or inside a GPU swap (`forGpuSwap`).
+  Future<void> ensureManagedBackendIsRunning({bool forGpuSwap = false}) async {
     if (hasAnyManagedProcessRunning) return;
-    if (!shouldEnsureKoboldProcess(
-      mouthType: _storageService.backendType,
-      workerType: _storageService.workerBackendType,
-      pairAllowed: !workerRefusedDualLocal,
-    )) {
+    if (!forGpuSwap &&
+        !shouldEnsureKoboldProcess(
+          mouthType: _storageService.backendType,
+          workerType: _storageService.workerBackendType,
+          pairAllowed: !workerRefusedDualLocal,
+          mouthIsLocal: backendLaneIsLocal(
+            _storageService.backendType,
+            _storageService.remoteApiUrl,
+          ),
+        )) {
       return;
     }
 
@@ -318,6 +317,11 @@ class LLMProvider extends ChangeNotifier {
     _koboldService.removeListener(_onServiceChanged);
     _omlxPoller.stop();
     _lmStudioStreamer.stop();
+    final occupancy =
+        _providerHeldSwap[this] ??
+        _providerSwapOverride[this] ??
+        _providerSwap[this];
+    if (occupancy != null) unawaited(occupancy.ensureMouth());
     super.dispose();
   }
 

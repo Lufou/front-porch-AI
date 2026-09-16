@@ -1,3 +1,28 @@
+## 2026-09-16 — Worker V2: HOLD A+B + worker-hot residency
+- **Why:** (A) Kobold admin `unload_model` left `_modelReady` true, so a successful `initial_model` + `waitUntilReady` no-op'd on stale `isReady`. (B) `isHeld` is depth-only; after release the restore tail (or worker-hot residency) could still have the mouth unloaded while speech wait returned. Cadence lock (corrects the queued “restore mouth on every release / ≥2 full cycles” note): dual-local pre+post must leave the worker hot. Mouth is resident only during speech. Do not keep the worker loaded through the mouth turn.
+- **What:** Admin unload calls `markModelNotReady` (no version-probe restart). Production `waitUntilReady` throws if still ready, then polls. Occupancy `release` only drops depth. `ensureMouth` unloads worker and restores mouth. `waitForWorkerLaneIdle` waits until depth idle, then `ensureMouth`, and does not return until that restore finishes. Next acquire is a no-op while `_mouthDown`. Provider dispose fire-and-forgets mouth restore. Rebuild refuses replace while `mouthDown` / busy. Held token stays (and is parked on the Expando) while `mouthDown`, so a dirty mid-hold rebuild cannot mint a new occupancy and orphan restore. SWITCH_CANCEL stays parked.
+- **Cost:** First turn / mouth-already-up still swaps to worker for pre. Steady-state: hot worker → pre (no swap) → swap to mouth for speech → swap to worker for post → leave hot. Speech always pays one restore wait (must not return early).
+- **Files:** `worker_gpu_swap.dart`, `worker_gpu_hosts.dart`, `kobold_service.dart`, `llm_provider.dart` + worker part, `chat_service_llm_lanes.dart`, swap tests
+- **Commit:** 034574f6 (A+B + residency); 31c4b12b (dirty rebuild must not orphan mouthDown)
+
+## 2026-09-16 — Worker V2: keep mouth generateStream seam + occupancy wait
+- **Why:** Source-grep pins require the request seam to call `llmService.generateStream(genParams)`. Wrapping that in `_mouthGenerateStream` went red in CI. Occupancy wait still has to run after catalog (catalog can nest under a journal hold).
+- **What:** Catalog round unchanged; then `waitForWorkerLaneIdle` then the original `llmService.generateStream(genParams)` seam. Impersonate/actions still use the wrapper. Existing pins not edited. SWITCH_CANCEL stays parked.
+- **Files:** `chat_service_generation_request.dart`
+- **Commit:** fbeb5d5e
+
+## 2026-09-16 — Worker V2 HOLD: immortal occupancy + fail-closed restore
+- **Why:** Mid-hold `_rebuildGpuSwap` could mint a second Expando occupancy and orphan restore. Kobold admin `initial_model` miss left the process up so ensure-running no-op'd a model-less mouth. oMLX load miss soft-returned so occupancy faked success. Cancel/stop pins skipped live occupancy. Next mouth generate could start while a journal hold still had the mouth unloaded.
+- **What:** Held-token pin so open/close/nested holds keep one occupancy; `_rebuildGpuSwap` does not replace the Expando while pins/depth > 0. Kobold restore fail-closed: stop-then-start when admin load fails and the process is still up; wait-until-ready after reload or restart. oMLX load miss throws. Cancel/stop pins use a live swapped hold (hang-until-abort worker, no `testWorkerLlmServiceOverride`). Mouth generate (send, impersonate, action suggestions) waits for occupancy idle. SWITCH_CANCEL stays parked.
+- **Files:** `llm_provider.worker.dart`, `worker_gpu_hosts.dart`, chat lanes/generation/impersonate/actions, new/extended swap tests
+- **Commit:** 46d1ae9b
+
+## 2026-09-16 — Worker backend V2: dual-local unload/swap
+- **Why:** V1 refused two local engines (GPU fight). Mouth and worker can take turns when each host has a real unload/restore lever.
+- **What:** One occupancy contract: unload mouth → prepare worker → run side-lane work → unload worker → restore mouth. oMLX `POST /v1/models/{id}/unload|load` (+ admin twin). LM Studio `GET /api/v1/models` then `POST /api/v1/models/unload` (`instance_id`) + `/load`. Kobold admin `reload_config` `unload_model`/`initial_model`, else process stop/start. Generic local OpenAI stays refused. Cancel/stop still abort both lanes. Widget tests stay V1 fail-closed unless a test injects a swap (`runningUnderFlutterTestBinding`). Occupancy order pin proven red then green.
+- **Files:** `worker_gpu_swap.dart`, `worker_gpu_hosts.dart`, `worker_backend.dart`, `llm_provider.dart` + worker part, ChatService lanes/evals/postgen/catalog, Settings + web card, new swap tests
+- **Commit:** 85ccdbf4, a6d31871
+
 ## 2026-09-16 — Worker lane is an LLMProvider instance contract
 - **Why:** FakeLLMProvider and Settings/idle doubles crashed: extension getters read library-private `_storageService`.
 - **What:** Worker service / side lane / unready / dual-local refuse are instance getters on LLMProvider. Fakes default to worker-off. Unready copy is a pure helper.
