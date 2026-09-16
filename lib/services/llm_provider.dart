@@ -32,6 +32,9 @@ import 'package:front_porch_ai/services/omlx_status_poller.dart';
 import 'package:front_porch_ai/services/open_router_service.dart';
 import 'package:front_porch_ai/services/remote_reachability.dart';
 import 'package:front_porch_ai/services/storage_service.dart';
+import 'package:front_porch_ai/services/worker_backend.dart';
+
+part 'llm_provider.worker.dart';
 
 /// The available backend types. The former `pseudoRemote` (a local KoboldCpp
 /// launched from a .kcpps preset) was folded into [kobold]: the local backend
@@ -50,6 +53,11 @@ class LLMProvider extends ChangeNotifier {
   final BackendManager _backendManager;
 
   BackendType _activeBackend = BackendType.kobold;
+
+  /// Dedicated OpenAI-compatible client for the worker lane. Never the
+  /// mouth [_openRouterService] — configuring this must not flip chat speech.
+  final OpenRouterService _workerRemote = OpenRouterService();
+  String? _lastWorkerIdentity;
 
   // ── Live generation status sources (truthful status bar) ────────────────
   // One shared struct per non-Kobold source; [activeLiveProgress] resolves
@@ -85,8 +93,15 @@ class LLMProvider extends ChangeNotifier {
   /// Start/stop the per-backend live-status sources for the current backend
   /// + URL. Called on backend switches; safe to call repeatedly.
   void _syncLiveStatusSources() {
-    if (_activeBackend == BackendType.omlx) {
-      _omlxPoller.start(_openRouterService.apiUrl);
+    if (shouldRunOmlxPoller(
+      mouthType: _storageService.backendType,
+      workerType: _storageService.workerBackendType,
+      pairAllowed: !workerRefusedDualLocal,
+    )) {
+      final url = _activeBackend == BackendType.omlx
+          ? _openRouterService.apiUrl
+          : resolvedLaneApiUrl('omlx', _storageService.workerRemoteApiUrl);
+      _omlxPoller.start(url);
     } else {
       _omlxPoller.stop();
     }
@@ -134,6 +149,55 @@ class LLMProvider extends ChangeNotifier {
     }
   }
 
+  /// Worker picker type, or null when the worker is off.
+  BackendType? get workerBackend {
+    switch (_storageService.workerBackendType) {
+      case 'openRouter':
+        return BackendType.openRouter;
+      case 'omlx':
+        return BackendType.omlx;
+      case 'kobold':
+        return BackendType.kobold;
+      default:
+        return null;
+    }
+  }
+
+  bool get workerConfigured =>
+      !workerBackendIsOff(_storageService.workerBackendType);
+
+  bool get workerRefusedDualLocal =>
+      workerConfigured &&
+      !workerPairAllowed(
+        mouthType: _storageService.backendType,
+        mouthUrl: _storageService.remoteApiUrl,
+        workerType: _storageService.workerBackendType,
+        workerUrl: _storageService.workerRemoteApiUrl,
+      );
+
+  /// Side-lane service when the worker is on and the pair is allowed.
+  LLMService? get workerService {
+    if (!workerConfigured || workerRefusedDualLocal) return null;
+    return switch (workerBackend) {
+      BackendType.kobold => _koboldService,
+      BackendType.openRouter || BackendType.omlx => _workerRemote,
+      null => null,
+    };
+  }
+
+  /// Evals / clerk / journal / growth. Mouth stays [activeService].
+  LLMService get sideLaneService => workerService ?? activeService;
+
+  bool get sideLaneIsKobold => sideLaneService is KoboldService;
+
+  /// Plain-English reason the worker host is picked but not ready.
+  String? get workerUnreadyMessage {
+    if (!workerConfigured || workerRefusedDualLocal) return null;
+    final svc = workerService;
+    if (svc == null || svc.isReady) return null;
+    return workerLaneUnreadyMessage(_storageService.workerBackendType);
+  }
+
   /// Whether the active backend is the local KoboldCpp instance (native or
   /// launched from a .kcpps preset). Gates the local niceties — real
   /// tokenizer counts and prefill perf metrics — and sequential eval dispatch
@@ -179,11 +243,17 @@ class LLMProvider extends ChangeNotifier {
   bool get hasAnyManagedProcessRunning => _koboldService.isRunning;
 
   /// Ensures the local Kobold backend is running when the user enters a chat —
-  /// including when a .kcpps preset owns the model. Good "it just works" for
-  /// normal users; safe to call repeatedly (no-op if already running or the
-  /// active backend is remote / oMLX).
+  /// including when a .kcpps preset owns the model, and when Kobold is the
+  /// worker while chat speech stays on a remote host.
   Future<void> ensureManagedBackendIsRunning() async {
-    if (!hasManagedProcess || hasAnyManagedProcessRunning) return;
+    if (hasAnyManagedProcessRunning) return;
+    if (!shouldEnsureKoboldProcess(
+      mouthType: _storageService.backendType,
+      workerType: _storageService.workerBackendType,
+      pairAllowed: !workerRefusedDualLocal,
+    )) {
+      return;
+    }
 
     // Make sure we have the backend binary
     if (_backendManager.backendPath == null) {
@@ -200,28 +270,25 @@ class LLMProvider extends ChangeNotifier {
     try {
       // Auto-start the local Kobold backend, whether it loads a plain model
       // file (lastUsedModelPath) or a .kcpps preset that owns its own model.
-      if (_activeBackend == BackendType.kobold) {
-        final modelPath = _storageService.lastUsedModelPath;
-        final hasPresetWithModel =
-            _storageService.kcppsHasModel &&
-            _storageService.kcppsModelFileExists;
+      final modelPath = _storageService.lastUsedModelPath;
+      final hasPresetWithModel =
+          _storageService.kcppsHasModel && _storageService.kcppsModelFileExists;
 
-        if (modelPath != null || hasPresetWithModel) {
-          await _koboldService.startKobold(
-            _backendManager.backendPath!,
-            modelPath ?? '',
-            kcppsPath: _storageService.activeKcppsPath,
-            mmprojPath: modelPath != null
-                ? _storageService.mmprojForModel(modelPath)
-                : null,
-            gpuLayers: _storageService.gpuLayers,
-            contextSize: _storageService.contextSize,
-            useVulkan: _storageService.useVulkan ?? false,
-            useCublas: _storageService.useCublas ?? false,
-            useMetal: _storageService.useMetal ?? false,
-            useRocm: _storageService.useRocm ?? false,
-          );
-        }
+      if (modelPath != null || hasPresetWithModel) {
+        await _koboldService.startKobold(
+          _backendManager.backendPath!,
+          modelPath ?? '',
+          kcppsPath: _storageService.activeKcppsPath,
+          mmprojPath: modelPath != null
+              ? _storageService.mmprojForModel(modelPath)
+              : null,
+          gpuLayers: _storageService.gpuLayers,
+          contextSize: _storageService.contextSize,
+          useVulkan: _storageService.useVulkan ?? false,
+          useCublas: _storageService.useCublas ?? false,
+          useMetal: _storageService.useMetal ?? false,
+          useRocm: _storageService.useRocm ?? false,
+        );
       }
     } catch (e) {
       // Never let an auto-start failure prevent the user from entering the chat.
@@ -311,11 +378,14 @@ class LLMProvider extends ChangeNotifier {
       _kickLocalThinkingResolve(newType);
     }
 
+    var notified = false;
     if (newType != _activeBackend) {
       _activeBackend = newType;
       _syncLiveStatusSources();
       notifyListeners();
+      notified = true;
     }
+    if (_syncWorkerFromStorage() && !notified) notifyListeners();
   }
 
   /// Last model-identity string synced from storage; used to clear stale

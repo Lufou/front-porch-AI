@@ -1,3 +1,27 @@
+## 2026-09-16 — Worker lane is an LLMProvider instance contract
+- **Why:** FakeLLMProvider and Settings/idle doubles crashed: extension getters read library-private `_storageService`.
+- **What:** Worker service / side lane / unready / dual-local refuse are instance getters on LLMProvider. Fakes default to worker-off. Unready copy is a pure helper.
+- **Files:** `llm_provider.dart`, `llm_provider.worker.dart`, `worker_backend.dart`, `test/golden/support/fakes.dart`
+- **Commit:** ba3b82c6
+
+## 2026-09-16 — Worker tests: clerk/eval dual-local pin + picker vitest
+- **Why:** Review wanted behavioral dual-local routing (not getters), a banner pin, and web picker parity. Source-grep asserts were already gone.
+- **What:** ChatService dual-local refuse now fires an eval and the clerk doorbell on the mouth Kobold. Desktop banner has a stable key. Web card lists the same picker families as desktop.
+- **Files:** `worker_backend_routing_test.dart`, `worker_backend_section.dart`, `WorkerBackendCard.test.tsx`
+- **Commit:** 70582ce4
+
+## 2026-09-16 — Worker: start local, apply key, abort both lanes
+- **Why:** API mouth + Kobold/oMLX worker never started the local engine. A key typed last did not reconfigure the worker. Cancel/stop aborted only the mouth.
+- **What:** ensureManagedBackendIsRunning and the oMLX poller also follow an allowed worker. Worker sync identity includes the vault key. Cancel/stop/yield abort mouth and worker. Dual-local banner is live on web. Honest Kobold worker copy.
+- **Files:** `llm_provider.dart`, `llm_provider.worker.dart`, `chat_service_message_ops.dart`, Settings + `web_ui/`, tests
+- **Commit:** 95ed0285
+
+## 2026-09-16 — Worker backend for side lanes (mouth stays on the chat model)
+- **Why:** Spoken replies want a strong chat model (Nano + Kimi). Feelings, clerk, journal, and growth can run on a second host (Nano GLM, OpenRouter, oMLX, LM Studio, Kobold) without flipping the mouth stream. Two locals would fight the GPU; that pair is refused.
+- **What:** Saved worker type/URL/model. A second OpenRouterService (or the existing Kobold) handles side lanes. Empty worker = today's single backend. API+API, API+local, local+API allowed. Tool-probe identity is prefixed `worker|` so it cannot overwrite the mouth pill. Desktop + web Settings.
+- **Files:** `worker_backend.dart`, `worker_backend_settings.dart`, `llm_provider.dart`, ChatService lanes/wiring, Settings UI + web, tests
+- **Commit:** ef8f62d2, 3cb4524f
+
 ## 2026-09-16 — Fused one-shot: tools retry + tight recovery (still apply deltas)
 - **Why:** Nano + Kimi thinking fused `report_realism` often returned prose, then the text salvage path sent max_tokens 4000+16000. The model wrote a think novel; the between-chunk hang guard never tripped; the Realism spinner sat for 5+ minutes. Skipping deltas is not acceptable.
 - **What:** One-shot uses `fireFusedRealismEval`: tools, forced tools retry, then tight no-headroom text that stops at the first complete JSON. Think-dump / wall-clock abort that stream and recover with tools then JSON-only text. 75s fused budget. OneShot Done/fail logs ms. Clerk / mouth params unchanged.
