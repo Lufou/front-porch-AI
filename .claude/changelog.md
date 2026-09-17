@@ -1,3 +1,63 @@
+## 2026-09-17 — Unload timeout fail-closed like restore
+- **Why:** Admin timeout was fail-closed on restore (rethrow, no restart) but unload caught it, markNotReady, and returned success. Occupancy then prepare-worker on a maybe-still-loaded / mid-teardown process.
+- **What:** Unload timeout while the process is up rethrows (no stop/start). Occupancy acquire failure always restore-mouth and does not treat unload as done. Connection-refused unload still returns without killing the process.
+- **Files:** `worker_gpu_hosts.dart`, `worker_gpu_swap.dart`, `kobold_admin_hang_ready_test.dart`
+- **Commit:** this tip (same commit)
+
+## 2026-09-17 — Admin reload timeout + block ToolSupport until gen-ready
+- **Why:** Live dual Q4/Q2 hung at `[GpuSwap] prepare-worker`. Admin `reload_config` from Dart had no HTTP timeout. ToolSupport auto-ping opened the worker lane on version 200 before the mouth was generation-ready. Completions stayed empty / `finish_reason=error`. No restore-mouth, no Flora reply.
+- **What:** 45s timeout on every Kobold admin reload (fail closed once, no 8× retry, no process restart while PID is up). `finish_reason=error` / `decoded.error` are not generation-ready. ToolSupport auto-ping waits until occupancy `mouthDown` after an explicit handoff (or same-resident). Prepare-worker timeout/inactive restore mouth and show the swap error.
+- **Files:** `kobold_admin_swap.dart`, `worker_gpu_hosts.dart`, `llm_provider.worker.dart`, `tool_support_tester.dart`, `chat_service_wiring_evals.dart`, `generation_error_messages.dart`, `kobold_admin_hang_ready_test.dart`
+- **Commit:** this tip (same commit; no hash-only follow-up)
+
+## 2026-09-17 — Drop unused `_writeJson` from admin-ready tests
+- **Why:** CI `changed Dart files` analyze failed (`unused_element`) after the generation-ready rewrite left a helper with no callers.
+- **What:** Deleted `_writeJson`. Assertions unchanged.
+- **Files:** `test/services/kobold_admin_ready_test.dart`
+- **Commit:** d2c9677f
+
+## 2026-09-17 — Pin speech before mouth restore; call-site empty-bubble guards
+- **Why:** Live log: restore-mouth → version 200 → PRE-GEN attach → immediate unload-mouth with no mouth generate. Pin-after-restore left a gap: `_markModelReady` notifies during `ensureMouth`; a listener `openWorkerLane` can unload before `beginSpeech`. Occupancy-only speech tests stayed green if the ChatService `pinSpeech: true` call site was deleted.
+- **What:** `waitForWorkerLaneIdle(pinSpeech: true)` pins **before** restore; restore failure unpins; no occupancy rebuild under a speech pin. Call-site tests: restore-mouth → generate → then post unload; racing `openWorkerLane` before generate is a regression; empty PRE-GEN stream writes the visible failure notice (not a blank bubble). Still no happy-path process restart.
+- **Files:** `llm_provider.worker.dart`, `test/services/chat/mouth_speech_before_post_eval_test.dart`
+- **Commit:** a0094a8e
+
+## 2026-09-17 — Admin swap waits for generation-ready; speech before post-eval unload
+- **Why:** Same-PID poke still fired Realism on version 200 (empty streams, `report_ping →0`, tool probe refused mid-swap). Mouth restore-mouth + PRE-GEN attach was immediately followed by unload-mouth with **no** `/v1/chat/completions` speech stream — empty bubble / Manual Reprocess. Version 200 means HTTP is up, not that the new GGUF can generate.
+- **What:** After `reload_config`, `waitUntilReadyAfterSwap` probes a tiny non-stream completion. Version JSON / empty / 0-token / newline is FAIL (retry the gate, no process restart). `noteAdminLoadedPair` stamps paths only. Speech `beginSpeech` after restore-mouth; worker `hold` waits until the mouth stream finishes (unpin at finalize start). Empty assistant after PRE-GEN is a visible error, not a successful blank bubble. No happy-path restart.
+- **Files:** `kobold_admin_swap.dart`, `kobold_service.dart`, `worker_gpu_swap.dart`, `llm_provider.worker.dart`, generation request/postgen/lanes, ready + swap + error-message tests
+- **Commit:** 05b1cb64
+
+## 2026-09-17 — Nested admin blip must not kill a live Kobold process
+- **Why:** Second unload-mouth (post Realism) got connection-refused through 4 retries (~800ms), then last-resort **stop** on a still-living process, then prepare-worker last-resort **start** (PID change). First cycle was in-process; the blip is `kcpp_instance` teardown after restore’s version 200. Stopping a live process is what dropped SWA.
+- **What:** Exponential admin backoff (250ms…2s, 8 tries). Unload/restore last-resort stop/start only if the process is dead or admin permanently failed (`success: false`). Transient miss while the process is up: wait/retry, do not kill. Mouth+worker share `KoboldAdminSwapLock` so nested reload_config cannot overlap; waitUntilReady stays inside the lock.
+- **Files:** `kobold_admin_swap.dart`, `worker_gpu_hosts.dart`, `kobold_service.dart`, `llm_provider.worker.dart`, silent-restart tests
+- **Commit:** 29fc07a2
+
+## 2026-09-17 — Dual GGUF swap never silent-restarts when admin exists
+- **Why:** Live poke: first prepare-worker changed PID with `=== STARTING KOBOLDCPP ===` and **no** last-resort log. Occupancy is `mouth.unload()` then `worker.restore()` — the worker host never ran `unload()`, so `_usedAdmin` stayed false and restore silently `stop`+`start`. Later connection-refused on `/api/admin/reload_config` last-resort-restarted again (socket blip after unload / after that silent kill).
+- **What:** Restore always tries admin when the admin host exists (do not gate on a prior unload). Never silent restart if admin is configured. Retry connection-refused / reset / timeout before last-resort. `success: false` still fails immediately.
+- **Files:** `worker_gpu_hosts.dart`, `kobold_admin_swap.dart`, silent-restart + retry tests
+- **Commit:** 91dd8651
+
+## 2026-09-17 — Re-arm Kobold ready after in-process admin reload
+- **Why:** After admin unload + `reload_config` HTTP 200, `markModelNotReady` cleared ready and did not restart the readiness probe (that only starts in `startKobold`). `noteAdminLoadedPair` stamped paths only. `waitUntilReady` polled `isReady` for 10s then threw — and that throw did not last-resort restart. In-process reload_config does not reprint the first-boot stdout ready line. Worker/mouth could stay not-ready after a successful swap.
+- **What:** `noteAdminLoadedPair` restarts the version probe and probes immediately. Production wait is `waitUntilReadyAfterSwap` (active `/api/extra/version` poll). Unload still stops the probe so a late tick cannot flip ready mid-swap. Process stop/start stays last-resort.
+- **Files:** `kobold_service.dart`, `llm_provider.worker.dart`, `worker_gpu_hosts.dart`, `kobold_admin_ready_test.dart`
+- **Commit:** a5a87a2a
+
+## 2026-09-17 — In-process Kobold admin swap (no SWA-killing restart)
+- **Why:** Live poke: `Kobold admin unload_model HTTP 200` treated a successful admin ACK as a miss and stopped the process. Full restart drops SWA cache slots. The old parser required `body is Map && success == true` (bool only), so empty 200, JSON `true`, and `"true"` all threw. Managed launches also lacked `--admin`/`--admindir`, so a real 200 `{"success":false}` took the same path.
+- **What:** Accept those ACK shapes; reject only non-2xx / `success:false`. Launch with `--admin --admindir` (app `kobold_admin`). Dual GGUF+`.kcpps` restore uses in-process `reload_config` (`filename` = GGUF or different `.kcpps`, `overrideconfig` for the pair). Process stop/start is last-resort only and logged. Stamp the loaded pair after admin reload. Worker `.kcpps` mmproj via `--config` stays parked.
+- **Files:** `kobold_admin_swap.dart`, `worker_gpu_hosts.dart`, `kobold_launch_args.dart`, `kobold_service.dart`, `llm_provider.worker.dart`, admin/host/launch tests
+- **Commit:** f288b606
+
+## 2026-09-17 — Managed Kobold dual-GGUF + per-slot .kcpps
+- **Why:** Mouth and clerk on one managed KoboldCPP need their own GGUF **and** `.kcpps`. Swap must load the matching pair; the previous slot’s `--config` must not stay attached. Mouth keeps `--mmproj`; the evals slot must not.
+- **What:** Persist `worker_kobold_model_path` + `worker_kobold_kcpps_path`. sameResident only when GGUF **and** .kcpps match (empty worker GGUF inherits mouth; empty worker .kcpps inherits mouth only if the GGUFs match). `ensureManaged(forGpuSwap, modelPath, kcppsPath)` starts that pair. Worker/evals launch never passes `--mmproj` (even if that GGUF has a mapped projector). Mouth restore / chat-entry still attach the Models-tab mmproj. In-process admin reload for a different pair (see tip above). Settings + web pickers (GGUF + .kcpps only — no worker mmproj UI). Worker-hot cadence unchanged.
+- **Files:** `worker_gpu_swap.dart`, `worker_gpu_hosts.dart`, `worker_backend*.dart`, `llm_provider.dart` + worker part, `kobold_service.dart`, Settings pickers + web card/facade, swap/launch/UI tests
+- **Commit:** (this PR)
+
 ## 2026-09-16 — Worker V2: HOLD A+B + worker-hot residency
 - **Why:** (A) Kobold admin `unload_model` left `_modelReady` true, so a successful `initial_model` + `waitUntilReady` no-op'd on stale `isReady`. (B) `isHeld` is depth-only; after release the restore tail (or worker-hot residency) could still have the mouth unloaded while speech wait returned. Cadence lock (corrects the queued “restore mouth on every release / ≥2 full cycles” note): dual-local pre+post must leave the worker hot. Mouth is resident only during speech. Do not keep the worker loaded through the mouth turn.
 - **What:** Admin unload calls `markModelNotReady` (no version-probe restart). Production `waitUntilReady` throws if still ready, then polls. Occupancy `release` only drops depth. `ensureMouth` unloads worker and restores mouth. `waitForWorkerLaneIdle` waits until depth idle, then `ensureMouth`, and does not return until that restore finishes. Next acquire is a no-op while `_mouthDown`. Provider dispose fire-and-forgets mouth restore. Rebuild refuses replace while `mouthDown` / busy. Held token stays (and is parked on the Expando) while `mouthDown`, so a dirty mid-hold rebuild cannot mint a new occupancy and orphan restore. SWITCH_CANCEL stays parked.

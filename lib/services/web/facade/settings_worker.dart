@@ -16,6 +16,10 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Front Porch AI. If not, see <https://www.gnu.org/licenses/>.
 
+import 'dart:io';
+
+import 'package:path/path.dart' as p;
+
 import 'package:front_porch_ai/services/services.dart';
 
 /// Additive worker-lane keys for Settings GET/POST. Older PWAs ignore them.
@@ -27,6 +31,11 @@ Map<String, dynamic> readWorkerSettings(
     'workerBackend': storage.workerBackendType,
     'workerRemoteApiUrl': storage.workerRemoteApiUrl,
     'workerRemoteModelName': storage.workerRemoteModelName,
+    'workerKoboldModelPath': storage.workerKoboldModelPath ?? '',
+    'workerKoboldKcppsPath': storage.workerKoboldKcppsPath ?? '',
+    'lastUsedModelPath': storage.lastUsedModelPath ?? '',
+    'activeKcppsPath': storage.activeKcppsPath ?? '',
+    'localKcpps': _localKcpps(storage),
     'workerEnabled': llm.workerService != null,
     'workerRefusedDualLocal': llm.workerRefusedDualLocal,
     'workerGpuSwapAvailable': llm.workerGpuSwapAvailable,
@@ -54,11 +63,40 @@ Future<void> updateWorkerSettings({
       body['workerRemoteModelName']?.toString() ?? '',
     );
   }
+  if (body.containsKey('workerKoboldModelPath')) {
+    await storage.setWorkerKoboldModelPath(
+      body['workerKoboldModelPath']?.toString(),
+    );
+  }
+  if (body.containsKey('workerKoboldKcppsPath')) {
+    await storage.setWorkerKoboldKcppsPath(
+      body['workerKoboldKcppsPath']?.toString(),
+    );
+  }
   final workerKey = body['workerApiKey']?.toString();
   if (workerKey != null && workerKey.isNotEmpty) {
     await storage.setRemoteApiKeyFor(
       resolvedLaneApiUrl(storage.workerBackendType, storage.workerRemoteApiUrl),
       workerKey,
     );
+  }
+}
+
+List<Map<String, String>> _localKcpps(StorageService storage) {
+  try {
+    final dir = storage.binDir;
+    if (!dir.existsSync()) return const [];
+    final files =
+        dir
+            .listSync()
+            .whereType<File>()
+            .where((f) => f.path.toLowerCase().endsWith('.kcpps'))
+            .toList()
+          ..sort((a, b) => p.basename(a.path).compareTo(p.basename(b.path)));
+    return [
+      for (final f in files) {'name': p.basename(f.path), 'path': f.path},
+    ];
+  } catch (_) {
+    return const [];
   }
 }

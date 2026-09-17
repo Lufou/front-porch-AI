@@ -39,7 +39,7 @@ enum LocalSwapKind {
   /// `POST /api/v1/models/unload` + `POST /api/v1/models/load`.
   lmStudio,
 
-  /// Admin `reload_config` `unload_model` / `initial_model`, or process stop.
+  /// Admin `reload_config` (unload / GGUF / `.kcpps`); process stop last.
   koboldProcess,
 }
 
@@ -47,10 +47,10 @@ enum LocalSwapKind {
 abstract class GpuSwapHost {
   String get label;
 
-  /// Free this host's VRAM (HTTP unload or stop the managed process).
+  /// Free this host's VRAM (HTTP unload; process stop is last resort).
   Future<void> unload();
 
-  /// Put the model back (HTTP load, admin `initial_model`, or start process).
+  /// Put the model back (HTTP load / admin reload; process start last).
   Future<void> restore();
 }
 
@@ -75,6 +75,10 @@ LocalSwapKind? localSwapKindFor({
 }
 
 /// Same process or same loaded model — two clients, one resident engine.
+///
+/// Two Kobold slots share the managed process. Occupancy is a no-op only
+/// when both lanes name the same GGUF **and** the same .kcpps. Different
+/// model or config must unload/reload.
 bool workerLanesShareResident({
   required String mouthType,
   required String mouthUrl,
@@ -82,13 +86,20 @@ bool workerLanesShareResident({
   required String workerType,
   required String workerUrl,
   required String workerModel,
+  String mouthKcpps = '',
+  String workerKcpps = '',
 }) {
-  if (mouthType == 'kobold' && workerType == 'kobold') return true;
   if (mouthType.trim() != workerType.trim()) return false;
   final mUrl = resolvedLaneApiUrl(mouthType, mouthUrl);
   final wUrl = resolvedLaneApiUrl(workerType, workerUrl);
   if (normalizeRemoteApiUrl(mUrl) != normalizeRemoteApiUrl(wUrl)) {
     return false;
+  }
+  if (mouthType.trim() == 'kobold') {
+    return normalizeLocalModelPath(mouthModel) ==
+            normalizeLocalModelPath(workerModel) &&
+        normalizeLocalModelPath(mouthKcpps) ==
+            normalizeLocalModelPath(workerKcpps);
   }
   return mouthModel.trim() == workerModel.trim();
 }
@@ -102,6 +113,8 @@ bool workerGpuSwapSupported({
   required String workerType,
   required String workerUrl,
   required String workerModel,
+  String mouthKcpps = '',
+  String workerKcpps = '',
 }) {
   if (workerBackendIsOff(workerType)) return false;
   final mouthLocal = backendLaneIsLocal(
@@ -120,6 +133,8 @@ bool workerGpuSwapSupported({
     workerType: workerType,
     workerUrl: workerUrl,
     workerModel: workerModel,
+    mouthKcpps: mouthKcpps,
+    workerKcpps: workerKcpps,
   )) {
     return true;
   }
@@ -151,6 +166,7 @@ class GpuSwapOccupancy {
   int _depth = 0;
   bool _mouthDown = false;
   bool _busy = false;
+  bool _speech = false;
   Future<void> _tail = Future<void>.value();
 
   bool get isHeld => _depth > 0;
@@ -159,6 +175,20 @@ class GpuSwapOccupancy {
   bool get mouthDown => _mouthDown;
 
   bool get isBusy => _busy;
+
+  /// Mouth speech is in flight — worker [hold]/[open] must wait.
+  bool get speechHeld => _speech;
+
+  /// Pin after [ensureMouth] for speech. [hold] cannot unload until [endSpeech].
+  void beginSpeech() => _speech = true;
+
+  void endSpeech() => _speech = false;
+
+  Future<void> _waitSpeech() async {
+    while (_speech) {
+      await Future<void>.delayed(const Duration(milliseconds: 5));
+    }
+  }
 
   void _record(String step) {
     steps.add(step);
@@ -189,7 +219,10 @@ class GpuSwapOccupancy {
   }
 
   Future<void> _acquire() {
-    final done = _tail.then((_) => _acquireLocked());
+    final done = _tail.then((_) async {
+      await _waitSpeech();
+      await _acquireLocked();
+    });
     _tail = done.catchError((_) {});
     return done;
   }
@@ -212,17 +245,13 @@ class GpuSwapOccupancy {
       await worker.restore();
     } catch (e) {
       _depth--;
-      if (_mouthDown) {
-        try {
-          _record('restore-mouth:${mouth.label}');
-          await mouth.restore();
-        } catch (restoreErr) {
-          debugPrint(
-            '[GpuSwap] mouth restore after failed acquire: $restoreErr',
-          );
-        }
-        _mouthDown = false;
+      try {
+        _record('restore-mouth:${mouth.label}');
+        await mouth.restore();
+      } catch (restoreErr) {
+        debugPrint('[GpuSwap] mouth restore after failed acquire: $restoreErr');
       }
+      _mouthDown = false;
       rethrow;
     } finally {
       _busy = false;

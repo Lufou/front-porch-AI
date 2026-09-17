@@ -23,6 +23,7 @@ import 'package:flutter/widgets.dart';
 import 'package:http/http.dart' as http;
 import 'package:front_porch_ai/services/gpu_backend_resolver.dart';
 import 'package:front_porch_ai/services/kobold_binary_version.dart';
+import 'package:front_porch_ai/services/kobold_admin_swap.dart';
 import 'package:front_porch_ai/services/kobold_launch_args.dart';
 import 'package:front_porch_ai/services/kobold_process_control.dart';
 import 'package:front_porch_ai/services/kobold_system_role.dart';
@@ -49,6 +50,8 @@ class KoboldService extends ChangeNotifier
   final List<String> _logs = [];
   String _modelLoadingStatus = '';
   bool _modelReady = false;
+  String? _loadedModelPath;
+  String? _loadedKcppsPath;
 
   /// One-shot flag for UI notifications (e.g. snackbar). Set to true when the
   /// model finishes loading, consumed once by the home page. Unlike _modelReady,
@@ -69,6 +72,15 @@ class KoboldService extends ChangeNotifier
   List<String> get logs => List.unmodifiable(_logs);
   String get modelLoadingStatus => _modelLoadingStatus;
   bool get modelReady => _modelReady;
+
+  /// GGUF last started or last admin-reloaded onto this process.
+  String? get loadedModelPath => _loadedModelPath;
+
+  /// `.kcpps` last started or last admin-reloaded. Empty = UI-flag launch.
+  String? get loadedKcppsPath => _loadedKcppsPath;
+
+  /// Mouth + worker hosts share this so nested reload_config cannot overlap.
+  final KoboldAdminSwapLock adminSwapLock = KoboldAdminSwapLock();
 
   /// Feed a console chunk to [liveProgress]; notify at most every 150ms
   /// (Generating lines arrive once per token).
@@ -333,6 +345,10 @@ class KoboldService extends ChangeNotifier
       _isRunning = true;
       _modelLoadingStatus = 'Initializing model...';
       _modelReady = false;
+      _loadedModelPath = modelPath.isNotEmpty
+          ? modelPath
+          : _storageService.kcppsModelPath;
+      _loadedKcppsPath = kcppsPath;
       _addLog('Starting Koboldcpp...');
       _addLog('Command: $executablePath ${args.join(' ')}');
       notifyListeners();
@@ -624,11 +640,56 @@ class KoboldService extends ChangeNotifier
   }
 
   /// Admin unload leaves the process up. Clear ready so swap restore cannot
-  /// treat a stale [isReady] as a loaded model.
+  /// treat a stale [isReady] as a loaded model. Keep [_loadedKcppsPath]:
+  /// last start or last [noteAdminLoadedPair] `--config`. Stop the probe
+  /// so a late startKobold tick cannot flip ready during unload.
   void markModelNotReady() {
+    _stopReadinessProbe();
     _modelReady = false;
+    _loadedModelPath = null;
     _modelLoadingStatus = 'Unloading model...';
     notifyListeners();
+  }
+
+  /// In-process `reload_config` loaded this pair. Stamp paths only.
+  /// Version 200 is HTTP-up, not generation-ready — [waitUntilReadyAfterSwap]
+  /// probes a tiny completion before [isReady] / evals / mouth generate.
+  Future<void> noteAdminLoadedPair({
+    String? modelPath,
+    String? kcppsPath,
+  }) async {
+    final model = modelPath?.trim() ?? '';
+    if (model.isNotEmpty) _loadedModelPath = model;
+    if (kcppsPath != null) {
+      final kcpps = kcppsPath.trim();
+      _loadedKcppsPath = kcpps.isEmpty ? null : kcpps;
+    }
+  }
+
+  /// Poll a tiny `/v1/chat/completions` until the swapped GGUF generates.
+  /// Version 200 alone is not enough (empty streams / 0-token pings).
+  Future<void> waitUntilReadyAfterSwap({
+    int attempts = 40,
+    Duration delay = const Duration(milliseconds: 250),
+  }) async {
+    final n = attempts < 1 ? 1 : attempts;
+    for (var i = 0; i < n; i++) {
+      final ready = await probeKoboldGenerationReady(baseUrl: _baseUrl);
+      if (ready) {
+        if (!_modelReady) _markModelReady();
+        return;
+      }
+      if (i < n - 1 && delay > Duration.zero) {
+        await Future<void>.delayed(delay);
+      }
+    }
+    throw StateError('Kobold was not generation-ready after GPU swap restore');
+  }
+
+  /// Test hook: pretend the managed process is up (admin swap leaves it up).
+  @visibleForTesting
+  void debugMarkProcessRunning() {
+    _isRunning = true;
   }
 
   @visibleForTesting
@@ -833,6 +894,8 @@ class KoboldService extends ChangeNotifier
     _isRunning = false;
     _modelLoadingStatus = '';
     _modelReady = false;
+    _loadedModelPath = null;
+    _loadedKcppsPath = null;
     _stopReadinessProbe();
     notifyListeners();
   }

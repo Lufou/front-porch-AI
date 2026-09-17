@@ -33,6 +33,26 @@ extension WorkerBackendStorage on StorageService {
   String get workerRemoteModelName => backendSettings.workerRemoteModelName;
   Future<void> setWorkerRemoteModelName(String v) =>
       backendSettings.setWorkerRemoteModelName(v);
+  String? get workerKoboldModelPath => backendSettings.workerKoboldModelPath;
+  Future<void> setWorkerKoboldModelPath(String? v) =>
+      backendSettings.setWorkerKoboldModelPath(v);
+  String? get workerKoboldKcppsPath => backendSettings.workerKoboldKcppsPath;
+  Future<void> setWorkerKoboldKcppsPath(String? v) =>
+      backendSettings.setWorkerKoboldKcppsPath(v);
+
+  /// Realism-evals GGUF, or the Models-tab file when the worker slot is empty.
+  String resolvedWorkerKoboldModelPath() => resolvedKoboldWorkerModelPath(
+    workerPath: workerKoboldModelPath,
+    mouthPath: lastUsedModelPath,
+  );
+
+  /// Realism-evals .kcpps. Empty inherits mouth only when the GGUFs match.
+  String resolvedWorkerKoboldKcppsPath() => resolvedKoboldWorkerKcppsPath(
+    workerKcpps: workerKoboldKcppsPath,
+    mouthKcpps: activeKcppsPath,
+    workerModel: resolvedWorkerKoboldModelPath(),
+    mouthModel: lastUsedModelPath,
+  );
   Future<void> setRemoteApiKeyFor(String url, String v) =>
       backendSettings.setRemoteApiKeyFor(url, v);
   String remoteApiKeyFor(String url) => backendSettings.remoteApiKeyFor(url);
@@ -47,6 +67,45 @@ const kWorkerDualLocalMessage =
 /// Empty [workerBackendType] means today's single-backend behavior.
 bool workerBackendIsOff(String workerBackendType) =>
     workerBackendType.trim().isEmpty;
+
+/// Slash-normalize a local GGUF / .kcpps path so mouth/worker compare is honest.
+String normalizeLocalModelPath(String path) {
+  var p = path.trim().replaceAll('\\', '/');
+  while (p.contains('//')) {
+    p = p.replaceAll('//', '/');
+  }
+  if (p.length > 1 && p.endsWith('/')) {
+    p = p.substring(0, p.length - 1);
+  }
+  return p;
+}
+
+/// Worker GGUF, or the mouth/Models-tab file when the worker slot is empty.
+String resolvedKoboldWorkerModelPath({
+  required String? workerPath,
+  required String? mouthPath,
+}) {
+  final worker = workerPath?.trim() ?? '';
+  if (worker.isNotEmpty) return worker;
+  return mouthPath?.trim() ?? '';
+}
+
+/// Worker .kcpps, or the mouth preset only when both slots name the same GGUF.
+/// A different worker GGUF never inherits mouth `--config`.
+String resolvedKoboldWorkerKcppsPath({
+  required String? workerKcpps,
+  required String? mouthKcpps,
+  required String? workerModel,
+  required String? mouthModel,
+}) {
+  final worker = workerKcpps?.trim() ?? '';
+  if (worker.isNotEmpty) return worker;
+  if (normalizeLocalModelPath(workerModel ?? '') ==
+      normalizeLocalModelPath(mouthModel ?? '')) {
+    return mouthKcpps?.trim() ?? '';
+  }
+  return '';
+}
 
 /// Same provider/URL family as chat speech. Empty worker inherits the mouth.
 bool workerHostMatchesChat({

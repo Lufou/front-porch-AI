@@ -26,17 +26,28 @@ mixin WorkerBackendFields on SettingsBase {
   String _workerBackendType = '';
   String _workerRemoteApiUrl = '';
   String _workerRemoteModelName = '';
+  String? _workerKoboldModelPath;
+  String? _workerKoboldKcppsPath;
 
   /// Empty = worker off (all traffic on the active chat backend).
   String get workerBackendType => _workerBackendType;
   String get workerRemoteApiUrl => _workerRemoteApiUrl;
   String get workerRemoteModelName => _workerRemoteModelName;
 
+  /// Dedicated Realism-evals GGUF for the managed Kobold process.
+  /// Empty inherits the Models-tab / [lastUsedModelPath] file.
+  String? get workerKoboldModelPath => _workerKoboldModelPath;
+
+  /// Dedicated Realism-evals .kcpps for the managed Kobold process.
+  String? get workerKoboldKcppsPath => _workerKoboldKcppsPath;
+
   void loadWorkerBackend() {
     _workerBackendType = prefs?.getString(k('worker_backend_type')) ?? '';
     _workerRemoteApiUrl = prefs?.getString(k('worker_remote_api_url')) ?? '';
     _workerRemoteModelName =
         prefs?.getString(k('worker_remote_model_name')) ?? '';
+    _workerKoboldModelPath = prefs?.getString(k('worker_kobold_model_path'));
+    _workerKoboldKcppsPath = prefs?.getString(k('worker_kobold_kcpps_path'));
   }
 
   Future<void> setWorkerBackendType(String value) async {
@@ -54,6 +65,38 @@ mixin WorkerBackendFields on SettingsBase {
   Future<void> setWorkerRemoteModelName(String value) async {
     _workerRemoteModelName = value;
     await prefs?.setString(k('worker_remote_model_name'), value);
+    notify();
+  }
+
+  Future<void> setWorkerKoboldModelPath(String? value) async {
+    final trimmed = value?.trim();
+    _workerKoboldModelPath = (trimmed == null || trimmed.isEmpty)
+        ? null
+        : trimmed;
+    if (_workerKoboldModelPath == null) {
+      await prefs?.remove(k('worker_kobold_model_path'));
+    } else {
+      await prefs?.setString(
+        k('worker_kobold_model_path'),
+        _workerKoboldModelPath!,
+      );
+    }
+    notify();
+  }
+
+  Future<void> setWorkerKoboldKcppsPath(String? value) async {
+    final trimmed = value?.trim();
+    _workerKoboldKcppsPath = (trimmed == null || trimmed.isEmpty)
+        ? null
+        : trimmed;
+    if (_workerKoboldKcppsPath == null) {
+      await prefs?.remove(k('worker_kobold_kcpps_path'));
+    } else {
+      await prefs?.setString(
+        k('worker_kobold_kcpps_path'),
+        _workerKoboldKcppsPath!,
+      );
+    }
     notify();
   }
 }

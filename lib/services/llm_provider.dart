@@ -27,6 +27,7 @@ import 'package:front_porch_ai/services/live_gen_progress.dart';
 import 'package:front_porch_ai/services/reasoning_effort.dart';
 import 'package:front_porch_ai/services/llm_service.dart';
 import 'package:front_porch_ai/services/lmstudio_log_streamer.dart';
+import 'package:front_porch_ai/services/kobold_admin_swap.dart';
 import 'package:front_porch_ai/services/kobold_service.dart';
 import 'package:front_porch_ai/services/omlx_status_poller.dart';
 import 'package:front_porch_ai/services/open_router_service.dart';
@@ -239,61 +240,18 @@ class LLMProvider extends ChangeNotifier {
   bool get hasAnyManagedProcessRunning => _koboldService.isRunning;
 
   /// Start Kobold on chat entry, or inside a GPU swap (`forGpuSwap`).
-  Future<void> ensureManagedBackendIsRunning({bool forGpuSwap = false}) async {
-    if (hasAnyManagedProcessRunning) return;
-    if (!forGpuSwap &&
-        !shouldEnsureKoboldProcess(
-          mouthType: _storageService.backendType,
-          workerType: _storageService.workerBackendType,
-          pairAllowed: !workerRefusedDualLocal,
-          mouthIsLocal: backendLaneIsLocal(
-            _storageService.backendType,
-            _storageService.remoteApiUrl,
-          ),
-        )) {
-      return;
-    }
-
-    // Make sure we have the backend binary
-    if (_backendManager.backendPath == null) {
-      await _backendManager.checkBackendAvailability();
-      if (_backendManager.backendPath == null) {
-        // Engine not installed: kick the background acquisition (a no-op if
-        // it's already downloading) — the engine chip shows progress and the
-        // next chat entry finds the binary in place.
-        unawaited(_backendManager.ensureEngineInstalled());
-        return;
-      }
-    }
-
-    try {
-      // Auto-start the local Kobold backend, whether it loads a plain model
-      // file (lastUsedModelPath) or a .kcpps preset that owns its own model.
-      final modelPath = _storageService.lastUsedModelPath;
-      final hasPresetWithModel =
-          _storageService.kcppsHasModel && _storageService.kcppsModelFileExists;
-
-      if (modelPath != null || hasPresetWithModel) {
-        await _koboldService.startKobold(
-          _backendManager.backendPath!,
-          modelPath ?? '',
-          kcppsPath: _storageService.activeKcppsPath,
-          mmprojPath: modelPath != null
-              ? _storageService.mmprojForModel(modelPath)
-              : null,
-          gpuLayers: _storageService.gpuLayers,
-          contextSize: _storageService.contextSize,
-          useVulkan: _storageService.useVulkan ?? false,
-          useCublas: _storageService.useCublas ?? false,
-          useMetal: _storageService.useMetal ?? false,
-          useRocm: _storageService.useRocm ?? false,
-        );
-      }
-    } catch (e) {
-      // Never let an auto-start failure prevent the user from entering the chat.
-      debugPrint('[LLMProvider] ensureManagedBackendIsRunning failed: $e');
-    }
-  }
+  /// [modelPath] / [kcppsPath] are the GGUF + `.kcpps` pair to load on swap;
+  /// omitted = Models-tab mouth pair. Mouth restore keeps the Models-tab
+  /// `--mmproj`; a worker/evals pair never gets a projector.
+  Future<void> ensureManagedBackendIsRunning({
+    bool forGpuSwap = false,
+    String? modelPath,
+    String? kcppsPath,
+  }) => _ensureManagedKobold(
+    forGpuSwap: forGpuSwap,
+    modelPath: modelPath,
+    kcppsPath: kcppsPath,
+  );
 
   /// Convenience getters for the underlying services (for UI that needs specifics).
   KoboldService get koboldService => _koboldService;

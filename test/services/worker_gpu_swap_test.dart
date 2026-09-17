@@ -56,6 +56,18 @@ void main() {
       isTrue,
     );
     expect(
+      workerLanesShareResident(
+        mouthType: 'kobold',
+        mouthUrl: '',
+        mouthModel: '/tmp/a.gguf',
+        workerType: 'kobold',
+        workerUrl: '',
+        workerModel: r'\tmp\a.gguf',
+      ),
+      isTrue,
+      reason: 'slash direction must not force a useless unload',
+    );
+    expect(
       workerGpuSwapSupported(
         mouthType: 'omlx',
         mouthUrl: kOmlxApiV1,
@@ -63,6 +75,60 @@ void main() {
         workerType: 'omlx',
         workerUrl: kOmlxApiV1,
         workerModel: 'same-mlx',
+      ),
+      isTrue,
+    );
+  });
+
+  test('same GGUF different .kcpps is not same-resident', () {
+    expect(
+      workerLanesShareResident(
+        mouthType: 'kobold',
+        mouthUrl: '',
+        mouthModel: '/tmp/a.gguf',
+        workerType: 'kobold',
+        workerUrl: '',
+        workerModel: '/tmp/a.gguf',
+        mouthKcpps: '/tmp/mouth.kcpps',
+        workerKcpps: '/tmp/worker.kcpps',
+      ),
+      isFalse,
+    );
+    expect(
+      workerLanesShareResident(
+        mouthType: 'kobold',
+        mouthUrl: '',
+        mouthModel: '/tmp/a.gguf',
+        workerType: 'kobold',
+        workerUrl: '',
+        workerModel: '/tmp/a.gguf',
+        mouthKcpps: '/tmp/same.kcpps',
+        workerKcpps: '/tmp/same.kcpps',
+      ),
+      isTrue,
+    );
+  });
+
+  test('kobold+kobold different GGUFs are not same-resident', () {
+    expect(
+      workerLanesShareResident(
+        mouthType: 'kobold',
+        mouthUrl: '',
+        mouthModel: '/tmp/mouth.gguf',
+        workerType: 'kobold',
+        workerUrl: '',
+        workerModel: '/tmp/worker.gguf',
+      ),
+      isFalse,
+    );
+    expect(
+      workerGpuSwapSupported(
+        mouthType: 'kobold',
+        mouthUrl: '',
+        mouthModel: '/tmp/mouth.gguf',
+        workerType: 'kobold',
+        workerUrl: '',
+        workerModel: '/tmp/worker.gguf',
       ),
       isTrue,
     );
@@ -195,6 +261,88 @@ void main() {
     );
     await occ.hold(() async {});
     expect(occ.steps, isEmpty);
+  });
+
+  test('kobold path pair drives acquire vs sameResident', () async {
+    final different = GpuSwapOccupancy(
+      mouth: _RecHost('mouth'),
+      worker: _RecHost('worker'),
+      sameResident: workerLanesShareResident(
+        mouthType: 'kobold',
+        mouthUrl: '',
+        mouthModel: '/tmp/mouth.gguf',
+        workerType: 'kobold',
+        workerUrl: '',
+        workerModel: '/tmp/worker.gguf',
+      ),
+    );
+    await different.hold(() async {});
+    expect(different.steps, ['unload-mouth:mouth', 'prepare-worker:worker']);
+    expect(different.mouthDown, isTrue);
+
+    final same = GpuSwapOccupancy(
+      mouth: _RecHost('mouth'),
+      worker: _RecHost('worker'),
+      sameResident: workerLanesShareResident(
+        mouthType: 'kobold',
+        mouthUrl: '',
+        mouthModel: '/tmp/a.gguf',
+        workerType: 'kobold',
+        workerUrl: '',
+        workerModel: '/tmp/a.gguf',
+      ),
+    );
+    await same.hold(() async {});
+    expect(same.steps, isEmpty);
+    expect(same.mouthDown, isFalse);
+  });
+
+  test('speech pin blocks unload until generate finishes', () async {
+    final occ = GpuSwapOccupancy(
+      mouth: _RecHost('mouth'),
+      worker: _RecHost('worker'),
+    );
+    await occ.hold(() async {});
+    await occ.ensureMouth();
+    expect(occ.steps.last, 'restore-mouth:mouth');
+    occ.beginSpeech();
+    var generated = false;
+    final post = occ.hold(() async {
+      expect(
+        generated,
+        isTrue,
+        reason: 'post-eval unload must follow generate',
+      );
+    });
+    await Future<void>.delayed(const Duration(milliseconds: 20));
+    expect(
+      occ.steps.where((s) => s.startsWith('unload-mouth')).length,
+      1,
+      reason: 'regression: post-eval unload ran before generate',
+    );
+    generated = true;
+    occ.endSpeech();
+    await post;
+    expect(occ.steps.where((s) => s.startsWith('unload-mouth')).length, 2);
+  });
+
+  test('same GGUF different .kcpps drives acquire', () async {
+    final occ = GpuSwapOccupancy(
+      mouth: _RecHost('mouth'),
+      worker: _RecHost('worker'),
+      sameResident: workerLanesShareResident(
+        mouthType: 'kobold',
+        mouthUrl: '',
+        mouthModel: '/tmp/a.gguf',
+        workerType: 'kobold',
+        workerUrl: '',
+        workerModel: '/tmp/a.gguf',
+        mouthKcpps: '/tmp/mouth.kcpps',
+        workerKcpps: '/tmp/worker.kcpps',
+      ),
+    );
+    await occ.hold(() async {});
+    expect(occ.steps, ['unload-mouth:mouth', 'prepare-worker:worker']);
   });
 }
 

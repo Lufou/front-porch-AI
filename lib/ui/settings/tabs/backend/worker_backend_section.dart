@@ -29,7 +29,9 @@ import 'package:front_porch_ai/ui/settings/widgets/widgets.dart';
 /// Side jobs sit below the complete Chat speech stack. Same-as-chat
 /// (empty worker type) shows no second URL/key/model.
 class WorkerBackendSection extends StatefulWidget {
-  const WorkerBackendSection({super.key});
+  const WorkerBackendSection({super.key, this.kcppsPresets = const []});
+
+  final List<File> kcppsPresets;
 
   @override
   State<WorkerBackendSection> createState() => _WorkerBackendSectionState();
@@ -66,6 +68,15 @@ class _WorkerBackendSectionState extends State<WorkerBackendSection> {
     final theme = Theme.of(context);
     final muted = AppColors.textTertiary(context);
     final off = workerBackendIsOff(storage.workerBackendType);
+    // This package's Provider has no maybeOf. Section tests omit ModelManager.
+    List<FileSystemEntity> koboldModels = const [];
+    if (!off && storage.workerBackendType == 'kobold') {
+      try {
+        koboldModels = Provider.of<ModelManager>(context).models;
+      } on ProviderNotFoundException {
+        koboldModels = const [];
+      }
+    }
     final different = !off || _pickingDifferent;
     final kind = off
         ? RemoteProviderKind.custom
@@ -256,16 +267,29 @@ class _WorkerBackendSectionState extends State<WorkerBackendSection> {
                     style: theme.textTheme.bodySmall?.copyWith(color: muted),
                   ),
                 ],
-                if (!off && storage.workerBackendType == 'kobold')
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8),
-                    child: Text(
-                      'Realism evals will start KoboldCPP using the model and GPU '
-                      'settings from the Models tab. Chat speech stays on '
-                      'your API host.',
-                      style: theme.textTheme.bodySmall?.copyWith(color: muted),
-                    ),
+                if (!off && storage.workerBackendType == 'kobold') ...[
+                  const SizedBox(height: 12),
+                  WorkerKoboldModelPicker(
+                    selectedPath: storage.workerKoboldModelPath,
+                    mouthPath: storage.lastUsedModelPath,
+                    models: koboldModels,
+                    onChanged: storage.setWorkerKoboldModelPath,
                   ),
+                  const SizedBox(height: 12),
+                  WorkerKoboldKcppsPicker(
+                    selectedPath: storage.workerKoboldKcppsPath,
+                    mouthPath: storage.activeKcppsPath,
+                    modelsMatch:
+                        normalizeLocalModelPath(
+                          storage.resolvedWorkerKoboldModelPath(),
+                        ) ==
+                        normalizeLocalModelPath(
+                          storage.lastUsedModelPath ?? '',
+                        ),
+                    presets: widget.kcppsPresets,
+                    onChanged: storage.setWorkerKoboldKcppsPath,
+                  ),
+                ],
               ],
             ],
           ),
