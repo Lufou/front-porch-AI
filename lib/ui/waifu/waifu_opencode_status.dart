@@ -22,9 +22,47 @@ import 'package:provider/provider.dart';
 import 'package:front_porch_ai/services/opencode/opencode.dart';
 import 'package:front_porch_ai/ui/theme/app_colors.dart';
 
-/// Compact pin-vs-remote line in the Waifu sidebar. Missing provider = tests.
-class WaifuOpenCodeStatus extends StatelessWidget {
+/// Compact installed-vs-GitHub-latest line in the Waifu sidebar.
+class WaifuOpenCodeStatus extends StatefulWidget {
   const WaifuOpenCodeStatus({super.key});
+
+  @override
+  State<WaifuOpenCodeStatus> createState() => _WaifuOpenCodeStatusState();
+}
+
+class _WaifuOpenCodeStatusState extends State<WaifuOpenCodeStatus> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      try {
+        final mgr = context.read<OpenCodeManager>();
+        mgr.refreshInstalled();
+        mgr.checkRemoteVersion();
+      } on ProviderNotFoundException {
+        return;
+      }
+    });
+  }
+
+  VoidCallback? _onPressed(OpenCodeManager mgr) {
+    if (mgr.isDownloading || mgr.isCheckingVersion) return null;
+    if (mgr.installedVersion == null || mgr.isUpdateAvailable) {
+      return () => mgr.upgrade();
+    }
+    if (mgr.versionError != null || mgr.remoteVersion == null) {
+      return () => mgr.checkRemoteVersion();
+    }
+    return null;
+  }
+
+  bool _showTap(OpenCodeManager mgr) {
+    if (mgr.installedVersion == null) return true;
+    if (mgr.versionError != null) return true;
+    if (mgr.remoteVersion == null) return true;
+    return mgr.isUpdateAvailable;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -36,9 +74,8 @@ class WaifuOpenCodeStatus extends StatelessWidget {
     }
     final honesty = openCodeUpgradeHonesty(
       installed: mgr.installedVersion,
-      pinned: mgr.pinnedVersion,
       remote: mgr.remoteVersion,
-      megabytes: mgr.pinDownloadMegabytes,
+      megabytes: mgr.downloadMegabytes,
     );
     return Padding(
       key: const Key('waifu-opencode-status'),
@@ -53,14 +90,15 @@ class WaifuOpenCodeStatus extends StatelessWidget {
               color: AppColors.textSecondary(context),
             ),
           ),
-          if (mgr.needsPinDownload)
+          if (_showTap(mgr))
             TextButton(
               key: const Key('waifu-opencode-upgrade'),
-              onPressed: mgr.isDownloading ? null : () => mgr!.upgradeToPin(),
+              onPressed: _onPressed(mgr),
               child: Text(
                 openCodeUpgradeButtonLabel(
                   installed: mgr.installedVersion,
-                  pinned: mgr.pinnedVersion,
+                  remote: mgr.remoteVersion,
+                  versionError: mgr.versionError,
                 ),
               ),
             ),

@@ -5,9 +5,22 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:front_porch_ai/services/opencode/opencode.dart';
 
 void main() {
-  test('pins a known-good 1.18.x and never latest', () {
-    expect(kOpenCodePinnedVersion, startsWith('1.18.'));
-    expect(kOpenCodePinnedVersion, isNot(contains('latest')));
+  test('latest download URL is GitHub latest, not brew', () {
+    final url = openCodeLatestDownloadUri(os: 'darwin', arch: 'arm64');
+    expect(
+      url.toString(),
+      'https://github.com/anomalyco/opencode/releases/latest/download/'
+      'opencode-darwin-arm64.zip',
+    );
+    expect(url.toString(), isNot(contains('homebrew')));
+    expect(
+      openCodeLatestDownloadUri(os: 'linux', arch: 'x64').toString(),
+      endsWith('opencode-linux-x64.tar.gz'),
+    );
+    expect(
+      openCodeLatestDownloadUri(os: 'linux', arch: 'x64').toString(),
+      contains('/releases/latest/download/'),
+    );
   });
 
   test('GitHub asset names match Mac zip, Linux tar.gz, Windows zip', () {
@@ -37,24 +50,15 @@ void main() {
     );
   });
 
-  test('download URL is the pinned GitHub release, not brew', () {
+  test('versioned download URL still names a tag asset', () {
     final url = openCodeDownloadUrl(
-      version: kOpenCodePinnedVersion,
+      version: '1.19.99',
       os: 'darwin',
       arch: 'arm64',
     );
     expect(url, contains('/anomalyco/opencode/releases/download/'));
-    expect(url, contains('v$kOpenCodePinnedVersion/'));
+    expect(url, contains('v1.19.99/'));
     expect(url, endsWith('opencode-darwin-arm64.zip'));
-    expect(url, isNot(contains('homebrew')));
-    expect(
-      openCodeDownloadUrl(
-        version: kOpenCodePinnedVersion,
-        os: 'linux',
-        arch: 'x64',
-      ),
-      endsWith('opencode-linux-x64.tar.gz'),
-    );
   });
 
   test('brew and user-config paths are rejected as the product copy', () {
@@ -72,37 +76,37 @@ void main() {
     );
   });
 
-  test('honesty names pin vs disk vs GitHub and never brew', () {
+  test('honesty names disk vs GitHub latest and never brew', () {
     expect(
-      openCodeUpgradeHonesty(installed: null, pinned: '1.18.30'),
+      openCodeUpgradeHonesty(installed: null),
       contains('not in the closet'),
     );
     expect(
-      openCodeUpgradeHonesty(
-        installed: '1.0.0',
-        pinned: '1.18.30',
-        remote: '1.19.0',
+      openCodeUpgradeHonesty(installed: '1.0.0', remote: '1.19.0'),
+      contains('1.0.0 → 1.19.0'),
+    );
+    expect(
+      openCodeUpgradeHonesty(installed: '1.19.0', remote: '1.19.0'),
+      contains('is current'),
+    );
+    expect(openCodeUpgradeButtonLabel(installed: null), 'Download');
+    expect(
+      openCodeUpgradeButtonLabel(installed: '1.18.30', remote: null),
+      'Check for Updates',
+    );
+    expect(
+      openCodeUpgradeButtonLabel(
+        installed: '1.18.30',
+        versionError: 'Could not check GitHub',
       ),
-      contains('1.0.0 → 1.18.30'),
+      'Check (failed)',
     );
     expect(
-      openCodeUpgradeHonesty(
-        installed: '1.0.0',
-        pinned: '1.18.30',
-        remote: '1.19.0',
-      ),
-      contains('GitHub latest is 1.19.0'),
+      openCodeUpgradeButtonLabel(installed: '1.18.30', remote: '1.19.0'),
+      'Update to v1.19.0',
     );
     expect(
-      openCodeUpgradeHonesty(installed: '1.18.30', pinned: '1.18.30'),
-      contains('current (pin)'),
-    );
-    expect(
-      openCodeUpgradeButtonLabel(installed: null, pinned: '1.18.30'),
-      contains('Download 1.18.30'),
-    );
-    expect(
-      openCodeUpgradeButtonLabel(installed: '1.18.30', pinned: '1.18.30'),
+      openCodeUpgradeButtonLabel(installed: '1.19.0', remote: '1.19.0'),
       'Up to date',
     );
   });

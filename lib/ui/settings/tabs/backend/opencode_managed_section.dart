@@ -24,7 +24,7 @@ import 'package:front_porch_ai/ui/settings/widgets/section_header.dart';
 import 'package:front_porch_ai/ui/theme/app_colors.dart';
 
 /// Waifu Coder's managed OpenCode — same shape as the Kobold download row.
-/// Tap installs the pin into the closet. Never Homebrew, never latest-on-launch.
+/// Tap installs GitHub latest into the closet. Never Homebrew.
 class OpenCodeManagedSection extends StatefulWidget {
   const OpenCodeManagedSection({super.key});
 
@@ -44,19 +44,33 @@ class _OpenCodeManagedSectionState extends State<OpenCodeManagedSection> {
     });
   }
 
+  VoidCallback? _onPressed(OpenCodeManager mgr) {
+    if (mgr.isDownloading || mgr.isCheckingVersion) return null;
+    if (mgr.installedVersion == null) {
+      return () => mgr.upgrade();
+    }
+    if (mgr.versionError != null || mgr.remoteVersion == null) {
+      return () => mgr.checkRemoteVersion();
+    }
+    if (mgr.isUpdateAvailable) {
+      return () => mgr.upgrade();
+    }
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
     final mgr = context.watch<OpenCodeManager>();
     final amber = AppColors.porchAmberOf(context);
     final honesty = openCodeUpgradeHonesty(
       installed: mgr.installedVersion,
-      pinned: mgr.pinnedVersion,
       remote: mgr.remoteVersion,
-      megabytes: mgr.pinDownloadMegabytes,
+      megabytes: mgr.downloadMegabytes,
     );
     final label = openCodeUpgradeButtonLabel(
       installed: mgr.installedVersion,
-      pinned: mgr.pinnedVersion,
+      remote: mgr.remoteVersion,
+      versionError: mgr.versionError,
     );
     return Column(
       key: const Key('opencode-managed-section'),
@@ -103,9 +117,7 @@ class _OpenCodeManagedSectionState extends State<OpenCodeManagedSection> {
             else
               ElevatedButton(
                 key: const Key('opencode-upgrade-tap'),
-                onPressed: mgr.needsPinDownload
-                    ? () => mgr.upgradeToPin()
-                    : null,
+                onPressed: _onPressed(mgr),
                 child: Text(label),
               ),
           ],

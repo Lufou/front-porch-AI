@@ -96,48 +96,99 @@ class OpenCodeManager extends ChangeNotifier {
   String? get error => _error;
   bool get isRunning => _isRunning;
   String? get installedVersion => _installedVersion;
-  String get pinnedVersion => kOpenCodePinnedVersion;
   String? get remoteVersion => _remoteVersion;
   bool get isCheckingVersion => _isCheckingVersion;
   String? get versionError => _versionError;
-  bool get needsPinDownload => _installedVersion != kOpenCodePinnedVersion;
-  int get pinDownloadMegabytes {
+
+  /// Same rule as managed Kobold: missing counts as an update; unknown
+  /// remote does not. Zip size is not compared (GitHub asset is an archive).
+  bool get isUpdateAvailable {
+    if (_installedVersion == null) return true;
+    if (_remoteVersion == null) return false;
+    return _installedVersion != _remoteVersion;
+  }
+
+  int get downloadMegabytes {
     final b = _remoteAssetBytes;
     if (b != null && b > 0) {
       return (b / (1024 * 1024)).round().clamp(1, 999);
     }
-    return kOpenCodePinMegabytes;
+    return kOpenCodeDownloadMegabytes;
   }
 
   Uri get baseUri =>
       _baseUri ?? (throw StateError('OpenCode serve is not running'));
   int? get pid => _handle?.pid;
 
-  Future<bool> get isPinnedInstalled async {
-    if (!await File(closet.binaryPath).exists()) return false;
-    final v = await OpenCodeBinaryVersion.read(closet.binDir);
-    return v.version == kOpenCodePinnedVersion;
-  }
+  Future<bool> get isInstalled async => File(closet.binaryPath).exists();
 
+  /// First-use grab. If a binary is already in the closet, leave it — upgrades
+  /// are a tap, same as Kobold's ensureEngineInstalled.
   Future<void> ensureInstalled({void Function(double p)? onProgress}) async {
     await closet.ensureLayout();
     if (openCodeLooksLikeBrewPath(closet.binaryPath)) {
       throw StateError('OpenCode closet resolved to a brew path');
     }
-    if (await isPinnedInstalled) {
-      _installedVersion = kOpenCodePinnedVersion;
-      notifyListeners();
+    if (await isInstalled) {
+      await refreshInstalled();
       return;
     }
+    await _installLatest(onProgress: onProgress);
+  }
 
+  Future<void> refreshInstalled() async {
+    final v = await OpenCodeBinaryVersion.read(closet.binDir);
+    _installedVersion = v.version;
+    notifyListeners();
+  }
+
+  /// Looks up GitHub latest. Never downloads it.
+  Future<void> checkRemoteVersion() async {
+    if (_isCheckingVersion) return;
+    _isCheckingVersion = true;
+    _versionError = null;
+    notifyListeners();
+    try {
+      final hit = await _remoteLookup();
+      if (hit == null) {
+        _versionError = 'Could not check GitHub';
+      } else {
+        _remoteVersion = hit.tag;
+        _remoteAssetBytes = hit.assetBytes;
+      }
+    } catch (_) {
+      _versionError = 'Could not check GitHub';
+    } finally {
+      _isCheckingVersion = false;
+      notifyListeners();
+    }
+  }
+
+  /// Tap-to-swap: stop our PID if running, then install GitHub latest.
+  /// Never Homebrew, never `~/.config/opencode`, never auto-download on launch.
+  Future<void> upgrade({void Function(double p)? onProgress}) async {
+    if (_isRunning) await stop();
+    await _installLatest(onProgress: onProgress);
+  }
+
+  Future<void> _installLatest({void Function(double p)? onProgress}) async {
+    if (_isDownloading) return;
+    await closet.ensureLayout();
+    if (openCodeLooksLikeBrewPath(closet.binaryPath)) {
+      throw StateError('OpenCode closet resolved to a brew path');
+    }
+    if (_remoteVersion == null) await checkRemoteVersion();
+    final tag = _remoteVersion;
     _isDownloading = true;
     _downloadProgress = 0;
-    _statusMessage = 'Downloading OpenCode $kOpenCodePinnedVersion…';
+    _statusMessage = tag == null || tag.isEmpty
+        ? 'Downloading OpenCode…'
+        : 'Downloading OpenCode $tag…';
     _error = null;
     notifyListeners();
     try {
       final bytes = await _downloader(
-        openCodePinnedDownloadUri(),
+        openCodeLatestDownloadUri(),
         onProgress: (received, total) {
           if (total != null && total > 0) {
             _downloadProgress = received / total;
@@ -163,17 +214,24 @@ class OpenCodeManager extends ChangeNotifier {
           await Process.run('chmod', ['+x', live.path]);
         }
       }
-      await OpenCodeBinaryVersion.write(
-        closet.binDir,
-        version: kOpenCodePinnedVersion,
-        size: await File(closet.binaryPath).length(),
-      );
+      final size = await File(closet.binaryPath).length();
+      if (tag != null && tag.isNotEmpty) {
+        await OpenCodeBinaryVersion.write(
+          closet.binDir,
+          version: tag,
+          size: size,
+        );
+        _installedVersion = tag;
+      } else {
+        await refreshInstalled();
+      }
       try {
         await unpack.delete(recursive: true);
       } catch (_) {}
-      _installedVersion = kOpenCodePinnedVersion;
       _downloadProgress = 1;
-      _statusMessage = 'OpenCode $kOpenCodePinnedVersion ready';
+      _statusMessage = tag == null || tag.isEmpty
+          ? 'OpenCode ready'
+          : 'OpenCode $tag ready';
     } catch (e) {
       _error = '$e';
       _statusMessage = 'OpenCode download failed';
@@ -182,41 +240,6 @@ class OpenCodeManager extends ChangeNotifier {
       _isDownloading = false;
       notifyListeners();
     }
-  }
-
-  Future<void> refreshInstalled() async {
-    final v = await OpenCodeBinaryVersion.read(closet.binDir);
-    _installedVersion = v.version;
-    notifyListeners();
-  }
-
-  /// Looks up GitHub latest for honesty only. Never downloads it.
-  Future<void> checkRemoteVersion() async {
-    if (_isCheckingVersion) return;
-    _isCheckingVersion = true;
-    _versionError = null;
-    notifyListeners();
-    try {
-      final hit = await _remoteLookup();
-      if (hit == null) {
-        _versionError = 'Could not check GitHub';
-      } else {
-        _remoteVersion = hit.tag;
-        _remoteAssetBytes = hit.assetBytes;
-      }
-    } catch (_) {
-      _versionError = 'Could not check GitHub';
-    } finally {
-      _isCheckingVersion = false;
-      notifyListeners();
-    }
-  }
-
-  /// Tap-to-swap: stop our PID if running, then install the pin. Never
-  /// Homebrew, never `~/.config/opencode`, never auto-latest.
-  Future<void> upgradeToPin({void Function(double p)? onProgress}) async {
-    if (_isRunning) await stop();
-    await ensureInstalled(onProgress: onProgress);
   }
 
   Future<void> start({String? workingDirectory}) async {

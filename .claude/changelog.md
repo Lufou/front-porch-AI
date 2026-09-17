@@ -1,3 +1,9 @@
+## 2026-09-17 — OpenCode updater tracks GitHub latest like Kobold
+- **Why:** Waifu Coder's OpenCode closet was frozen on a baked pin (1.18.30). GitHub latest was shown but a tap still installed the pin, so the row did not work like managed KoboldCPP.
+- **What:** First sit-down still downloads only if the closet is empty. Settings / Waifu tap installs GitHub `releases/latest`. Button words match Kobold (Download / Check for Updates / Update to vX / Up to date). Homebrew still refused. No auto-upgrade on launch.
+- **Files:** `opencode_pin.dart`, `opencode_manager.dart`, `opencode_managed_section.dart`, `waifu_opencode_status.dart`, opencode tests, `docs/Rawhide.md`
+- **Commit:** this tip
+
 ## 2026-09-17 — Model Settings goldens: Realism evals in the sheet
 - **Why:** PR #260 added Realism evals under the in-chat Model Settings stack. Widget Golden Tests failed on the expected pixel drift. `approved-test-change` is on the PR.
 - **What:** Regenerated only `model_settings.light.png` and `model_settings.dark.png` via `flutter test … --update-goldens --name ModelSettingsDialog`. No other goldens.

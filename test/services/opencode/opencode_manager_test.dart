@@ -8,6 +8,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:front_porch_ai/services/opencode/opencode.dart';
 import 'package:path/path.dart' as p;
 
+const _latestTag = '1.19.99';
+
+Future<({String tag, int? assetBytes})?> _latestLookup() async =>
+    (tag: _latestTag, assetBytes: 44 * 1024 * 1024);
+
 void main() {
   late Directory root;
 
@@ -63,10 +68,11 @@ void main() {
     expect(await writeOpenCodeVoicePluginFile(closet), isFalse);
   });
 
-  test('ensureInstalled writes the pinned binary under the closet', () async {
+  test('ensureInstalled writes GitHub latest under the closet', () async {
     final captured = <Uri>[];
     final mgr = OpenCodeManager(
       rootPath: root.path,
+      remoteLookup: _latestLookup,
       downloader: (url, {onProgress}) async {
         captured.add(url);
         onProgress?.call(12, 12);
@@ -86,32 +92,37 @@ void main() {
 
     expect(File(mgr.closet.binaryPath).readAsStringSync(), 'FAKE-OPENCODE');
     expect(captured, hasLength(1));
-    expect(captured.single.toString(), contains('v$kOpenCodePinnedVersion'));
+    expect(captured.single.toString(), contains('/releases/latest/download/'));
     expect(openCodeLooksLikeBrewPath(mgr.closet.binaryPath), isFalse);
     final stamped = await OpenCodeBinaryVersion.read(mgr.closet.binDir);
-    expect(stamped.version, kOpenCodePinnedVersion);
+    expect(stamped.version, _latestTag);
+    expect(mgr.isUpdateAvailable, isFalse);
   });
 
-  test('ensureInstalled does not re-download a matching pin', () async {
-    var downloads = 0;
-    final mgr = OpenCodeManager(
-      rootPath: root.path,
-      downloader: (url, {onProgress}) async {
-        downloads++;
-        return utf8.encode('zip');
-      },
-      unpack: (bytes, dest) async {
-        final bin = File(
-          p.join(dest.path, OpenCodeCloset(root.path).binaryName),
-        );
-        await bin.writeAsString('ONCE');
-        return bin;
-      },
-    );
-    await mgr.ensureInstalled();
-    await mgr.ensureInstalled();
-    expect(downloads, 1);
-  });
+  test(
+    'ensureInstalled does not re-download when a binary is already there',
+    () async {
+      var downloads = 0;
+      final mgr = OpenCodeManager(
+        rootPath: root.path,
+        remoteLookup: _latestLookup,
+        downloader: (url, {onProgress}) async {
+          downloads++;
+          return utf8.encode('zip');
+        },
+        unpack: (bytes, dest) async {
+          final bin = File(
+            p.join(dest.path, OpenCodeCloset(root.path).binaryName),
+          );
+          await bin.writeAsString('ONCE');
+          return bin;
+        },
+      );
+      await mgr.ensureInstalled();
+      await mgr.ensureInstalled();
+      expect(downloads, 1);
+    },
+  );
 
   test(
     'start serves 127.0.0.1 from the closet binary with isolated env',
@@ -121,6 +132,7 @@ void main() {
       OpenCodeSpawnRequest? spawned;
       final mgr = OpenCodeManager(
         rootPath: root.path,
+        remoteLookup: _latestLookup,
         downloader: (url, {onProgress}) async => utf8.encode('zip'),
         unpack: (bytes, dest) async {
           final bin = File(
@@ -175,6 +187,7 @@ void main() {
     var killed = 0;
     final mgr = OpenCodeManager(
       rootPath: root.path,
+      remoteLookup: _latestLookup,
       downloader: (url, {onProgress}) async => utf8.encode('zip'),
       unpack: (bytes, dest) async {
         final bin = File(
@@ -193,10 +206,11 @@ void main() {
     expect(killed, 1);
   });
 
-  test('stale stamp re-downloads the pin; matching pin does not', () async {
+  test('stale stamp does not re-download on ensure; upgrade does', () async {
     var downloads = 0;
     final mgr = OpenCodeManager(
       rootPath: root.path,
+      remoteLookup: _latestLookup,
       downloader: (url, {onProgress}) async {
         downloads++;
         return utf8.encode('zip');
@@ -216,11 +230,15 @@ void main() {
       version: '1.0.0',
       size: 1,
     );
+    await mgr.refreshInstalled();
+    expect(mgr.installedVersion, '1.0.0');
+    expect(mgr.isUpdateAvailable, isTrue);
     await mgr.ensureInstalled();
+    expect(downloads, 1);
+    await mgr.upgrade();
     expect(downloads, 2);
-    expect(mgr.installedVersion, kOpenCodePinnedVersion);
-    await mgr.ensureInstalled();
-    expect(downloads, 2);
+    expect(mgr.installedVersion, _latestTag);
+    expect(mgr.isUpdateAvailable, isFalse);
   });
 
   test(
@@ -239,15 +257,16 @@ void main() {
       await mgr.checkRemoteVersion();
       expect(mgr.remoteVersion, '1.19.99');
       expect(downloads, 0);
-      expect(mgr.needsPinDownload, isTrue);
+      expect(mgr.isUpdateAvailable, isTrue);
     },
   );
 
-  test('upgradeToPin stops a running serve then installs the pin', () async {
+  test('upgrade stops a running serve then installs GitHub latest', () async {
     var killed = 0;
     var downloads = 0;
     final mgr = OpenCodeManager(
       rootPath: root.path,
+      remoteLookup: _latestLookup,
       downloader: (url, {onProgress}) async {
         downloads++;
         return utf8.encode('zip');
@@ -272,11 +291,11 @@ void main() {
       size: 1,
     );
     await mgr.refreshInstalled();
-    expect(mgr.needsPinDownload, isTrue);
-    await mgr.upgradeToPin();
+    expect(mgr.isUpdateAvailable, isTrue);
+    await mgr.upgrade();
     expect(killed, greaterThanOrEqualTo(1));
-    expect(downloads, greaterThanOrEqualTo(1));
+    expect(downloads, greaterThanOrEqualTo(2));
     expect(mgr.isRunning, isFalse);
-    expect(mgr.installedVersion, kOpenCodePinnedVersion);
+    expect(mgr.installedVersion, _latestTag);
   });
 }
