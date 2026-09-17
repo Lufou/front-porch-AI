@@ -429,4 +429,7 @@ class AppColors {
   static const Color stoopCheckBlue = Color(
     0xFF1D9BF0,
   ); // theme-keep: hub verification blue
+
+  /// Developer check (hub `#c0c7d1`). Same silhouette as gold/blue.
+  static const Color stoopCheckSilver = Color(0xFFC0C7D1);
 }

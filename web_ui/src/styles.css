@@ -2122,6 +2122,7 @@ button.danger:hover { background: rgba(255, 107, 107, 0.12); filter: none; }
 .stoop-check svg { width: 100%; height: 100%; display: block; }
 .stoop-check-gold svg { fill: #e8b923; }
 .stoop-check-blue svg { fill: #1d9bf0; }
+.stoop-check-silver svg { fill: #c0c7d1; }
 .stoop-creator-head h3 .stoop-check,
 .stoop-tab-name .stoop-check {
   width: 1.05em;
