@@ -16,10 +16,8 @@ import 'package:front_porch_ai/ui/pages/repository/stoop_glass.dart';
 import 'package:front_porch_ai/ui/pages/repository/stoop_verified_badge.dart';
 import 'package:front_porch_ai/ui/theme/app_colors.dart';
 
-/// Two-line summary box matching hub `.hub-tile-summary` (`-webkit-line-clamp: 2`).
-/// 12.5px at height 1.45 × 2 lines.
+/// Two-line summary matching hub `.hub-tile-summary` (`-webkit-line-clamp: 2`).
 const kStoopTileSummaryMaxLines = 2;
-const kStoopTileSummaryBoxHeight = 12.5 * 1.45 * kStoopTileSummaryMaxLines;
 
 /// Grid cell aspect so the reserved two-line summary plus name/handle/stats fit
 /// under the square art. 0.64 was a few pixels short and clipped mid-word.
@@ -191,12 +189,12 @@ class _StoopCardTileState extends State<StoopCardTile> {
             ],
             if (card.summary.isNotEmpty) ...[
               const SizedBox(height: 4),
-              // Hub .hub-tile-summary is -webkit-line-clamp: 2. Expanded +
-              // maxLines: 2 in a cell a few pixels short clipped the second
-              // line mid-word with no ellipsis. A reserved two-line box lets
-              // TextOverflow.ellipsis actually fire.
-              SizedBox(
-                height: kStoopTileSummaryBoxHeight,
+              // Hub .hub-tile-summary is -webkit-line-clamp: 2. A hard 2-line
+              // box overflowed short test cells; Expanded without a height
+              // clipped mid-word with no ellipsis. Loose Flexible lets the
+              // text take up to two lines and ellipsize when the cell is tight.
+              Flexible(
+                fit: FlexFit.loose,
                 child: Text(
                   stoopResolveMacros(card.summary, card.name),
                   maxLines: kStoopTileSummaryMaxLines,
