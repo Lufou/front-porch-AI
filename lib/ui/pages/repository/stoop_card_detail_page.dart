@@ -11,7 +11,6 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
@@ -22,15 +21,14 @@ import 'package:front_porch_ai/providers/auth_state.dart';
 import 'package:front_porch_ai/services/backporch/backporch.dart';
 import 'package:front_porch_ai/services/services.dart';
 import 'package:front_porch_ai/services/group_card_importer.dart';
-import 'package:front_porch_ai/ui/pages/repository/stoop_avatar.dart';
 import 'package:front_porch_ai/ui/pages/repository/stoop_card_comments.dart';
+import 'package:front_porch_ai/ui/pages/repository/stoop_detail_top.dart';
 import 'package:front_porch_ai/ui/pages/repository/stoop_card_sections.dart';
 import 'package:front_porch_ai/ui/pages/repository/stoop_collapsible.dart';
 import 'package:front_porch_ai/ui/pages/repository/stoop_group_sections.dart';
 import 'package:front_porch_ai/ui/pages/repository/stoop_creator_page.dart';
 import 'package:front_porch_ai/ui/pages/repository/stoop_glass.dart';
 import 'package:front_porch_ai/ui/pages/repository/stoop_report.dart';
-import 'package:front_porch_ai/ui/pages/repository/stoop_verified_badge.dart';
 import 'package:front_porch_ai/ui/theme/app_colors.dart';
 
 /// Open a character as a frosted glass panel that slides in from the right while
@@ -355,7 +353,24 @@ class _StoopDetailPanelState extends State<_StoopDetailPanel> {
   Widget _content(StoopCardDetail d) {
     return CustomScrollView(
       slivers: [
-        SliverToBoxAdapter(child: _hero(d)),
+        SliverToBoxAdapter(
+          child: StoopDetailTop(
+            detail: d,
+            downloadCount: _downloadCount,
+            onClose: () => Navigator.of(context).pop(),
+            onCreatorTap: d.creator == null
+                ? null
+                : () {
+                    Navigator.of(context).pop();
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            StoopCreatorPage(creatorId: d.creator!.id),
+                      ),
+                    );
+                  },
+          ),
+        ),
         SliverPadding(
           padding: const EdgeInsets.fromLTRB(18, 16, 18, 36),
           sliver: SliverList(
@@ -363,37 +378,7 @@ class _StoopDetailPanelState extends State<_StoopDetailPanel> {
               _actions(d),
               const SizedBox(height: 10),
               _reportButton(),
-              if (d.tags.isNotEmpty) ...[
-                const SizedBox(height: 16),
-                // Teal tag pills (hub .hub-tag).
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 6,
-                  children: [
-                    for (final t in d.tags)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 11,
-                          vertical: 3,
-                        ),
-                        decoration: BoxDecoration(
-                          color: stoopTealSoft(context),
-                          borderRadius: BorderRadius.circular(999),
-                          border: Border.all(
-                            color: AppColors.stoopTeal.withValues(alpha: 0.35),
-                          ),
-                        ),
-                        child: Text(
-                          '#$t',
-                          style: TextStyle(
-                            color: stoopTealText(context),
-                            fontSize: 12.5,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ],
+              const SizedBox(height: 16),
               if (d.type == 'GROUP')
                 ..._groupSections(d)
               else if (d.isWorld)
@@ -429,230 +414,12 @@ class _StoopDetailPanelState extends State<_StoopDetailPanel> {
     );
   }
 
-  // Cinematic header: the avatar fills the top with a scrim carrying the name,
-  // @creator, and stats. Close + report float over it.
-  Widget _hero(StoopCardDetail d) {
-    return SizedBox(
-      height: 260,
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          // Blurred, darkened fill of the same art — so a tall portrait or a
-          // tight headshot never has to crop the face to fill this wide, short
-          // banner. The sharp portrait sits on top, shown whole.
-          //
-          // Blur the IMAGE itself (ImageFiltered), not the backdrop: this panel
-          // is already a frosted BackdropFilter, and nesting a second
-          // BackdropFilter here breaks compositing (the content below the hero
-          // wouldn't paint until scrolled).
-          ImageFiltered(
-            imageFilter: ImageFilter.blur(sigmaX: 28, sigmaY: 28),
-            child: Transform.scale(
-              scale: 1.18,
-              child: StoopAvatar(assetId: d.primaryAssetId),
-            ),
-          ),
-          // Dusk-toned scrims (hub #0a0805 tints) — the hero stays a night
-          // scene in both themes, so overlay text uses the const dusk ramp.
-          Container(color: const Color(0x4D0A0805)),
-          Center(
-            child: StoopAvatar(assetId: d.primaryAssetId, fit: BoxFit.contain),
-          ),
-          Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Color(0x400A0805),
-                  Colors.transparent,
-                  Color(0xD90A0805),
-                ],
-                stops: [0, 0.4, 1],
-              ),
-            ),
-          ),
-          Positioned(
-            top: 10,
-            right: 10,
-            child: _glassIcon(Icons.close, () => Navigator.of(context).pop()),
-          ),
-          Positioned(
-            left: 18,
-            right: 18,
-            bottom: 14,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  d.name,
-                  style: stoopDisplay(
-                    context,
-                    size: 26,
-                    color: AppColors.stoopCream,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    if (d.creator != null)
-                      GestureDetector(
-                        onTap: () {
-                          Navigator.of(context).pop();
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) =>
-                                  StoopCreatorPage(creatorId: d.creator!.id),
-                            ),
-                          );
-                        },
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.baseline,
-                          textBaseline: TextBaseline.alphabetic,
-                          children: [
-                            Text(
-                              '@${d.creator!.displayName}',
-                              style: const TextStyle(
-                                color: AppColors.stoopTealText,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            StoopVerifiedBadge(
-                              verification: d.creator!.verification,
-                            ),
-                          ],
-                        ),
-                      ),
-                    // Attribution: uploader ≠ author ("@handle · created by X").
-                    if (d.originalCreator != null)
-                      Flexible(
-                        child: Padding(
-                          padding: const EdgeInsets.only(left: 6),
-                          child: Text(
-                            '${d.creator != null ? '· ' : ''}created by '
-                            '${d.originalCreator}',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.85),
-                              fontStyle: FontStyle.italic,
-                              fontSize: 13,
-                            ),
-                          ),
-                        ),
-                      ),
-                    const SizedBox(width: 12),
-                    Icon(
-                      Icons.download_rounded,
-                      size: 14,
-                      color: Colors.white.withValues(alpha: 0.8),
-                    ),
-                    const SizedBox(width: 3),
-                    Text(
-                      '$_downloadCount',
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.8),
-                      ),
-                    ),
-                    if (stoopTokenLabel(d.tokenCount) case final tl?) ...[
-                      const SizedBox(width: 12),
-                      Icon(
-                        Icons.data_usage_rounded,
-                        size: 13,
-                        color: Colors.white.withValues(alpha: 0.8),
-                      ),
-                      const SizedBox(width: 3),
-                      Text(
-                        '~$tl tokens',
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.8),
-                        ),
-                      ),
-                    ],
-                    // Version pill — only once the card has been updated (v2+),
-                    // so it reads as "this was updated" rather than noise on v1.
-                    if (d.version >= 2) ...[
-                      const SizedBox(width: 12),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 7,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.16),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(
-                              Icons.autorenew_rounded,
-                              size: 12,
-                              color: Colors.white,
-                            ),
-                            const SizedBox(width: 3),
-                            Text(
-                              'v${d.version}',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                    if (d.isWorld) ...[
-                      const SizedBox(width: 12),
-                      Wrap(
-                        spacing: 6,
-                        children: stoopWorldKindBadges(
-                          climateEnabled: stoopWorldClimateEnabled(d.card),
-                        ),
-                      ),
-                    ],
-                    if (d.nsfw) ...[
-                      const SizedBox(width: 12),
-                      const StoopBadge(StoopBadgeKind.nsfw),
-                    ],
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   // Ember report control. Unverified accounts never get the dialog — they
   // see “Confirm email to report” (hub parity, 2026-08).
   Widget _reportButton() {
     return StoopReportControl(
       user: context.watch<AuthState>().user,
       onReport: _report,
-    );
-  }
-
-  // Floating close control over the hero (always on the dark scrim).
-  Widget _glassIcon(IconData icon, VoidCallback onTap) {
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xBF14110D),
-        shape: BoxShape.circle,
-        border: Border.all(color: AppColors.stoopBorderHi),
-      ),
-      child: InkWell(
-        customBorder: const CircleBorder(),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(6),
-          child: Icon(icon, size: 18, color: AppColors.stoopCream2),
-        ),
-      ),
     );
   }
 

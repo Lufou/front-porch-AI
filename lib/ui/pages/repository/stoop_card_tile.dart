@@ -16,6 +16,15 @@ import 'package:front_porch_ai/ui/pages/repository/stoop_glass.dart';
 import 'package:front_porch_ai/ui/pages/repository/stoop_verified_badge.dart';
 import 'package:front_porch_ai/ui/theme/app_colors.dart';
 
+/// Two-line summary box matching hub `.hub-tile-summary` (`-webkit-line-clamp: 2`).
+/// 12.5px at height 1.45 × 2 lines.
+const kStoopTileSummaryMaxLines = 2;
+const kStoopTileSummaryBoxHeight = 12.5 * 1.45 * kStoopTileSummaryMaxLines;
+
+/// Grid cell aspect so the reserved two-line summary plus name/handle/stats fit
+/// under the square art. 0.64 was a few pixels short and clipped mid-word.
+const kStoopCardTileAspectRatio = 0.60;
+
 /// The hub card tile (hub.frontporchai.app .hub-tile): square art on top
 /// with badge pills, then a body — name, @creator, two-line summary, and a
 /// stats foot (▲ score, ⬇ downloads, token count). Lifts with an amber
@@ -182,10 +191,15 @@ class _StoopCardTileState extends State<StoopCardTile> {
             ],
             if (card.summary.isNotEmpty) ...[
               const SizedBox(height: 4),
-              Expanded(
+              // Hub .hub-tile-summary is -webkit-line-clamp: 2. Expanded +
+              // maxLines: 2 in a cell a few pixels short clipped the second
+              // line mid-word with no ellipsis. A reserved two-line box lets
+              // TextOverflow.ellipsis actually fire.
+              SizedBox(
+                height: kStoopTileSummaryBoxHeight,
                 child: Text(
                   stoopResolveMacros(card.summary, card.name),
-                  maxLines: 2,
+                  maxLines: kStoopTileSummaryMaxLines,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: stoopMute(context),
@@ -194,8 +208,8 @@ class _StoopCardTileState extends State<StoopCardTile> {
                   ),
                 ),
               ),
-            ] else
-              const Spacer(),
+            ],
+            const Spacer(),
             const SizedBox(height: 8),
             _statsFoot(card),
           ],

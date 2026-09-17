@@ -171,7 +171,7 @@ class _StoopCreatorPageState extends State<StoopCreatorPage> {
             sliver: SliverGrid(
               gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
                 maxCrossAxisExtent: 230,
-                childAspectRatio: 0.64,
+                childAspectRatio: kStoopCardTileAspectRatio,
                 crossAxisSpacing: 16,
                 mainAxisSpacing: 16,
               ),

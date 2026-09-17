@@ -1,3 +1,9 @@
+## 2026-09-17 — Stoop listing blurb matches the hub
+- **Why:** Desk tiles clipped the summary mid-word (`My take on mountain-`) and the detail panel hid it under a 260px art banner. Hub shows a two-line clamp on tiles and the full blurb beside the portrait, with Description and Personality as separate drawers.
+- **What:** Reserved two-line summary box + slightly taller grid cells. Detail top is art + full summary (hub `.hub-detail-top`). Persona split into Description (open) and Personality.
+- **Files:** `stoop_card_tile.dart`, `stoop_card_sections.dart`, `stoop_detail_top.dart`, `stoop_card_detail_page.dart`, browse/creator/home grids, `stoop_description_parity_test.dart`, `docs/Rawhide.md`
+- **Commit:** this tip
+
 ## 2026-09-17 — OpenCode updater tracks GitHub latest like Kobold
 - **Why:** Waifu Coder's OpenCode closet was frozen on a baked pin (1.18.30). GitHub latest was shown but a tap still installed the pin, so the row did not work like managed KoboldCPP.
 - **What:** First sit-down still downloads only if the closet is empty. Settings / Waifu tap installs GitHub `releases/latest`. Button words match Kobold (Download / Check for Updates / Update to vX / Up to date). Homebrew still refused. No auto-upgrade on launch.

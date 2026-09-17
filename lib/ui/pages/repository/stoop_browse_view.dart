@@ -663,7 +663,7 @@ class _StoopBrowseViewState extends State<StoopBrowseView> {
       sliver: SliverGrid(
         gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
           maxCrossAxisExtent: 230,
-          childAspectRatio: 0.64,
+          childAspectRatio: kStoopCardTileAspectRatio,
           crossAxisSpacing: 16,
           mainAxisSpacing: 16,
         ),
