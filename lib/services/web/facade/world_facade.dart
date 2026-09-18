@@ -16,14 +16,14 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with Front Porch AI. If not, see <https://www.gnu.org/licenses/>.
 
-import 'dart:convert';
-
 import 'package:front_porch_ai/models/models.dart';
 import 'package:front_porch_ai/models/lorebook_analysis.dart';
 import 'package:front_porch_ai/services/services.dart';
 import 'package:front_porch_ai/services/chat/weather_biomes.dart';
 import 'package:front_porch_ai/services/web/util/lorebook_json.dart';
 import 'package:front_porch_ai/utils/utils.dart';
+
+part 'world_facade.import.dart';
 
 /// Thin adapter for world (portable place) CRUD over [WorldRepository].
 /// Worlds have stable UUID identity; name is display-only.
@@ -173,140 +173,6 @@ class WorldFacade {
     if (w == null) return false;
     await _worlds.deleteWorld(w);
     return true;
-  }
-
-  /// Import .fpworld or bare lorebook JSON as a place. Routes through
-  /// WorldRepository.importWorldJson — the same path desktop file import
-  /// uses — so climate, place traits, lore, provenance, and name
-  /// uniquifying behave identically on both surfaces.
-  Future<bool> importWorld(Map<String, dynamic> json) async {
-    // Reject payloads that are neither a package envelope nor a lorebook.
-    final isEnvelope =
-        json.containsKey('formatVersion') ||
-        (json.containsKey('id') &&
-            json.containsKey('name') &&
-            (json.containsKey('lorebook') || json.containsKey('lorebooks')));
-    if (!isEnvelope &&
-        json['entries'] == null &&
-        json['lorebook'] == null &&
-        detectLorebookFormat(json) == LorebookFormat.fpaiOrSt) {
-      return false;
-    }
-    try {
-      await _worlds.importWorldJson(json);
-      return true;
-    } catch (_) {
-      return false;
-    }
-  }
-
-  /// Import a lorebook with a chosen destination — the web twin of the
-  /// desktop Import Lorebook wizard. `dryRun` returns the review summary +
-  /// destination availability without writing anything; a commit clones the
-  /// decoded entries into exactly one home. Additive API; the plain
-  /// [importWorld] endpoint is untouched for older clients.
-  Future<Map<String, dynamic>?> importLorebook(
-    Map<String, dynamic> json, {
-    bool dryRun = false,
-    String destination = 'world',
-    String? name,
-    String? description,
-    List<String> characterIds = const [],
-  }) async {
-    if (json['entries'] == null &&
-        json['lorebook'] == null &&
-        detectLorebookFormat(json) == LorebookFormat.fpaiOrSt) {
-      return null; // unrecognized shape → 400
-    }
-    final source = json['lorebook'] is Map
-        ? Map<String, dynamic>.from(json['lorebook'] as Map)
-        : json;
-    final book = Lorebook.fromJson(source);
-    final summary = LorebookImportSummary.analyze(json, book);
-
-    if (dryRun) {
-      return {
-        'format': summary.formatLabel,
-        'suggestedName': summary.suggestedName,
-        'suggestedDescription': summary.suggestedDescription,
-        'entryCount': summary.entryCount,
-        'enabledCount': summary.enabledCount,
-        'approxTokens': summary.approxTokens,
-        'features': summary.features,
-        'warnings': summary.warnings,
-        'canGroup': _chat?.activeGroup != null,
-        'canChat': _chat?.currentSessionId != null,
-      };
-    }
-    if (book.entries.isEmpty) return null;
-
-    List<LorebookEntry> cloned() => [for (final e in book.entries) e.clone()];
-    Lorebook clonedBook() => Lorebook(
-      entries: cloned(),
-      scanDepth: book.scanDepth,
-      tokenBudget: book.tokenBudget,
-      recursiveScanning: book.recursiveScanning,
-      extensions: Map<String, dynamic>.from(book.extensions),
-    );
-
-    switch (destination) {
-      case 'world':
-        var base = (name ?? summary.suggestedName).trim();
-        if (base.isEmpty) base = 'Imported Lorebook';
-        final taken = _worlds.worlds.map((w) => w.name).toSet();
-        var candidate = base;
-        var i = 2;
-        while (taken.contains(candidate)) {
-          candidate = '$base ($i)';
-          i++;
-        }
-        await _worlds.saveWorld(
-          World(
-            name: candidate,
-            description: (description ?? summary.suggestedDescription).trim(),
-            lorebook: clonedBook(),
-          ),
-        );
-        return {'ok': true, 'where': 'world', 'name': candidate};
-      case 'characters':
-        final chars = _characters;
-        if (chars == null || characterIds.isEmpty) return null;
-        var count = 0;
-        for (final c in chars.characters) {
-          if (c.dbId == null || !characterIds.contains(c.dbId)) continue;
-          final existing = c.lorebook;
-          if (existing == null) {
-            c.lorebook = clonedBook();
-          } else {
-            existing.entries.addAll(cloned());
-          }
-          await chars.updateCharacter(c);
-          count++;
-        }
-        return count > 0
-            ? {'ok': true, 'where': 'characters', 'count': count}
-            : null;
-      case 'group':
-        final g = _chat?.activeGroup;
-        final groups = _groups;
-        if (g == null || groups == null) return null;
-        final existing = g.groupLorebook.isEmpty
-            ? Lorebook(entries: [])
-            : Lorebook.fromJson(
-                jsonDecode(g.groupLorebook) as Map<String, dynamic>,
-              );
-        existing.entries.addAll(cloned());
-        g.groupLorebook = jsonEncode(existing.toJson());
-        await groups.save(g);
-        return {'ok': true, 'where': 'group', 'name': g.name};
-      case 'chat':
-        final chat = _chat;
-        if (chat == null || chat.currentSessionId == null) return null;
-        chat.chatLorebook.entries.addAll(cloned());
-        await chat.commitChatLorebookEdit();
-        return {'ok': true, 'where': 'chat'};
-    }
-    return null;
   }
 
   /// Export as .fpworld place package (lore + climate). Prefer over ST-only.

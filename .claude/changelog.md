@@ -1,3 +1,625 @@
+## 2026-09-18 — CI: retarget split-moved source pins + saveState door
+- **Why:** unit job on 94bc0447 failed 10 tests. Scans still read chrome / ChatTools / session_manage / world_facade shells after the residual splits. `saveState()` lived on an extension so the debounce test override never fired.
+- **What:** `CreatorState.saveState()` is a class forwarder to `_saveStateImpl`. Pins now read `world_facade.import.dart`, `chat_service_session_fork.dart`, `ChatToolsRealism.tsx`, and `home_page_chrome.actions.dart`. Contracts unchanged.
+- **Verified:** the ten named suites, locally.
+- **Files:** creator_state + prefs; lorebook_import, audit_fix_callsite, medium_followups, home_tap_* tests
+- **Commit:** this tip
+
+## 2026-09-18 — residual keep census
+- **Why:** after the leftover SEVERAL cuts, 48 production files are still over 500. All are ONE, LIST, or the ChatService shell.
+- **What:** documented keep verdicts. `home_page.dart` (556) is the home shell. `chat_service.dart` (510) is imports + part list + Fake-pinned forwarders. `image_gen_service.dart` (508) is the image-gen shell. No 500-line CI gate.
+- **Verified:** remasured committed source on this tip.
+- **Files:** plan + this changelog
+- **Commit:** this tip
+
+## 2026-09-18 — residual pass_support: fire off probe (503 → 255)
+- **Why:** `_matchesEvalSchema` / `usableEvalJsonText` / `fireStructuredEval` lived next to the owner loop and `ToolTransportProbe`.
+- **What:** `pass_support.dart` keeps owners, one-shot resolve, and the probe (255). `pass_support_fire.dart` is schema salvage + the ONE tools-vs-text fire (272). Same library — existing `pass_support.dart` imports still see `fireStructuredEval`.
+- **Verified:** analyzer clean.
+- **Files:** pass_support + pass_support_fire
+- **Commit:** this tip
+
+## 2026-09-18 — residual world_repository: clone purge off CRUD (580 → 424)
+- **Why:** the one-shot character-linked clone purge lived next to CRUD after the attach extract. Attach one-liners stay on the class so FakeWorldRepository / noSuchMethod keep resolving.
+- **What:** `world_repository.dart` keeps CRUD and the attach/biome class forwarders (424). `world_repository_purge.dart` is `_maybePurge` + `_purgeCharacterLinkedWorldsImpl` (183). Public `purgeCharacterLinkedWorlds` stays a class one-liner.
+- **Verified:** analyzer clean.
+- **Files:** world_repository + world_repository_purge
+- **Commit:** this tip
+
+## 2026-09-18 — residual memory_service: window embed off retrieve (505 → 336)
+- **Why:** the sliding-window insert body lived next to retrieve scoring after the first retrieve extract.
+- **What:** `memory_service.dart` keeps retrieve, embedText, cosine, and the class lock wrapper (336). `memory_service_embed.dart` is `_embedMessageWindowBody` (194). `notify()` is the extension door. Think-strip in `_cleanForEmbedding` is untouched.
+- **Verified:** analyzer clean.
+- **Files:** memory_service + memory_service_embed
+- **Commit:** this tip
+
+## 2026-09-18 — residual chat_facade: state payload off send-load (508 → 319)
+- **Why:** the full `/api/chat/state` map lived next to send, load, continue, and regen.
+- **What:** `chat_facade.dart` keeps send/load and Continue/regen (319). `chat_facade_state.dart` is `state()` (212). History stays on its existing part. Continue still does not tick; it only forwards.
+- **Verified:** analyzer clean.
+- **Files:** chat_facade + chat_facade_state
+- **Commit:** this tip
+
+## 2026-09-18 — residual accessors: living-time/cast off setters (657 → 480)
+- **Why:** weather, ambitions, cast, and session-theme lived next to setter/gate/init after the today-sentence split.
+- **What:** `chat_service_accessors.dart` keeps setters, gates, init/dispose, and the live `objectivesActive` AND (480). `chat_service_accessors_living.dart` is storyDayCount through stream-text clean (201).
+- **Verified:** analyzer clean.
+- **Files:** accessors + accessors_living; `chat_service.dart` part
+- **Commit:** this tip
+
+## 2026-09-18 — S2 world_facade: import off CRUD (520 → 386)
+- **Why:** world/lorebook import lived next to list/save/delete and chat-places.
+- **What:** `world_facade.dart` keeps CRUD, export, and chat-places (386). `world_facade.import.dart` is importWorld + importLorebook (139). Public extension so web routes still call `facade.importWorld`.
+- **Verified:** analyzer clean.
+- **Files:** world_facade + world_facade.import
+- **Commit:** this tip
+
+## 2026-09-18 — S2 character_card_grid: cells off toolbar chrome (520 → 412)
+- **Why:** folder/group/character cells lived in the same widget as toolbar chrome.
+- **What:** `character_card_grid.dart` keeps SearchScope, drag-hold delay, and toolbar chrome (412). `character_card_grid.grid.dart` is `_buildGrid` (132).
+- **Verified:** analyzer clean.
+- **Files:** grid + grid.grid
+- **Commit:** this tip
+
+## 2026-09-18 — S2 styled_text_controller: tokenizer off the controller (522 → 366)
+- **Why:** presets and scan/tokenize lived in the same file as the TextEditingController.
+- **What:** `styled_text_controller.dart` keeps the controller (366). `styled_text_tokenizer.dart` is presets, tokenizeChat, and quote scanners (233). Controller re-exports the tokenizer so existing imports stay valid.
+- **Verified:** analyzer clean.
+- **Files:** `lib/ui/widgets/styled_text_controller.dart` + `styled_text_tokenizer.dart`
+- **Commit:** this tip
+
+## 2026-09-18 — S2 chat_package: import off export (525 → 134)
+- **Why:** `.fpchat` import lived next to export.
+- **What:** `chat_service_chat_package.dart` keeps export (134). `chat_service_chat_package_import.dart` is import, image materialize, journal restore, and RAG backfill (413).
+- **Verified:** analyzer clean.
+- **Files:** package + package_import; `chat_service.dart` part
+- **Commit:** this tip
+
+## 2026-09-18 — S2 image_gen backends: generators off disk (526 → 129)
+- **Why:** A1111 / Draw Things / OpenAI / OpenRouter generators lived next to disk save.
+- **What:** `image_gen_service.backends.dart` keeps save-to-disk (129). `image_gen_service.backends.generate.dart` is the generators (419). `_notify()` stays the extension door.
+- **Verified:** analyzer clean.
+- **Files:** backends + backends.generate; `image_gen_service.dart` part
+- **Commit:** this tip
+
+## 2026-09-18 — S2 group_membership: members off 1:1 fork (528 → 298)
+- **Why:** live add/remove/create-member lived next to forking a 1:1 into a group.
+- **What:** `chat_service_group_membership.dart` keeps `forkToGroupChat` (298). `chat_service_group_members.dart` is create/add/reload/remove (250).
+- **Verified:** analyzer clean.
+- **Files:** membership + members; `chat_service.dart` part
+- **Commit:** this tip
+
+## 2026-09-18 — S2 session_state: persist off hydrate (528 → 221)
+- **Why:** `_saveChat` / `_doSaveChat` / replace-all lived next to scene-guest and group-realism hydrate.
+- **What:** `chat_service_session_state.dart` keeps hydrate and small accessors (221). `chat_service_session_state_save.dart` is enqueue, write, and replace-all (331).
+- **Verified:** analyzer clean.
+- **Files:** session_state + session_state_save; `chat_service.dart` part
+- **Commit:** this tip
+
+## 2026-09-18 — S2 StoopAccountPage: collections off profile (544 → 461)
+- **Why:** uploads, downloads, and following lived in the same page as profile, 2FA, and account danger. Inbox is already `StoopInboxPage`.
+- **What:** `StoopAccountPage.tsx` keeps profile, 2FA, and sign-out/delete (461). `StoopAccountCollections.tsx` is the three lists (119). Web bundle rebuilt.
+- **Verified:** tsc clean. vitest 238 green.
+- **Files:** `web_ui/src/pages/stoop/StoopAccountPage.tsx` + `StoopAccountCollections.tsx`; `assets/web_app`
+- **Commit:** this tip
+
+## 2026-09-18 — S2 settings_page.advanced: web server off storage (543 → 194)
+- **Why:** web-server start/port lived next to the storage path and database cleanup.
+- **What:** `settings_page.advanced.dart` keeps the tab shell, storage, cleanup, and shared text field (194). `settings_page.advanced.web.dart` is start, port commit, and the Web Server section (370). `rebuildState` already exists on the settings page.
+- **Verified:** analyzer clean.
+- **Files:** advanced + advanced.web; `settings_page.dart` part
+- **Commit:** this tip
+
+## 2026-09-18 — S2 generation_postgen: engine bookkeeping off finalize (558 → 244)
+- **Why:** sanitizer / lorebook / TTS lived next to needs ∥ reply-facts, climax → pockets → posture, and Journal/Growth.
+- **What:** `chat_service_generation_postgen.dart` keeps finalize chrome (244). `chat_service_generation_postgen_engine.dart` is the guest-guarded engine family (340). Continue scores new text only; `asContinuation` keeps `pockets_before`; Continue does not tick. `resolveMouthSpeech` untouched.
+- **Verified:** analyzer clean.
+- **Files:** postgen + postgen_engine; `chat_service.dart` part
+- **Commit:** this tip
+
+## 2026-09-18 — S2 home_page_chrome: open/menus off mode toggle (570 → 99)
+- **Why:** mode toggle and the model-load status bar lived next to open-chat, context menus, and folder/sort handlers.
+- **What:** `home_page_chrome.dart` keeps the mode toggle and status wrap (99). `home_page_chrome.actions.dart` is open-chat, menus, and folder/sort (492). Same library; `applyState` stays the setState door.
+- **Verified:** analyzer clean.
+- **Files:** chrome + chrome.actions; `home_page.dart` part
+- **Commit:** this tip
+
+## 2026-09-18 — S2 home_page_dialogs: import off delete (574 → 233)
+- **Why:** PNG/JSON and BYAF import lived next to delete, edit, and duplicate. Folder/move is already elsewhere.
+- **What:** `home_page_dialogs.dart` keeps delete / mass-delete / edit / duplicate (233). `home_page_dialogs.import.dart` is PNG/JSON + BYAF import (362). Same library; `applyState` already exists on `_HomePageState`.
+- **Verified:** analyzer clean.
+- **Files:** dialogs + dialogs.import; `home_page.dart` part
+- **Commit:** this tip
+
+## 2026-09-18 — S2 chat_service_cast: collapse and host carry off exit (585 → 182)
+- **Why:** group collapse to 1:1 and the inverse 1:1→group host carry lived next to `/exit` and member cleanup.
+- **What:** `chat_service_cast.dart` keeps exit, deferred delete, cleanup, and journal re-key (182). `chat_service_cast_shrink.dart` is collapse + host carry (429). Shared `_moveJournalCards` stays on the exit half.
+- **Verified:** analyzer clean.
+- **Files:** cast + cast_shrink; `chat_service.dart` part
+- **Commit:** this tip
+
+## 2026-09-18 — S2 backend_manager: download off version check (587 → 325)
+- **Why:** stream-to-.part download lived next to availability and GitHub version check.
+- **What:** `backend_manager.dart` keeps init, availability, updates, ensure, and `swapStagedBinary` (325). `backend_manager.download.dart` is the download stream and name/URL helpers (292). Class forwarder keeps FakeBackendManager on the type. `notify()` is the extension door.
+- **Verified:** analyzer clean. staging + setup (9) green.
+- **Files:** `lib/services/backend_manager.dart` + `.download.dart`
+- **Commit:** this tip
+
+## 2026-09-18 — S2 useLibrary: folder and card writes off the load hook (595 → 345)
+- **Why:** folder/character/group writes and import lived in the same hook as load, search, and open.
+- **What:** `useLibrary.ts` keeps load, search, folder trail, and open/start-fresh (345). `useLibrary.actions.ts` is folder CRUD, card moves, group extract, and import (326). Public hook return is unchanged. Web bundle rebuilt.
+- **Verified:** tsc clean. useLibrary search/open + cardMenus (5) green.
+- **Files:** `web_ui/src/hooks/useLibrary.ts` + `.actions.ts`; `assets/web_app`
+- **Commit:** this tip
+
+## 2026-09-18 — S2 settings_facade: already under 500 after T11
+- **Why:** the S2 row still listed 606; T11 had already split read/update.
+- **What:** remeasured 213 / 149 / 299. No further extract.
+- **Verified:** line counts only.
+- **Files:** none
+- **Commit:** this tip
+
+## 2026-09-18 — S2 chat_service_pockets: pass off intro and persist (622 → 359)
+- **Why:** the post-gen eval and stamps lived next to the sidebar intro queue and persist helpers.
+- **What:** `chat_service_pockets.dart` keeps intro queue, add/remove, seed, and rewind restore (359). `chat_service_pockets_pass.dart` is `_runPocketsPass` (287). Continue `asContinuation: true` still keeps the turn's `pockets_before`.
+- **Verified:** analyzer clean.
+- **Files:** pockets + pockets_pass; `chat_service.dart` part
+- **Commit:** this tip
+
+## 2026-09-18 — S2 user_persona_service: model and import off the store (629 → 254)
+- **Why:** the UserPersona record and file import/export lived in the same ChangeNotifier as load/CRUD.
+- **What:** `user_persona_service.dart` keeps load, create/update/delete, and active vs default (254). `user_persona_service.model.dart` is the record (87). `user_persona_service.import.dart` is file import/export (353). Class forwarders keep FakeUserPersonaService on the type. `notify()` is the extension door.
+- **Verified:** analyzer clean.
+- **Files:** `lib/services/user_persona_service.dart` + `.model.dart` + `.import.dart`
+- **Commit:** this tip
+
+## 2026-09-18 — S2 growth_store: persist off the cursor cache (634 → 236)
+- **Why:** ring writes, fade, and session-carry lived next to the sync cache the prompt reads.
+- **What:** `growth_store.dart` keeps refresh, invalidate, cursor, and `receiptsOf`/`decodeReceiptIds` (236). `growth_store.persist.dart` is add/reinforce/revise/retire/fade/copy/carry (417). Receipt decoder stays in the shell for the shared-column pin.
+- **Verified:** analyzer clean.
+- **Files:** `lib/services/chat/growth_store.dart` + `.persist.dart`
+- **Commit:** this tip
+
+## 2026-09-18 — S2 image_studio: subject off the canvas (635 → 469)
+- **Why:** subject pick, group shot, pack target, and look target lived next to generate/save/accept.
+- **What:** `image_studio.dart` keeps the session, generate, save, accept, and history (469). `image_studio.subject.dart` is subject switch, group pick, pack/look targets, and Craft (180). `rebuildState` is the extension door.
+- **Verified:** analyzer clean.
+- **Files:** `lib/ui/image_studio/image_studio.dart` + `.subject.dart`
+- **Commit:** this tip
+
+## 2026-09-18 — S2 character_facade: import off the read facade (637 → 431)
+- **Why:** list/detail/avatar memo lived next to update, create, persist, and import.
+- **What:** `character_facade.dart` keeps list, folders, avatar version memo, cardByDbId, detail, and avatar reads (431). `character_facade.import.dart` is update, create, persistNewCard, and importBytes (250). Class one-line forwarders keep Chargen and routes on the type. Duplicate ttsVoice comment collapsed.
+- **Verified:** analyzer clean.
+- **Files:** `lib/services/web/facade/character_facade.dart` + `.import.dart`
+- **Commit:** this tip
+
+## 2026-09-18 — S2 stoop_card_detail_page: body off the panel (637 → 394)
+- **Why:** the slide-in panel inlined actions, greetings, and the member pager, and imported the creator page (a cycle).
+- **What:** `stoop_card_detail_page.dart` keeps show, load, vote, download, report, and the untrusted `is List` reads (394). `stoop_card_detail_page.body.dart` is actions, greeting carousel, and member pager (250). `stoop_nav.dart` is `openStoopCreator` so detail and creator no longer import each other. `rebuildState` is the extension door.
+- **Verified:** analyzer clean. untrusted-JSON source guard + description parity (4) green.
+- **Files:** detail + `.body.dart` + `stoop_nav.dart`
+- **Commit:** this tip
+
+## 2026-09-18 — S2 chat_service_send: decay and generate handoff off capture (649 → 369)
+- **Why:** pre-turn capture, decay, generate, director note, guest chime-ins, and dream prefetch lived in one send part.
+- **What:** `chat_service_send.dart` keeps sendMessage guards, persist, chaos wheel, and call-model swap (369). `chat_service_send_handoff.dart` is `_sendDecayAndGenerate` (preTurnVector then tickDecay), director note, guest chime-ins, and dream prefetch (309). Continue does not tick — that path never enters this file.
+- **Verified:** analyzer clean. with_user pre-turn + dream prefetch + continue_postgen (12) green.
+- **Files:** send + send_handoff; `chat_service.dart` part
+- **Commit:** this tip
+
+## 2026-09-18 — S2 rag_injection: receipt and cover off the block (654 → 307)
+- **Why:** journal-cover drop and the per-turn receipt lived next to the memories block builder.
+- **What:** `rag_injection.dart` keeps day stamps, query, quote-reach, cap, and `buildRagMemoriesBlock` (307). `rag_injection.receipt.dart` is cover-drop plus `buildRagReceipt` (356). Same library — tests still import one file. Session isolation for other-chat lines is unchanged.
+- **Verified:** analyzer clean. rag_injection (47) green.
+- **Files:** `lib/services/chat/rag_injection.dart` + `.receipt.dart`
+- **Commit:** this tip
+
+## 2026-09-18 — S2 wiring_injection: leaf builders off lore/world helpers (658 → 327)
+- **Why:** prompt-injection leaf constructors lived next to lore scanner/injector and world/biome helpers.
+- **What:** `chat_service_wiring_injection.dart` keeps lore/world helpers and macro context (327). `chat_service_wiring_injection_leaves.dart` is author note through realism-state (341). Late finals stay on the class. `objectivesActive` stays the live AND in author note and ambitions.
+- **Verified:** analyzer clean. prompt_injection (27) green.
+- **Files:** wiring_injection + wiring_injection_leaves; `chat_service.dart` part
+- **Commit:** this tip
+
+## 2026-09-18 — S2 model_manager_page: download off the local list (666 → 465)
+- **Why:** HuggingFace search/queue lived in the same page as the local list and folder actions.
+- **What:** `model_manager_page.dart` keeps the widget, folder/import/delete, My Models tab, and empty state (465). `model_manager_page.download.dart` is search, queue-download, and the Search tab (214). `rebuildState` is the extension door. Existing indigo/red search chrome moved verbatim.
+- **Verified:** analyzer clean.
+- **Files:** `lib/ui/pages/model_manager_page.dart` + `.download.dart`
+- **Commit:** this tip
+
+## 2026-09-18 — S2 generate_kcpps_dialog: generate off the form (670 → 484)
+- **Why:** detect/VRAM/write lived in the same file as the form fields and dialog chrome.
+- **What:** `generate_kcpps_dialog.dart` keeps the widget, fields, hardware listener, and form (484). `generate_kcpps_dialog.generate.dart` is detect, VRAM estimate, batch suggest, and write (200). `rebuildState` is the extension door. Sync file stats stay event-path with `io-ok`.
+- **Verified:** analyzer clean.
+- **Files:** `lib/ui/dialogs/generate_kcpps_dialog.dart` + `.generate.dart`
+- **Commit:** this tip
+
+## 2026-09-18 — S2 wiring_evals: judge builders off engine/transport (675 → 353)
+- **Why:** pre-gen judge constructors lived next to the shared eval engine, post-gen trio, and tools transport.
+- **What:** `chat_service_wiring_evals.dart` keeps LlmEvalEngine, pockets/climax/reply-facts, `_fireToolEval`, and the tool-support pill (353). `chat_service_wiring_evals_judges.dart` is verifier, needs impact, RealismEvals, ObjectiveProposal (334). Late finals stay on the class. `objectivesActive` stays the live AND. Injection is a different file.
+- **Verified:** analyzer clean. one-shot objectives gate + mode + parity (15) green.
+- **Files:** wiring_evals + wiring_evals_judges; `chat_service.dart` part
+- **Commit:** this tip
+
+## 2026-09-18 — S2 stoop_browse_view: grid off search (678 → 361)
+- **Why:** Stoop browse inlined the featured hero, pick rows, and card sliver next to search/sort/type load.
+- **What:** `stoop_browse_view.dart` keeps load, `_reqGen`, search bar, sort, and type chips (361). `stoop_browse_view.grid.dart` is the hero, pick rows, and grid sliver (329). `_loadAll` / `_loadMore` stay in the shell so the superseded-filter source guard still reads them.
+- **Verified:** analyzer clean. teardown `_reqGen` guard + world climate list/badge (14) green.
+- **Files:** `lib/ui/pages/repository/stoop_browse_view.dart` + `.grid.dart`
+- **Commit:** this tip
+
+## 2026-09-18 — S2 memory_service: retrieve off embed (679 → 505)
+- **Why:** window embed/store and query retrieve lived in one 679-line class.
+- **What:** `memory_service.dart` keeps fields, lock, embed, `embedText`, and vector math (505). `memory_service_retrieve.dart` is the query score loop plus Data Bank (206). `retrieve` stays a class forwarder. `isWindowEligible` / `bytesToVector` / `cosineSimilarity` stay class statics. Session isolation for `sessionScopedCharacterIds` is unchanged.
+- **Verified:** analyzer clean. memory_service + embed offset + recheck + group RAG identity + error receipt (29) green.
+- **Files:** `lib/services/memory_service.dart` + `_retrieve`
+- **Commit:** this tip
+
+## 2026-09-18 — S2 edit_character_page: tab host off the field bag (687 → 379)
+- **Why:** the character editor still inlined the TabBar scaffold, token badge, avatar resolve, and lore CRUD next to the field bag.
+- **What:** `edit_character_page.dart` keeps the widget, fields, init, and dispose (379). `edit_character_page.host.dart` is token/avatar/lore CRUD plus the TabBar host (299). `build` stays a class override. `rebuildState` is the extension door. Existing tab/save/realism parts unchanged.
+- **Verified:** analyzer clean. greeting / identity / voice / tab interaction (9) green.
+- **Files:** `lib/ui/pages/edit_character_page.dart` + `.host.dart`
+- **Commit:** this tip
+
+## 2026-09-18 — S2 database_cleanup: apply off the scan (704 → 412)
+- **Why:** orphan scan counts and destructive delete/fix lived in one 704-line class.
+- **What:** `database_cleanup.dart` keeps `OrphanReport`/`CleanupResult`, `checkOrphans`, identity, and count helpers (412). `database_cleanup_apply.dart` is `cleanOrphans` plus delete/fix (312). `_liveCharacterIdentities` stays the one identity set (`stableGroupIdFrom`, never `characters.id` alone for objectives/embeddings/data bank). `cleanOrphans` stays a class forwarder.
+- **Verified:** analyzer clean. cleanup identity + group/sources (10) green.
+- **Files:** `lib/database/database_cleanup.dart` + `_apply`
+- **Commit:** this tip
+
+## 2026-09-18 — S2 world_repository: attach and biome spans off CRUD (711 → 580)
+- **Why:** Living Worlds CRUD, chat_worlds writers, and biome spans lived in one 711-line class.
+- **What:** `world_repository.dart` keeps load/save/delete/rename/import/export/purge (580). `world_repository_attach.dart` is chat attachments plus biome spans (201). Class forwarders stay for FakeWorldRepository. `notify()` is the extension door. `isCharacterLinkedWorld` stays the util.
+- **Verified:** analyzer clean. world_repository + world facade climate (24) green.
+- **Files:** `lib/services/world_repository.dart` + `_attach`
+- **Commit:** this tip
+
+## 2026-09-18 — S2 data_bank_dialog: editor and import off the list (712 → 421)
+- **Why:** the Data Bank dialog inlined the add/edit form and file/PDF import next to the entry list.
+- **What:** `data_bank_dialog.dart` keeps load, delete, embed, and the list (421). `data_bank_dialog_editor.dart` is start/cancel/save and the form (145). `data_bank_dialog_import.dart` is file pick, PDF extract, and chunking (192). `rebuildState` is the extension door. Chunking is one top-level helper.
+- **Verified:** analyzer clean. character_delete_data_bank (2) green.
+- **Files:** `lib/ui/dialogs/data_bank_dialog.dart` + `_editor` + `_import`
+- **Commit:** this tip
+
+## 2026-09-18 — S2 group_member_card: menus and views off the shell (727 → 390)
+- **Why:** the sidebar group card inlined the Edit Group menu plus the expanded and compact bodies.
+- **What:** `group_member_card.dart` keeps resolve, the header, and the shell (390). `group_member_card_menu.dart` is the header right-click Edit Group menu (60). `group_member_card_views.dart` is expanded 1:1-parity and compact mini-state (411). `NeedsGrid` stays the shared widget. `objectivesActive` stays the live AND.
+- **Verified:** analyzer clean. v2 presence "Away dims the compact card" golden green.
+- **Files:** `lib/ui/widgets/group_member_card.dart` + `_menu` + `_views`
+- **Commit:** this tip
+
+## 2026-09-18 — S2 update_service: download and install off check (735 → 455)
+- **Why:** GitHub check, asset download, and platform install lived in one 735-line class.
+- **What:** `update_service.dart` keeps fields, `checkForUpdate`, version compare, `selectTargetRelease`, and `validateInstallerDownload` (455). `update_service_download.dart` is the temp-file download (103). `update_service_install.dart` is installNow/OnClose plus Windows/Linux/macOS replace (239). Class forwarders stay for download/install. `notify()` is the extension door. Statics stay on the class.
+- **Verified:** analyzer clean. update_service + download validation (8) green.
+- **Files:** `lib/services/update_service.dart` + `_download` + `_install`
+- **Commit:** this tip
+
+## 2026-09-18 — S2 objectives: tasks and completion off inject (744 → 338)
+- **Why:** load/set/inject, task mutate, and completion/promise lived in one 744-line part.
+- **What:** `chat_service_objectives.dart` keeps load, injection text, set/clear/promote, today line, and the class-forwarder impls (338). `chat_service_objective_tasks.dart` is list decode, generate, and per-task mutate (141). `chat_service_objective_completion.dart` is check cadence, force/maybe/background check, regen turn-ops, and promise/debt (311). `objectivesActive` stays the live AND on the class. Continue does not tick.
+- **Verified:** analyzer clean. one-shot gate, mention gate, secondary cap, toggle live-AND, proposal, eval tools (36) green.
+- **Files:** objectives + objective_tasks + objective_completion; `chat_service.dart` parts
+- **Commit:** this tip
+
+## 2026-09-18 — S2 session_load: hydrate off last-session and the list (744 → 395)
+- **Why:** last-session open, the history list, and hydrate (messages/scalars/persona/porch diary) lived in one 744-line part.
+- **What:** `chat_service_session_load.dart` keeps `_computeAbsenceGap`, `_loadLastSession`, `getSessions*`, and `loadSession` (395). `chat_service_session_hydrate.dart` is `_hydrateMessagesFromRows`, `_hydrateSessionScalars`, `_activateSessionPersona`, and porch diary import (373). Both load paths still call the same helpers. Objectives still reload on `loadSession`. Continue does not tick.
+- **Verified:** analyzer clean. load_session_objectives + session load/persona/overlay (16) green.
+- **Files:** session_load + session_hydrate; `chat_service.dart` part
+- **Commit:** this tip
+
+## 2026-09-18 — S2 chat_facade: swipe/history off send-load (776 → 508)
+- **Why:** the web chat adapter mixed send/load/state with swipe, personas, and session history.
+- **What:** `chat_facade.dart` keeps state, select/load, send, stop, Chance Time, `regenerate`, and `continueGeneration` (508). `chat_facade_history.dart` is swipe/variants, edit/delete, impersonate, personas, sessions, lore, theme (292). Continue and regen both stay forwarded. Continue does not tick.
+- **Verified:** analyzer clean. chat fork/insert-image/session/persona (14) green.
+- **Files:** `lib/services/web/facade/chat_facade.dart` + `chat_facade_history.dart`
+- **Commit:** this tip
+
+## 2026-09-18 — S2 reprocess: regen revert and swipe-merge off the hold (791 → 457)
+- **Why:** `_regenerateLastMessageHeld` inlined the speaker revert and the swipe merge. Needs reprocess/revert already live in `chat_service_needs_reprocess.dart`. Continue is not this file.
+- **What:** `chat_service_reprocess.dart` keeps `regenerateMainCharacter`, the settling hold, guest/host gates, 1:1 eval replay, and `_generateResponse` (457). `chat_service_regen_revert.dart` is `_revertRegenRealismBaseline` (1:1 + group speaker impersonation) and `_mergeOrRestoreRegenSwipe` (387). `_resolveGroupSpeakerForMessage` stays here for the needs-reprocess twin. Continue does not tick.
+- **Verified:** analyzer clean. regen chip/cancel/failed-restore, posture rewind, pockets rewind, guest-left journal, god-file ratchet green.
+- **Files:** reprocess + regen_revert; `chat_service.dart` part
+- **Commit:** this tip
+
+## 2026-09-18 — S2 setup_step: Extra Settings and status dot off the form (802 → 486)
+- **Why:** the Backend & Model form inlined Extra Settings helpers and the pulsing status dot.
+- **What:** `setup_step.dart` keeps the form `build` and `_applyAutoConfigure` (486) so `existsSync`/`lengthSync` stay in this file with `io-ok` on the token line. `setup_step_fields.dart` is Extra Settings + labels/fields (254). `setup_step_status_dot.dart` is the private blinking dot (78). `CreatorState.notify()` stays.
+- **Verified:** analyzer clean. setup_backend_picker + creator remaining goldens (6) green.
+- **Files:** `lib/ui/character_creator/steps/setup_step.dart` + `_fields` + `_status_dot`
+- **Commit:** this tip
+
+## 2026-09-18 — S2 realism_verification: rules and critique off fire (803 → 394)
+- **Why:** verify/verifyBatch lived next to `_applyRuleChecks` and the critique prompt builders.
+- **What:** `realism_verification.dart` keeps ctor, `kMetaKey`, `verify`, `verifyBatch`, and `VerificationResult` (394). `realism_verification_rules.dart` is the one rule helper, both critique prompts, and `_RuleResult` (433). T8/T12 already landed, so this split is safe. Director still exempt on needs bounds (that helper is not here).
+- **Verified:** analyzer clean. realism_verification_test (26) green.
+- **Files:** `lib/services/chat/realism_verification.dart` + `realism_verification_rules.dart`
+- **Commit:** this tip
+
+## 2026-09-18 — S2 chat_command_handler: guest mint off slash parse (815 → 466)
+- **Why:** slash parse, the command catalog, and Scene Guest create/join/speak/exit lived in one 815-line leaf.
+- **What:** `chat_command_handler.dart` keeps types, ctor, `commands`, `handle`, turn-order, and AFK (466). `chat_command_guest.dart` is create/join/speak/exit plus name resolve (373). `GuestMintResult` and `SlashCommandInfo` stay public on the library. Preserve thinking is not wired.
+- **Verified:** analyzer clean. chat_command_handler_test (68) green.
+- **Files:** `lib/services/chat/chat_command_handler.dart` + `chat_command_guest.dart`
+- **Commit:** this tip
+
+## 2026-09-18 — S2 session_manage: fork/rename off new-chat seed (816 → 490)
+- **Why:** rename, fork, world seed, and startNewChat lived in one 816-line part.
+- **What:** `chat_service_session_manage.dart` keeps `startNewChat` / `startFreshChatWith` / `persistSessionPersona` and both Chaos seeds (490). `chat_service_session_fork.dart` is rename, description, `forkFromMessage`, and world seed/refresh (202). `chat_service_session_new_chat_prep.dart` is character refresh + transcript reset (177). Greeting stays in `startNewChat`. Continue does not tick.
+- **Verified:** analyzer clean. chaos toggle, group New Chat needs, wardrobe zero, session rename, picker overlay hold, god-file ratchet green.
+- **Files:** session_manage + session_fork + session_new_chat_prep; `chat_service.dart` parts
+- **Commit:** this tip
+
+## 2026-09-18 — S2 needs_impact_evaluator: bound helper and activity table off fire (822 → 441)
+- **Why:** eval fire, `_boundDeltas`, and the AFK keyword table lived in one 822-line leaf.
+- **What:** `needs_impact_evaluator.dart` keeps ctor, `evaluateAndApply`, `reprocessWithUserCritique`, and the class static `afkKeywordFallback` door (441). `_parseNeedDeltas` is the one JSON+regex parse used by both fire and reprocess. `needs_impact_bound.dart` is THE `_boundDeltas` helper (73) — Director exempt, not in `applySceneImpact`, no third copy. `needs_impact_table.dart` is the AFK keyword table (324).
+- **Verified:** analyzer clean. needs_impact_evaluator + needs_depletion_cap (46) green.
+- **Files:** `lib/services/chat/needs_impact_evaluator.dart` + `needs_impact_bound.dart` + `needs_impact_table.dart`
+- **Commit:** this tip
+
+## 2026-09-18 — S2 accessors: today-sentence and planner off the grab-bag (826 → 657)
+- **Why:** the accessors part mixed the grab-bag with the today-sentence mixin and planner resolve.
+- **What:** `chat_service_accessors.dart` keeps lore/worlds/gates/setters/`_objectivesActiveImpl` live AND (657). `chat_service_today_sentence.dart` is the mixin (53). `chat_service_planner_resolve.dart` is fate + upsert/journal (153). Also restored class doors `TimeService.evaluateTimeProgressAndPostureIfNeeded` / `setClockDirect` and `_ChatPageState._groupCharacterColor` so callers that only have the type still compile. Continue does not tick.
+- **Verified:** analyzer clean. god-file ratchet, planner fate, today side-quest, today-line, objectives toggle/gate/facade, time_service, standalone clock green.
+- **Files:** accessors + today_sentence + planner_resolve; `chat_service.dart` parts; TimeService + ChatPage class doors
+- **Commit:** this tip
+
+## 2026-09-18 — S1.19: eval engine split into fire and extract (842 → 487)
+- **Why:** fire/retry/cancel lived next to think-strip, the recent-exchange window, and the needs-impact JSON call.
+- **What:** `llm_eval_engine.dart` keeps fields, ctor, `fireLLMEval`, and class forwarders for `stripThinkBlocks` / `extractJson*` / `evaluateNeedsImpactCall` (487). `llm_eval_extract.dart` is the eval canon: window helpers, `stripEvalThinkBlocks`, and the needs-impact body (390). StoryJson.stripThinkTags and char_macro.stripThinkBlocks stay separate.
+- **Verified:** analyzer clean. llm_eval_engine + orphan-think + salvage + needs-zero-tools + recent-exchange + clamp + reply-facts fusion (50) green.
+- **Files:** `lib/services/chat/llm_eval_engine.dart` + `llm_eval_extract.dart`
+- **Commit:** this tip
+
+## 2026-09-18 — S1.18: ChatTools split into memory, realism, and objectives (862 → 314)
+- **Why:** the web tools sidebar inlined every desktop section in one 862-line TSX file.
+- **What:** `ChatTools.tsx` is the load/toggle/apply shell plus Scene & time (clock chevron pin stays in this file) (314). `ChatToolsShared` is the snapshot type + Toggle/NumField. `ChatToolsMemory` is wiki / RAG / journal / growth / recap (321). `ChatToolsRealism` is pockets / chaos / NSFW (139). `ChatToolsObjectives` is standing mood / ambitions / ObjectivesPanel (64). Section order is unchanged. Preserve thinking is not wired.
+- **Verified:** `tsc --noEmit` clean. ChatTools clock + recap field + ObjectivesPanel (9) green. `npm run build` wrote `assets/web_app`.
+- **Files:** `web_ui/src/components/ChatTools.tsx` + Shared / Memory / Realism / Objectives, rebuilt `assets/web_app`
+- **Commit:** this tip
+
+## 2026-09-18 — S1.17: OpenRouter split into tools and catalog (868 → 455)
+- **Why:** chat generate, tools/style retry, and the model catalog lived in one 868-line class.
+- **What:** the shell keeps configure, `generateStream`, abort, and class forwarders for `generateWithTools` / `fetchAvailableModels` (455) — `LLMService` plus `import … show OpenRouterService`. `.tools` is `_chatPayload` + `_generateWithTools` (318). `.catalog` is the `/models` fetch (153). Catalog overrides still do not call `configure()`.
+- **Verified:** analyzer clean. structured-eval + native-tools + tools (42) green.
+- **Files:** `lib/services/open_router_service.dart` + `.tools` + `.catalog`
+- **Commit:** this tip
+
+## 2026-09-18 — S1.13: ChatPage split into overlays and app-bar host (900 → 474)
+- **Why:** the route shell still inlined the background/bubble surface, page overlays, and the app bar next to `_bubbleKeys`.
+- **What:** `chat_page.dart` keeps the route, owner-scoped `_bubbleKeys` (HashMap.identity, never `GlobalObjectKey(msg)`), send, and a thin `build` (474). `_overlays` is the chat surface + loading/call/realism/objective/ONNX overlays (253). `_sidebar_host` is the app bar including the sidebar toggle (181). Extensions call `rebuildState`. `io-ok` stays on the `existsSync` token.
+- **Verified:** analyzer clean. `message_key_scope_test` (2) green.
+- **Files:** `lib/ui/pages/chat_page.dart` + `chat_page_overlays.dart` + `chat_page_sidebar_host.dart`
+- **Commit:** this tip
+
+## 2026-09-18 — S1.12: KoboldService split into admin and process (902 → 436)
+- **Why:** generate/abort, admin extras, and process start/stop lived in one 902-line class. A two-file split left admin over 500.
+- **What:** the shell keeps `LLMService` generate/abort, fields, and class forwarders for `startKobold` / `stopKobold` (436) — `show KoboldService` hides extension methods. `.admin` is readiness, swap, perf, token count (276). `.process` is start/stop and console ingest (272). Extensions call `notify()`. `_armedProbe` stays a class field.
+- **Verified:** analyzer clean. abort-ownership + hang-ready + service (37) green.
+- **Files:** `lib/services/kobold_service.dart` + `_admin` + `_process`
+- **Commit:** this tip
+
+## 2026-09-18 — S1.11: WebServerHost split into streams and wiring (934 → 429)
+- **Why:** bind/lifecycle, overlay relays, and facade assembly lived in one 934-line host. The inventory's `web_server_static` / `web_server_auth` names were already extracted to routes.
+- **What:** the shell keeps fields, setters, `startSafely`, `describeStartFailure` (class static), and `stop` (429). `.streams` attaches processing / gen-status / LLM-ready / image / library relays (258). `.wiring` is `start` + `setupRemoteAccess` (309). Extensions call `notify()`.
+- **Verified:** analyzer clean. start-failure + abandoned-start + rebind (10) green.
+- **Files:** `lib/services/web/web_server_host.dart` + `.streams` + `.wiring`
+- **Commit:** this tip
+
+## 2026-09-18 — S1.10: TimeService split into eval and apply (939 → 454)
+- **Why:** story-clock public API, LLM minutes decide, and clamp/skip apply lived in one 939-line class.
+- **What:** `time_service.dart` keeps fields, seed/load/restore, and class statics `TimeService.postureQuestion` / `TimeService.parsePosture` (454) — fusion callers use those names. `.eval` is `_fireSceneTimeEval` + `evaluateTimeProgressAndPostureIfNeeded` (302). `.apply` is nudge/set/OOC skip/`_applyElapsed` and the `new_day` corroboration regex (230). Continue still does not tick. Extension calls qualify the class statics.
+- **Verified:** analyzer clean. `time_service_test` + `standalone_clock_test` (48) green.
+- **Files:** `lib/services/chat/time_service.dart` + `time_service_eval.dart` + `time_service_apply.dart`
+- **Commit:** this tip
+
+## 2026-09-18 — S1.7: ChatService private fields onto a mixin (968 → 492)
+- **Why:** the shell still held every runtime field next to fake-pinned getters and `late final` builders. Extensions cannot declare instance state.
+- **What:** `ChatServiceFieldBag` mixin in `chat_service_fields.dart` (371) holds private runtime fields. The class keeps constructor deps, test hooks, `_groupRealism` / `_turnSpeakerIdForRealism`, `late final` builders (they call extension `_buildX()`), and fake-pinned members (`pocketsFor`, `callMode`, `isCheckingCompletion`, `journalStore`, …). Hide-not-erase `pocketsFor` body is unchanged.
+- **Verified:** analyzer clean on the library. `god_file_ratchet`, `standalone_clock_test` (11), `wardrobe_message_zero_test` (8, including hide-not-erase) green.
+- **Files:** `lib/services/chat_service.dart`, new `lib/services/chat/chat_service_fields.dart`
+- **Commit:** this tip
+
+## 2026-09-18 — S1.5: ChatPage split into session, send, and overlays (978 → 479)
+- **Why:** the web chat route owned load/socket, send/regen, overlays, and the desktop/phone layout in one file.
+- **What:** `ChatPage.tsx` keeps auth, layout branch, header, composer, insight aside, drawers, and `ProcessingOverlay` (480). The overlay is `position:absolute` against `.chat-view` — moving it out of that ancestor would park it in the wrong place. `chat/chatState.ts` is the GET /api/chat/state type. `useChatSession` is load / socket / history / session switch (353). `useChatSend` is send / continue / regen / swipe / edit / reprocess (155); `postChatSend` stays in `chatSend.ts`. `ChatOverlays` is chance time, reprocess, persona, image review, edit, and the join picker (103). Existing page tests still import `ChatPage`.
+- **Verified:** `tsc --noEmit` clean. `chatAsideMount`, `chatSessionRecovery`, `chatSend` (14 tests) green. `npm run build` wrote `assets/web_app`.
+- **Files:** `web_ui/src/pages/ChatPage.tsx` + `web_ui/src/pages/chat/{chatState,useChatSession,useChatSend,ChatOverlays}`
+- **Commit:** this tip
+
+## 2026-09-18 — CI: notify, GrowthPanel statics, theme-keep, io-ok after S1 splits
+- **Why:** three CI jobs went red on the split tip. Extensions on `CreatorState` called `notifyListeners` (protected). `growth_panel.card.dart` used `categoryAccent` / `categoryLabel` unqualified. `dart format` wrapped `Colors.blueAccent` and sync I/O off their same-line allow comments, so theme-lint and io-lint treated the moved lines as new.
+- **What:** prefs/models parts call `CreatorState.notify()`. Card chips use `GrowthPanel.categoryAccent` / `GrowthPanel.categoryLabel`. Lore enabled-marker uses one `_loreEnabledAccent` const with `// theme-keep` on the `Colors.blueAccent` line. Catalog/preset/cover sync I/O keep `// io-ok` on the token line (short assignment so format cannot move the comment inside the `if` block).
+- **Verified:** `flutter analyze` clean on the six touched paths. Local theme-lint and io-lint greps against `origin/Rawhide` pass.
+- **Files:** `creator_state.prefs.dart`, `creator_state.models.dart`, `growth_panel.card.dart`, `create_group_chat_page.steps_lore.dart`, `stoop_upload_page.publish.dart`
+- **Commit:** this tip
+
+## 2026-09-18 — S1.15: Growth sidebar split into cards, actions, and the ring editor (881 → 327)
+- **Why:** the panel listed rings, owned the plant/edit/reset path, and inlined the ring editor dialog.
+- **What:** `growth_panel.dart` keeps the list, review banner, and cadence slider (327). `.card` is the past fold + ring card + overflow menu (248). `.actions` is check-now / plant / edit / reset / settings (206). `.editor` is `_RingEditorDialog` (169). Journal's editor is a different UX — not shared.
+- **Verified:** `growth_test` + `growth_refresh_race_test` (35 tests) green; analyzer clean.
+- **Files:** `lib/ui/chat_components/sidebar/journal_memory/growth_panel.dart` + 3 new part files
+- **Commit:** this tip
+
+## 2026-09-18 — S1.8: Realism form split into engine, porch, and controls (963 → 298)
+- **Why:** one StatelessWidget built the engine master switch, bond/emotion/verifier, time, Chaos, and identity chips in a single 545-line `build`.
+- **What:** the shell keeps the constructor, the public `buildToggleRow` (needs_form_section and the edit dialog call `RealismFormSection.buildToggleRow` — that cannot become an extension static), and a four-line column that spreads the parts. `.engine` is the master switch plus the fields that hide when the engine is off (376). `.porch` is time, Chaos-when-off, and identity/wardrobe (204). `.controls` is labels, colours, section header, slider row (163). Child order is unchanged so Porch Life still renders with the engine off.
+- **Verified:** porch-life-ungated, relationship padding, caret, edit-scroll, chaos global toggle, creator realism-step (12 tests) green. Analyzer clean.
+- **Files:** `lib/ui/widgets/realism_form_section.dart` + 3 new part files
+- **Commit:** this tip
+
+## 2026-09-18 — S1.4: creator state split into prefs and model loading (987 → 444)
+- **Why:** the wizard's field bag also held SharedPreferences load/save/reset and the setup-step model catalog / Kobold reload.
+- **What:** `creator_state.dart` keeps fields, step index, dispose, and `setStep` (444). `.prefs` is load / save / reset / clear-after-save (389). `.models` is abort, catalog, local scan, and Kobold reload, plus the existing `scanKcppsPresets` helper (204). `CreatorEngine` is untouched — it already lives in `creator_state_engine.dart`. Pref keys stay on the class; the prefs part qualifies them (`CreatorState._prefName`) because extensions cannot see those statics unqualified.
+- **Verified:** creator modes / persist / nav-lock / lore-and-concept (10 tests) green, including `CreatorEngine.generateFromMode`. Analyzer clean.
+- **Files:** `lib/ui/character_creator/creator_state.dart` + 2 new part files
+- **Commit:** this tip
+
+## 2026-09-18 — S1.3: group-create wizard shell split (980 → 287)
+- **Why:** step bodies were already parts; the shell still held roster mutations, scenario/first-message generation, and the persist path.
+- **What:** `create_group_chat_page.dart` keeps fields, nav, snack, and `build` (287). `.roster` is add/remove/reorder/voice/seed (155). `.generate` is the two LLM fills plus the dynamics context they take (234). `.commit` is `_createGroup` (332). Lore entry + world-toggle helpers moved into the existing lore step part (the UI that calls them) instead of a 60-line fourth file. Wizard chrome (`_currentStep`, `AnimatedSwitcher`, top-bar dots) is untouched. `setState` in the new parts goes through the existing `rebuildState` bridge.
+- **Verified:** `create_group_chat_page_interaction_test` walks all eight steps by real taps — green. Analyzer clean.
+- **Files:** `lib/ui/pages/create_group_chat_page.dart` + 3 new parts; `create_group_chat_page.steps_lore.dart` gained the three helpers it already called
+- **Commit:** this tip
+
+## 2026-09-18 — S1.16: Chance Time overlay split into shell, views, and painters (876 → 268)
+- **Why:** one file held the spin/accept path, every visual builder, and three CustomPainters.
+- **What:** `chance_time_overlay.dart` keeps the widget, the State, the spin, category keywords, and `build` (268). `.view` carries the card / header / wheel stack / button / result / splash / pressure row (460). The wheel, pointer, and confetti painters live as their own library under `ui/widgets/chance_time/` so they are not private copies inside the overlay. The overlay's `_WheelPainter` / `_ConfettiPainter` / `_PointerPainter` are gone.
+- **Verified:** analyzer clean on the overlay + painters; new call-site pin in `test/ui/widgets/chance_time_painters_test.dart`.
+- **Files:** `lib/ui/widgets/chance_time_overlay.dart`, new `chance_time_overlay.view.dart`, new `chance_time/{chance_time,wheel_painter,confetti_painter}.dart`, new pin test
+- **Commit:** this tip
+
+## 2026-09-18 — S1.9: hardware detection split by platform (946 → 283 shell)
+- **Why:** one class held nvidia-smi, Apple unified-memory, Linux lspci/sysfs, and the Windows four-method cascade.
+- **What:** `hardware_service.dart` keeps the public API, cache restore, dispatch, driver flags, and name/vendor helpers (283). Parts: `.nvidia` (locate + parse nvidia-smi, 122), `.apple` (system_profiler + unified-memory heuristic, 102), `.linux` (lspci / sysfs / distro family, 184), `.windows` (registry / WMI / shared-memory cascade, 356). The plan guessed an "estimate" file; VRAM-fit math already lives in `vram_estimator.dart`, so the split followed the four real detection passes instead.
+- **Verified:** `hardware_gpu_name_match_test` + `hardware_info_cache_test` + `vram_estimator_test` (50 tests) green; analyzer clean.
+- **Files:** `lib/services/hardware_service.dart` + 4 new part files
+- **Commit:** this tip
+
+## 2026-09-18 — S1.6: Stoop discussion split into actions and views (970 → 302 shell)
+- **What:** `stoop_card_comments.dart` keeps both widgets, the State fields, load/replace, the verify/sign-in nudges and `build` (302). `.actions` carries post / reply / confirm-delete / delete / delete-reply / report / report-reply (277); `.views` carries the composer, thread, reply composer, reply row, creator mark and row (416). Same `rebuildState` bridge as S1.2, same reason.
+- **Verified:** `test/ui/pages/repository` + `test/services/backporch` (185 tests) green, including the comment-gate suite; analyzer clean on the directory.
+- **Files:** `lib/ui/pages/repository/stoop_card_comments.dart` + 2 new part files
+- **Commit:** this tip
+
+## 2026-09-18 — S1.2: Stoop share wizard split (990 → 464 shell)
+- **Why:** one State class holding the wizard chrome, all four step bodies, and three publish paths (character, group, world).
+- **What:** `stoop_upload_page.dart` keeps the widget, the State's fields, selection/advance logic, `build`, `_stepBody` and `_navButtons` (464). `.steps` carries the four step bodies + the shared label (323); `.publish` carries `_publish` / `_publishGroup` / `_publishWorld` / `_rememberCommentsOptIn` (243). The wizard's top-bar step dots and linear `_currentStep` progression are untouched — that pattern is mandatory for every Create X flow.
+- **One new method, and it is the precedented one:** `rebuildState(VoidCallback)`, because `setState` is protected and an extension in a part cannot call it. `settings_page.dart` exposes exactly this bridge for exactly this reason; the doc comment says so. Statics referenced from a part are qualified (`_StoopUploadPageState._maxTags`).
+- **Formatter aftercare:** the rename lengthened three lines, so `dart format` wrapped `if (mounted) rebuildState(...)` and created `curly_braces_in_flow_control_structures`. Blocked all three.
+- **Verified:** `test/ui/pages/repository` + `stoop_adult_lock_test` + `test/services/backporch` (204 tests) green; analyzer clean on the directory.
+- **Files:** `lib/ui/pages/repository/stoop_upload_page.dart` + 2 new part files
+- **Commit:** this tip
+
+## 2026-09-18 — S1.14: pockets.dart split into record, grammar, matching, applier
+- **Why:** 889 lines holding four separable things behind one pure library.
+- **What:** `pockets.dart` keeps the caps, `_tidy` and the `Pockets` record itself (228). Four `part` files: `.items` (PocketItem / SetAsideItem / PocketSection, 162), `.ops` (PocketOpKind / PocketOpReport / PocketEvent, 149), `.names` (filler words, generic references, same-item matching, 139), `.apply` (the ONE applier, 315). Parts rather than separate libraries because `_tidy` is shared by `PocketItem` and `PocketOpReport` and `_norm` by the matchers — separate files would have forced those private helpers public for no reason. No imports to move: the library has none by design.
+- **Verified:** 62 tests across `pockets_test`, `pockets_rewind_test`, `item_card_swipe_and_cite_test` and the `wardrobe_message_zero` hide-not-erase pin — all green. Analyzer clean on `lib/services/chat/`.
+- **Files:** `lib/services/chat/pockets.dart` + 4 new part files
+- **Commit:** this tip
+
+## 2026-09-18 — S1.1: chat tools facade split five ways (995 → 385 shell)
+- **Why:** the single biggest mixed file in `lib/` — one class carrying the sidebar snapshot plus every tool domain behind it.
+- **What:** `chat_tools_facade.dart` keeps construction, the `state()` snapshot and its block helpers, `journalWeb`, `applySettings`, `_notify` (385). Five `part` files carry extensions: `.memory` (journal/growth/recap/promises/timeline, 273), `.scene` (clock, calendar, presence, story handoff, 132), `.switches` (the plain toggles, 86), `.objectives` (quests + tasks, 124), `.pockets` (wardrobe + belongings, 121). Pure move — members copied verbatim with their doc comments, no renames, no new methods.
+- **Verified:** `test/services/web` + growth + journal suites (351 tests) green; analyzer clean on the facade directory.
+- **Files:** `lib/services/web/facade/chat_tools_facade.dart` + 5 new part files
+- **Commit:** this tip
+
+## 2026-09-18 — T12: the two tool probes answer different questions; documented, not merged
+- **Why:** the inventory flagged `ToolTransportProbe` and `OpenRouterToolSupport` as possibly one contract written twice.
+- **Finding:** they are two layers, and they compose. `OpenRouterToolSupport` is inside the HTTP door, keyed by openrouter.ai **model id**, and answers "is a `tools` POST to this route worth making at all" from the provider's `supported_parameters` and from 400/404 bodies ("no endpoints found that support tool use"). `ToolTransportProbe` sits above any transport, keyed by **backend identity** (name + model, so Kobold and oMLX are covered), and answers "did a real attempt come back with usable tool calls, should the next eval in THIS send try again", plus the skip/pause bookkeeping and the live sidebar pill. A catalog "no" makes the HTTP layer return null without a request; the caller's empty result is then what teaches the probe the backend is text-only.
+- **What:** a doc block on each class stating the distinction and why merging would be wrong (the transport would inherit per-send skip/pause; the probe would inherit one provider's catalog semantics). No code change — the plan's own instruction for this case was "document that or merge", and merging was the wrong half.
+- **No test added:** a test asserting a comment is decoration. The existing `tool_support_test`, `tool_skip_pause_test` and `openrouter_native_tools_test` (36 tests) already pin both behaviours separately and stay green.
+- **Files:** `lib/services/openrouter_tool_support.dart`, `lib/services/chat/pass_support.dart`
+- **Commit:** this tip
+
+## 2026-09-18 — T11: settings facade split into a read half and a write half
+- **Why:** 606 lines mixing the JSON snapshot the PWA renders with the 270-line write path that applies a settings body.
+- **What:** `settings_facade.dart` is now a 213-line shell (construction, reasoning/template resolution, backend name parsing, legacy-model cleanup) plus two `part` files carrying `extension SettingsFacadeRead` (149) and `extension SettingsFacadeUpdate` (299) — the same pattern `image_gen_service.backends.dart` and the ChatService parts use. Pure move: no new methods, no renames, statics qualified as `SettingsFacade.x` because extensions cannot reach them unqualified.
+- **What I did NOT do:** the plan floated replacing the read/update key lists with one declarative table. Those lists are the wire contract, not duplication — the keys appear once per direction — and a dynamic getter/setter table would trade type safety and readability for a shorter file. Said no and split instead.
+- **Verified:** `test/services/web` + `test/ui/settings` + `test/ui/pages` (519 tests) green, including the settings round-trip through the relay.
+- **Files:** `lib/services/web/facade/settings_facade.dart`, new `settings_facade.read.dart`, new `settings_facade.update.dart`
+- **Commit:** this tip
+
+## 2026-09-18 — T10: one reader for the receipt column (a real desktop↔web gap)
+- **Why:** the plan expected the web TSX to be re-parsing a string. It is not — the relay already sends `number[]`. The actual duplication was on the Dart side: THREE decoders for `source_message_ids`, and they disagreed. `journal_dialog._receiptPositions` used `whereType<int>()`, so a position that had round-tripped as `12.0` or `"12"` rendered as a tappable pill in the browser and silently vanished in the desktop diary. Same card, same column, two answers.
+- **What:** new `lib/utils/receipt_ids.dart` → `decodeReceiptIds(String?)` (tolerant: nums, numeric strings, `[]` on anything unreadable), exported from the utils barrel. `GrowthStore.receiptsOf` keeps its typed door and forwards; the web journal surface and the desktop diary call it directly. Two now-unused `dart:convert` imports dropped.
+- **Proven red:** restored the strict int-only branch — the double case fails. The call-site pin also fails if any of the three regrows `whereType<int>()`.
+- **Files:** new `lib/utils/receipt_ids.dart`, `lib/utils/utils.dart`, `lib/services/chat/growth_store.dart`, `lib/services/web/facade/journal_web_surface.dart`, `lib/ui/dialogs/journal_dialog.dart`, new `test/utils/receipt_ids_test.dart`
+- **Commit:** this tip
+
+## 2026-09-18 — T9: lorebook import takes its post-decode steps once
+- **Why:** decoding was already shared (`Lorebook.fromJson`, `detectLorebookFormat`, `LorebookImportSummary`). Everything AFTER it was written twice — the desktop wizard and the web relay each deep-copied the book, hand-rolled a free-world-name loop, and merged entries into a group's stored JSON. `uniqueWorldName` already existed in `utils/world_ref_resolver.dart` and neither import surface called it.
+- **What:** new `lib/models/lorebook_import.dart` with `cloneLorebook` and `appendToGroupLorebookJson` (+ models barrel export). Both surfaces now call those and `uniqueWorldName`. The group merge also got more forgiving: unreadable stored lore starts a fresh book instead of throwing, so a group whose lore column is corrupt can still receive an import. `dart:convert` dropped from `world_facade.dart` (no longer needed there).
+- **Deliberately NOT unified:** the destination switch itself. The wizard writes a sentence for a human ("the world \"X\"", "3 characters"), the relay returns JSON for the PWA; sharing that would make one carry the other's presentation.
+- **Proven red:** made `cloneLorebook` alias the source entries instead of copying — the aliasing test fails. The call-site pin also fails if either surface regrows the `while (taken.contains(` loop.
+- **Files:** new `lib/models/lorebook_import.dart`, `lib/models/models.dart`, `lib/ui/pages/import_lorebook_page.dart`, `lib/services/web/facade/world_facade.dart`, new `test/models/lorebook_import_test.dart`
+- **Commit:** this tip
+
+## 2026-09-18 — T8 (finished): the think-strip landscape swept, ten more copies gone
+- **Why:** the plan catalogued five copies. A full grep of `lib/` found ten more inline ones, which is the real reason this kept rotting: a fix to one copy never reached the others.
+- **Visual family (behaviour preserved, one home):** `image_prompt_builder._stripThinkBlocks`, `chat_page.scene_dialogs._cleanImageSourceText` and `prompt_workspace._cleanForPill` were byte-identical think-strips (cut from the LAST open tag, strip stray tags of any shape, collapse whitespace), two of them also dropping the "Auto-imported from character card:" line. Extracted `lib/services/image_prompt/visual_source_text.dart` — `stripThinkForVisual` + `cleanVisualSourceText` over one private core, so the card-import removal still runs BEFORE the collapse (doing it after would change what the line regex matches). All three call sites now forward. No behaviour change by construction.
+- **Folded into the stronger existing canon:** `chargen_json.extractChargenValue`, both sites in `character_gen_steps.dart`, and the too-short guard in `character_gen_service.dart` now call `stripThinkBlocks` (the chargen canon, which also catches the misspelled tags those sites were blind to — the length guard was counting misspelled reasoning as content). `create_group_chat_page._cleanThinkAndMarkers` and `memory_service._cleanForEmbedding` now call `stripThinkTags`.
+- **Second real bug, same shape as the clock one:** `_cleanForEmbedding` stripped closed blocks only, so an unclosed `<think>` tail was embedded as a RAG memory — the character could later "remember" the model's deliberation as an event. It is a private method on a DB-bound service, so it has no direct guard; the canon's own strip semantics are covered by the `think_tags` tests, and this is stated rather than implied.
+- **Left alone on purpose:** `StoryJson.stripThinkTags` (JSON-anchored), `char_macro.stripThinkBlocks` (fuzzy, and now the canon five sites call), `regen_critique_injection._stripThink` and the image-prompt contract itself, plus `eval_stream_guards._stripClosedThink` (a dump-size measurement, closed-only on purpose) and `chat_service_generation_stream`'s tail scan (streaming detection, not a strip).
+- **Proven red:** pointed `prompt_workspace` back at a local copy — the call-site pin in the new `test/services/image_prompt/visual_source_text_test.dart` fails naming the file. Restored, green. The unclosed-tail case also pins the deliberate difference from the shared helper.
+- **Files:** new `lib/services/image_prompt/visual_source_text.dart` + barrel export; `image_prompt_builder.dart`, `lib/ui/pages/chat_page.dart`, `chat_page.scene_dialogs.dart`, `lib/ui/image_studio/prompt_workspace.dart`, `lib/ui/character_creator/chargen_json.dart`, `lib/services/chargen/character_gen_steps.dart`, `lib/services/character_gen_service.dart`, `lib/ui/pages/create_group_chat_page.dart`, `lib/services/memory_service.dart`, new `test/services/image_prompt/visual_source_text_test.dart`
+- **Commit:** this tip
+
+## 2026-09-18 — T8 (part): clock claims use the shared think-strip; two copies proven NOT duplicates
+- **Why:** the plan listed five local think-strip copies to fold into the canon. Reading them first changed the answer — only one was a safe fold, and doing the other four blind would have broken the story pipeline.
+- **Fixed (a real bug, not just DRY):** `story_clock_claims.dart` stripped CLOSED think blocks only, with a local regex. An unclosed `<think>` — a cut-off stream — passed through whole, so "it is 3:15 pm" inside an abandoned thought was read as a time the character SAID and moved the story clock. It now calls `stripThinkTags`, which also drops an unclosed tail and a bare orphan closer. New `test/services/chat/story_clock_claims_think_test.dart` (4 cases). **Proven red:** restore the closed-only regex and the unclosed case returns 15:15 instead of null. `clockNamedInReply` had no test at all before this.
+- **Proven NOT duplicates, documented in place rather than unified:** `StoryJson.stripThinkTags` is JSON-anchored — on an unclosed tag the canon deletes to end-of-string, which would delete the JSON the pipeline came for. `char_macro.stripThinkBlocks` matches misspelled tags (`<thnk>`, `<tink>`) because chargen runs hot; widening the shared helper instead would change what the bubble, TTS and the expression classifier treat as speech.
+- **Still open:** `image_prompt_builder._stripThinkBlocks` and `regen_critique_injection._stripThink` are near-duplicates whose deltas are small but real (last-open-tag vs first, and replacing a block with a space vs nothing, which can join two words in a prompt clip). Neither has a pinned test for those deltas, so folding them is its own change with its own proven-red guard.
+- **Files:** `lib/services/chat/story_clock_claims.dart`, `lib/services/story/story_json.dart`, `lib/services/chargen/char_macro.dart`, `test/services/chat/story_clock_claims_think_test.dart`
+- **Commit:** this tip
+
+## 2026-09-18 — T7: 12 dead CSS classes removed, then styles.css split by surface
+- **Why:** `styles.css` was 2,960 lines carrying twelve rules with no `className` anywhere in `web_ui/src`, and it was the third-largest file in the repo.
+- **What:** (step A) deleted `.cast-avatar` (+ `.initial`), `.card-delete` (+ its hover/`@media` companions), `.chat-places-chips`, `.tool-slider` (+ head and range), `.story-meta`, `.story-cast-row`, `.story-act-row`, `.char-meta`, `.reader-scene` (+ head and `p`), `.reader-act-title` — 22 lines. (step B) split the remaining 2,938 lines into 19 contiguous slices under `web_ui/src/styles/` (joining `ws-g.css` / `ws-j.css`, which already lived there), largest 430 lines; `styles.css` is now a 28-line manifest whose `@import` order IS the cascade, and says so.
+- **Verified:** built the bundle before and after the split — the emitted CSS is **byte-identical** (109,181 bytes, same content hash), so no rule changed precedence. `npm run lint` (tsc) clean, 238 vitest tests in 50 files pass. The JS chunk is byte-identical too; only its Vite filename hash moved with the CSS dependency.
+- **Files:** `web_ui/src/styles.css`, 19 new files under `web_ui/src/styles/`, rebuilt `assets/web_app` bundle
+- **Commit:** this tip
+
+## 2026-09-18 — T6: five stale notes corrected
+- **Why:** each one told a reader something the code contradicts, and agents read these files before touching anything.
+- **What:** (C20) `CLAUDE.md` barrel count 17 → 36, measured. (C21) `database.migrations.dart` header + library doc said "v1 → v44"; the ladder ends at `if (from < 52)`. Comments only — no `if (from < N)` body touched. (C22) `CLAUDE.md` schema notes stopped at v45; added v46–v52 as one line each, wording taken from the live ladder comments rather than invented. (C23) `dev-notes/refactoring-guide.md` was the seven-stage god-file plan, all shipped, which opened by promising the full Riverpod migration that was later rejected and taught a deprecation-shim pattern current law forbids — replaced with a stub pointing at `CLAUDE.md` (same shape as `AGENTS.md`) plus a table of where each surviving idea now lives; `dev-notes/README.md` row updated to match. (C24) deleted `docs/superpowers/specs/2026-09-05-waifu-coding-design.md`, a pre-ship agent spec for a feature that is in-tree, with no inbound links.
+- **Verified:** `test/database` + `avatar_repository_test` (the `schemaVersion == 52` pin) green, so the corrected comments agree with the code.
+- **Files:** `CLAUDE.md`, `lib/database/database.migrations.dart`, `dev-notes/refactoring-guide.md`, `dev-notes/README.md`, `docs/superpowers/specs/2026-09-05-waifu-coding-design.md` (deleted)
+- **Commit:** this tip
+
+## 2026-09-18 — T5: three decoration tests wired to the product (or told the truth)
+- **Why:** each stayed green if the thing it named stopped working.
+- **C25 `needs_verifier_hunger_delta_test`:** it carried a byte-copy of the eval extractor regex, so the strict-quote matching that IS half the bug could drift in the product and the suite would not notice. Real DRY fix: the regex bodies moved to top-level `evalJsonInt` / `evalJsonBool` in `eval_json_merge.dart`, `LlmEvalEngine.extractJsonInt/Bool` became one-line forwarders (one implementation, still one wired callback door), and the test now passes the product functions. **Proven red:** stubbing `evalJsonInt` to return null turns the hunger tests red; before the rewire it could not.
+- **C26 `realism_parity_test`:** header claimed "parity is now proven, not asserted by hand" and "REPLACES the review rule". Both false — ChatService's `_loadGroupRealismIntoScalars` / `_saveScalarsIntoGroupRealism` are private to a part-file library and unreachable from a unit test, and the needs half of the swap is hand-copied here. The mechanics were left alone (the relationship/NSFW halves DO call the real load/save); the header now states exactly what is covered, what is not, and names the owners: `integration_test/group_smoke_test.dart` for the ChatService dance, `relationship_clamp_and_speaker_roundtrip_test.dart` for the field list. The plan's suggestion to drive the private dance from here was not possible; inventing a public hook just for a test would have been the shim this PR is removing.
+- **C27 `weather_segments_test`:** "adding segments did NOT change the pinned daily walk" never called the segment layer — it re-ran the engine and asserted the first of the eight days it computed, a weaker copy of the 8-day golden in `weather_engine_test.dart`. Deleted; the header records the single owner. **Proven red:** perturbing the daily seed turns the engine golden red while the segments' own golden stays honest.
+- **Needs the `approved-test-change` label** (three existing test files).
+- **Files:** `lib/services/chat/eval_json_merge.dart`, `lib/services/chat/llm_eval_engine.dart`, `test/services/chat/needs_verifier_hunger_delta_test.dart`, `test/services/chat/realism_parity_test.dart`, `test/services/chat/weather_segments_test.dart`
+- **Commit:** this tip
+
+## 2026-09-18 — T4: the orphan web-search round is gone; its tests drive the live path
+- **Why:** `runWebSearchRound` was a second implementation of what `runCatalogRound` + `_dispatchSearch` already do. Its own doc said it "remains for unit tests of the search client" — a function kept alive by its tests, so five real assertions were guarding nothing production runs.
+- **What:** Deleted `runWebSearchRound`, the `WebSearchRound` result class, and the `_wsClip` helper only it used. Rewrote the test group onto `runCatalogRound` with a catalog holding `inProcessWebSearchTool()`; the fake LLM now serves a sequence so the clerk loop terminates. Two assertions changed for real behaviour differences (live discards doorbell speech instead of returning `cannedReply`; live asks again after a dispatch, so the test reads `dispatchRounds`), both documented in the file header with the rationale.
+- **Proven red:** stubbed out the live `_dispatchSearch` lookup — 4 of the 5 rewritten tests fail. Against the orphan they would have stayed green.
+- **Needs the `approved-test-change` label:** this edits an existing test file, which `test-integrity.yml` blocks by design.
+- **Kept:** `kWikipediaSearchEndpoint` (test-only constant pinning the live URL — a pin, not decoration), `WebSearchService` and its cache, `shouldAdvertiseWebSearch`.
+- **Files:** `lib/services/chat/web_search_service.dart`, `test/services/chat/web_search_service_test.dart`
+- **Commit:** this tip
+
+## 2026-09-18 — T3: 21 unused declarations deleted across 13 files
+- **Why:** Each had zero references anywhere — not in `lib/`, not in tests, not even in its own file. The plan listed 16; deleting them stranded 5 more (a clip helper and its cap that only `waifuPromptSpeech` used, the jail resolver's private prefix-stripper, and `encodeWorldRefList` beside its decoder), and stranded code is part of the same task.
+- **What:** `decodeFpWorldString`, `kEvalWallClockTimeout`, `streamOpenAiChatTools`, `remoteApiUrlIsOmlx`, `kWaifuLegacyDotDir`, `waifuPromptSpeech` + `waifuClipPreservedThinking` + `kWaifuPreserveThinkMaxChars`, `WaifuJail` + `WaifuJailHit` + `waifuStripRedundantProjectPrefix` + `_sameFolderName` (leaving `WaifuPathMode`, which is live), `waifuQuestionFromArgs`, `kWaifuTodosRel`, `waifuTodoStatusIsDone`, `waifuTodoWriteError`, `kWaifuReadClipChars`, `waifuShouldCompact`, `worldLoreEntryToolSchema`, `getModeLabel`, `decodeWorldRefList`, `encodeWorldRefList`. Two now-unused imports dropped (`waifu_session` from the coworker prompt, `dart:convert` from the world-ref resolver). `dead_surface_test.dart` gained a whole-word symbol ratchet naming the live replacement for each.
+- **Finding to hand back (not fixed here):** `waifuPromptSpeech` was the only reader of the session's `preserveThinking` flag, so the "Preserve thinking" switch in the Waifu Coder mode bar currently changes nothing — OpenCode owns its own session and the app replays no transcript. Wiring it or removing the switch is a product call.
+- **Kept deliberately:** `WaifuPathMode`, `kWaifuCompactAt` (context bar), `kWorldLoreEntryToolName` (batch parser), `waifuTodoCanonicalStatus`, `streamOpenAiChatToolsWithStyleRetry`, `resolveWorldRefsToIds`, `uniqueWorldName`, `cropFillR`, `CreatorEngine`, `WorkerBackendStorage`.
+- **Proven red:** re-added `kWaifuLegacyDotDir`; the symbol ratchet failed naming the file. Removed again, green.
+- **Files:** `lib/models/fp_world_package.dart`, `lib/services/chat/eval_stream_guards.dart`, `lib/services/openai_tool_stream.dart`, `lib/services/storage/settings/remote_api_key_vault.dart`, `lib/services/waifu/waifu_brand.dart`, `waifu_coworker_prompt.dart`, `waifu_jail.dart`, `waifu_question.dart`, `waifu_todos.dart`, `waifu_tokens.dart`, `lib/services/world_from_wiki/world_from_wiki_tools.dart`, `lib/ui/image_studio/studio_helpers.dart`, `lib/utils/world_ref_resolver.dart`, `test/hygiene/dead_surface_test.dart`
+- **Commit:** this tip
+
+## 2026-09-18 — T2: two dead files deleted, dead-surface ratchet added
+- **Why:** `waifu_chips.dart` (`waifuChipCaption` / `waifuChipDetail`) and `styled_text_field.dart` (`StyledTextField`) had zero callers. Both were reachable only through their barrels, which is exactly how dead code survives here: an exported symbol with no caller is legal Dart, so nothing objects.
+- **What:** Deleted both files and dropped their barrel exports. New `test/hygiene/dead_surface_test.dart`: the deleted paths may not return, and no barrel may still export them. Other waifu exports and `StyledTextController` (different file, live) untouched.
+- **Proven red:** restored `waifu_chips.dart` and its export — both tests failed; removed again, green.
+- **Files:** `lib/services/waifu/waifu_chips.dart` (deleted), `lib/services/waifu/waifu.dart`, `lib/ui/character_creator/widgets/styled_text_field.dart` (deleted), `lib/ui/character_creator/widgets/widgets.dart`, `test/hygiene/dead_surface_test.dart`
+- **Commit:** this tip
+
+## 2026-09-18 — T1: Drift table managers off, generated size now has an owner
+- **Why:** `database.g.dart` was 24,343 lines and 7,652 of them were Drift table managers (`db.managers`, the `$$…Composer` family) with zero callers in the app. The god-file ratchet excludes `.g.dart` on purpose, so generated size had no owner at all.
+- **What:** `generate_manager: false` under `drift_dev` in `build.yaml`, regenerated via `build_runner` (never hand-edited). 24,343 → 16,636 lines. New `test/hygiene/generated_dart_size_test.dart`: build.yaml keeps the option, no generated file carries the manager API, every `lib/**.g.dart` is recorded under a ceiling. Regen also picked up two doc comments that had drifted (the committed generated file was stale): the 1:1 pockets note and the v52 `ChatWorld.isPrimary` note. Table classes, `tables:` order, `onUpgrade` bodies, companions, `toJson` and schemaVersion 52 untouched.
+- **Proven red:** removed the option, regenerated with managers on — all three rules failed (24,366 lines, manager markers present). Restored and regenerated byte-identical; green again.
+- **Files:** `build.yaml`, `lib/database/database.g.dart`, `test/hygiene/generated_dart_size_test.dart`
+- **Commit:** this tip
+
+## 2026-09-18 — Rawhide debt-payback plan (inventory only)
+- **Why:** After PR #262, size, leftover cruft, and duplicate contracts still need a sequenced payback. This run must not change product code.
+- **What:** Added `docs/superpowers/plans/2026-09-18-rawhide-debt-payback.md`. Measured 160 source files over 500 lines and 40 cruft items. Sequences later PRs: Drift managers off first, then zero-caller cruft, then splits of mixed files. Five global constraints on every later task (one implementation, readable Dart, limited comments, per-file `dart format`, zero analyzer issues).
+- **Files:** `docs/superpowers/plans/2026-09-18-rawhide-debt-payback.md`
+- **Commit:** this tip
+
 ## 2026-09-18 — Split think-only lift from open-think salvage
 - **Why:** `resolveMouthSpeech` lifted every empty-display think body, including an unclosed mid-thought. `generation_stream_behavior_test` expects that cut-off to stay tagged and end with `</think>`.
 - **What:** Lift only a *closed* think-only body (Flora / Qwen finished line). Stream still inside `<think>` gets `closeOpenThink` only. Did not edit the salvage pin. Cleanup / 17 pins / pockets pin untouched.
