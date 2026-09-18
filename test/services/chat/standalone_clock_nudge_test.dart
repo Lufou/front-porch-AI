@@ -63,18 +63,6 @@ void main() {
     );
   });
 
-  test('mutators gate on _clockRunning, not the engine alone', () {
-    final src = File('lib/services/chat/chat_service_controls.dart')
-        .readAsStringSync();
-    expect(src.contains('_clockRunning'), isTrue);
-    expect(
-      src.contains('if (!_realismEnabled) return;'),
-      isFalse,
-      reason:
-          'nudge/setClock/setStartDate must not no-op when standalone is on',
-    );
-  });
-
   group('ChatService nudge', () {
     late AppDatabase db;
     late StorageService storage;
@@ -115,7 +103,7 @@ void main() {
     });
 
     test('engine off + standalone on + passage on → nudge succeeds', () async {
-      await storage.setStandaloneClockEnabled(true);
+      await storage.realismSettings.setStandaloneClockEnabled(true);
       final before = chat.timeService.clock;
       await chat.nudgeTimePeriod(1);
       expect(
@@ -126,7 +114,7 @@ void main() {
     });
 
     test('engine off + standalone off → nudge is a no-op', () async {
-      await storage.setStandaloneClockEnabled(false);
+      await storage.realismSettings.setStandaloneClockEnabled(false);
       final before = chat.timeService.clock;
       await chat.nudgeTimePeriod(1);
       expect(chat.timeService.clock, before);
@@ -139,7 +127,7 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     final storage = StorageService();
     addTearDown(storage.dispose);
-    await storage.setStandaloneClockEnabled(true);
+    await storage.realismSettings.setStandaloneClockEnabled(true);
 
     final chat = FakeChatService(realismEnabled: false);
     addTearDown(chat.dispose);
@@ -166,7 +154,7 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     final storage = StorageService();
     addTearDown(storage.dispose);
-    await storage.setStandaloneClockEnabled(false);
+    await storage.realismSettings.setStandaloneClockEnabled(false);
 
     final chat = FakeChatService(realismEnabled: false);
     addTearDown(chat.dispose);
@@ -191,7 +179,7 @@ void main() {
     final storage = StorageService();
     addTearDown(storage.dispose);
     await storage.initialized;
-    await storage.setStandaloneClockEnabled(true);
+    await storage.realismSettings.setStandaloneClockEnabled(true);
     final fake = FakeChatService(realismEnabled: false);
     addTearDown(fake.dispose);
     final facade = ChatToolsFacade(fake, storage, null);

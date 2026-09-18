@@ -1,3 +1,63 @@
+## 2026-09-18 — Split think-only lift from open-think salvage
+- **Why:** `resolveMouthSpeech` lifted every empty-display think body, including an unclosed mid-thought. `generation_stream_behavior_test` expects that cut-off to stay tagged and end with `</think>`.
+- **What:** Lift only a *closed* think-only body (Flora / Qwen finished line). Stream still inside `<think>` gets `closeOpenThink` only. Did not edit the salvage pin. Cleanup / 17 pins / pockets pin untouched.
+- **Files:** `lib/utils/think_tags.dart`, `lib/services/chat/chat_service_generation_postgen.dart`, `test/services/chat/pre_eval_mouth_speech_test.dart`
+- **Commit:** this tip
+
+## 2026-09-18 — Think-only mouth after PRE-GEN attach is spoken, not blank
+- **Why:** Live poke on tip `848ccc4b`: Nano `qwen/qwen3.8-27b`, 1:1 Flora, one-shot finished (deflated, bond −1, trust −2), `[Realism:Metadata] PRE-GEN attach`, then an empty reply card, no banner, Manual Reprocess still blank. Mouth *did* run; Qwen parked the line in `<think>` / `reasoning_content`. `displayText` stripped it, `emptySpeechAfterPregen` saw non-empty raw so no notice, TTS used displayText so speech never started. Older than this branch; same finalize path.
+- **What:** Finalize lifts a think-only body via `resolveMouthSpeech` (keeps think+speech when both exist). New send pin: successful one-shot then think-only mouth must leave visible Flora speech and the pre-eval chips. Proven red without the lift (`displayText == ''`), green with it. Did not undo cleanup, the 17 pins, or the pockets pin.
+- **Files:** `lib/utils/think_tags.dart`, `lib/services/chat/chat_service_generation_postgen.dart`, `test/services/chat/pre_eval_mouth_speech_test.dart`
+- **Commit:** this tip
+
+## 2026-09-18 — Rip agent-narration slop and leftover extract essays
+- **Why:** User lock: close the ~65k-deleted gap vs Rawhide with real slop, not live product. Session breadcrumbs and extract-process comments are not gates.
+- **What:** Deleted the 4796-line god-file progress log and seven leftover agent plans/checklists with zero inbound refs. Stripped Stage/step/"0 new god private"/deletion-part-of-task essays from extract leftovers (settings_page tombstones, leaf headers, wiring builders). Kept live contracts (eval hang guards, messagesThroughLastUser user-score rule, pockets hide-not-erase, io-ok). Did not touch the 17 restored pins, hardware lengthSync, or restore pockets_off_means_off_test.
+- **Files:** `dev-notes/refactor-god-file-modularization.md`; unused `docs/superpowers/plans|specs` + `docs/stoop-report-gate-app.md`; extract-comment cuts under `lib/`
+- **Commit:** this tip
+
+## 2026-09-18 — Second dead-code cut: leftover unused screenshots and DMG backgrounds
+- **Why:** After the pockets pin, hunt for another ~6k deleted lines vs Rawhide to reach ~65k. Every `lib/` and `web_ui/src` Dart/TS file has an importer. `.recovery/` is empty. No unused `*_test.dart` helpers. The only proven-zero-ref leftovers were superseded screenshot backups and retired DMG art.
+- **What:** Deleted `docs/screenshots/{home,group_chat,create}.png` (0 inbound refs; README uses `*_new.png`), `assets/macos/dmg-background.png` + `assets/dmg_background.png` (create-dmg retired; no script/workflow load), and unused `assets/images/eye_bleach.jpg` (ships via the `assets/images/` glob, never loaded). Dropped the now-false `.gitignore` DMG png exception. Did not delete live design notes (`tools-transport.md`, `dev-notes/refactor-god-file-modularization.md`) or any of the 17 restored pins / hardware `lengthSync` / pockets pin.
+- **Files:** the six binaries; `.gitignore`
+- **Commit:** this tip
+
+## 2026-09-18 — Behavioral pin: pocketsFor hides when the switch goes down
+- **Why:** `wardrobe_message_zero_test` turns the switch off *before* open, so seed never runs and `_pockets` stays null. Deleting the `pocketsFor` read gate still returns null. The gate's job is hide-not-erase after a record already exists.
+- **What:** Open a dressed character with Pockets ON, then `setPocketsEnabled(false)`, then `pocketsFor` must be null. Did not restore the old source-scan file.
+- **Files:** `test/services/chat/wardrobe_message_zero_test.dart`
+- **Commit:** this tip
+
+## 2026-09-18 — Restore real call-site pins deleted as decoration
+- **Why:** Senior Dev HOLD: the decoration sweep also dropped tests that go red if a live product call site dies. Surviving tests never reach those orders.
+- **What:** Restored 17 files byte-identical from `a316e7dc`. Left `pockets_off_means_off_test.dart` deleted (source-scan). Left the reviewer-hollow files deleted.
+- **Files:** 17 restored `*_test.dart` listed in the commit
+- **Commit:** this tip
+
+## 2026-09-18 — Delete unused .recovery chat_page snapshots
+- **Why:** Four identical 472KB copies of an old `chat_page` sat in `.recovery` with zero importers. They still called StorageService flat accessors this PR already removed.
+- **What:** Deleted the four files. Restored the Rawhide `lengthSync` one-liner in `settings_page.hardware.dart` so io-lint no longer treats a dart-format wrap as new I/O.
+- **Files:** `.recovery/pre_reextract_chat_page.dart`, `.recovery/pre_stage2_chat_page.dart`, `.recovery/round3_pre_chat_page.dart`, `.recovery/round4_pre_chat_page.dart`, `settings_page.hardware.dart`
+- **Commit:** this tip
+
+## 2026-09-17 — Drop decoration tests that stay green without the product
+- **Why:** Tests whose only engine was a stub, a planted LLM receipt, or a grep of `lib/*.dart` stayed green even if the product call site died.
+- **What:** Deleted 27 whole test files (source-grep pins, ChatService mirrors, `expect(true)` placeholders, stub-widget pumps). Cut grep-only groups and planted-receipt smokes from mixed files. Kept goldens, `integration_test/`, sqlite migrations, parse/clip helpers, and live ChatService jobs.
+- **Files:** 27 deleted `*_test.dart`; grep/placeholder cuts across ~80 mixed test files. No product `lib/` changes.
+- **Commit:** this tip
+
+## 2026-09-17 — Drop leftover flat storage shims and tombstone comments
+- **Why:** Three files sat at 999 lines because of leftover Stage-7 flat accessors and "god thins to delegation" essays, not because they still needed a split.
+- **What:** Pointed remaining `storage.textScale`-style callers at the `*Settings` objects, deleted the compatibility flat-accessor block on StorageService (kept spell-check language and custom models path), and trimmed ChatService tombstone comments. chat_tools_facade had no unused methods; only retargeted its storage reads.
+- **Files:** `storage_service.dart` (999→393), `chat_service.dart` (999→968), `chat_tools_facade.dart` (stays under 1000), callers and fakes that used the flat names
+- **Commit:** this tip
+
+## 2026-09-17 — Drop unused scratch/ghost files
+- **Why:** Three Dart files had zero importers and still looked like live rooms: a scratch pad, a private hover card, and the retired cloud-sync merge service.
+- **What:** Deleted `lib/test_pad.dart`, `lib/ui/widgets/_hoverable_card.dart`, `lib/services/database_merge_service.dart`. Shortened comments that named `DatabaseMergeService` / `_HoverableCard`. Left migrations, sync_meta, and storage 999s alone.
+- **Files:** the three deletes; `database.queries.library.dart`; `leaf_widgets_remaining_golden_test.dart`
+- **Commit:** this tip
+
 ## 2026-09-17 — Stoop listing blurb matches the hub
 - **Why:** Desk tiles clipped the summary mid-word (`My take on mountain-`) and the detail panel hid it under a 260px art banner. Hub shows a two-line clamp on tiles and the full blurb beside the portrait, with Description and Personality as separate drawers.
 - **What:** Reserved two-line summary box + slightly taller grid cells. Detail top is art + full summary (hub `.hub-detail-top`). Persona split into Description (open) and Personality.

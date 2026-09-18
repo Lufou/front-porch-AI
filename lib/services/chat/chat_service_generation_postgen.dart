@@ -113,9 +113,9 @@ extension ChatServiceGenerationPostGen on ChatService {
           ? glueContinueText(prefix, newPart)
           : newPart.trim();
 
-      // Salvage a reply stranded inside an unclosed <think> in the NEW
-      // portion only (backend stop sequences can still cut mid-think).
-      finalResponse = closeOpenThink(finalResponse);
+      // Close a dangling think. Lift only a *closed* think-only body
+      // (Qwen reasoning_content). An unclosed cut-off stays tagged.
+      finalResponse = resolveMouthSpeech(finalResponse);
 
       // ── Output Sanitizer ──────────────────────────────────────────────
       // NOTE: This runs BEFORE _lorebookScanner.scanLatest() below, so
