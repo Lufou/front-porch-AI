@@ -20,6 +20,7 @@
 // Niche ones can be direct imported too.
 
 export 'bubbles/message_bubble.dart';
+export 'bubbles/selectable_bubble_body.dart';
 export 'bubbles/styled_chat_message.dart';
 export 'bubbles/external_image_widget.dart';
 
@@ -31,6 +32,7 @@ export 'sidebar/character_portrait.dart';
 export 'sidebar/chat_main_settings.dart';
 export 'stage/chat_message_list.dart';
 export 'stage/chat_resize_sidebar.dart';
+export 'stage/transcript_auto_scroll.dart';
 export 'sidebar/expandable_sidebar_text.dart';
 export 'chat_composer_hint.dart';
 export 'sidebar/emoji_burst.dart';
