@@ -126,7 +126,10 @@ export function WorkerBackendCard({
   const onHostChange = (nextId: string) => {
     const opt = HOSTS.find((o) => o.id === nextId);
     if (!opt) return;
-    const patch: Partial<WorkerBackendFields> = { workerBackend: opt.backend };
+    const patch: Partial<WorkerBackendFields> = {
+      workerBackend: opt.backend,
+      workerRemoteModelName: '',
+    };
     if (nextId === 'custom') {
       patch.workerRemoteApiUrl = '';
     } else if (opt.url) {
@@ -202,7 +205,12 @@ export function WorkerBackendCard({
               <input
                 data-testid="side-jobs-worker-url"
                 value={s.workerRemoteApiUrl ?? ''}
-                onChange={(e) => onPatch({ workerRemoteApiUrl: e.target.value })}
+                onChange={(e) =>
+                  onPatch({
+                    workerRemoteApiUrl: e.target.value,
+                    workerRemoteModelName: '',
+                  })
+                }
                 placeholder="https://your-server.example/v1"
               />
             </label>
