@@ -7,6 +7,8 @@ Last shipped nightly: `rawhide.20260906.7059c91`. Everything below is unreleased
 
 ## Recent improvements (unreleased — ships in the next build)
 
+- 🚽 **A new need: Bowels** — alongside Bladder, characters now track needing to use the bathroom the other way. It builds slowly over hours, not minutes; low Bowels shows up as gassiness before anything worse. Same on the phone.
+
 - 👋 **Group friends can come back** — if someone wandered off (Away), `@Ana` asks her to check in this turn. Just saying “Ana, you coming?” does not drag her back — she may stay Away. Or they quietly notice and rejoin on their own. `@Bea` still gets Bea when she is already with you — a returning friend does not talk over her. A mid-sentence “I told Ana about it” does not drag them back. People at work stay on the clock. If the whole porch is empty, you still get the Away line after a check-in that did not stick, and a later message can still bring someone back. Same on the phone.
 
 - 🔕 **No more “model loaded and ready” popup** — finishing a local model load (including mouth/worker swaps) no longer stacks that toast, and the chat box no longer flashes with it. A failed load still tells you.

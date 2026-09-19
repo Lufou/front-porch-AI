@@ -95,6 +95,7 @@ extension _CreateCharacterSave on _CreateCharacterPageState {
         realismNeedsDirectorAuthority: _realismNeedsDirectorAuthority,
         needsBaselineHunger: _needsBaselineHunger,
         needsBaselineBladder: _needsBaselineBladder,
+        needsBaselineBowels: _needsBaselineBowels,
         needsBaselineEnergy: _needsBaselineEnergy,
         needsBaselineSocial: _needsBaselineSocial,
         needsBaselineFun: _needsBaselineFun,
@@ -102,15 +103,15 @@ extension _CreateCharacterSave on _CreateCharacterPageState {
         needsBaselineComfort: _needsBaselineComfort,
         needsDecayHunger: _needsDecayHunger,
         needsDecayBladder: _needsDecayBladder,
+        needsDecayBowels: _needsDecayBowels,
         needsDecayEnergy: _needsDecayEnergy,
         needsDecaySocial: _needsDecaySocial,
         needsDecayFun: _needsDecayFun,
         needsDecayHygiene: _needsDecayHygiene,
         needsDecayComfort: _needsDecayComfort,
-        greetingSeeds: compactGreetingPairs(
-          [for (final c in _altGreetingControllers) c.text],
-          _altGreetingSeeds,
-        ).seeds,
+        greetingSeeds: compactGreetingPairs([
+          for (final c in _altGreetingControllers) c.text,
+        ], _altGreetingSeeds).seeds,
       );
 
       fpExt.ensureStableId();
@@ -124,10 +125,9 @@ extension _CreateCharacterSave on _CreateCharacterPageState {
         mesExample: _exampleDialogueController.text,
         systemPrompt: _systemPromptController.text,
         postHistoryInstructions: _postHistoryController.text,
-        alternateGreetings: compactGreetingPairs(
-          [for (final c in _altGreetingControllers) c.text],
-          _altGreetingSeeds,
-        ).greetings,
+        alternateGreetings: compactGreetingPairs([
+          for (final c in _altGreetingControllers) c.text,
+        ], _altGreetingSeeds).greetings,
         tags: List.from(_tags),
         lorebook: _lorebookEntries.isNotEmpty
             ? Lorebook(entries: List.from(_lorebookEntries))
@@ -254,6 +254,7 @@ extension _CreateCharacterSave on _CreateCharacterPageState {
       _realismNeedsDirectorAuthority = false;
       _needsBaselineHunger = 80;
       _needsBaselineBladder = 80;
+      _needsBaselineBowels = 80;
       _needsBaselineEnergy = 80;
       _needsBaselineSocial = 80;
       _needsBaselineFun = 80;
@@ -261,6 +262,7 @@ extension _CreateCharacterSave on _CreateCharacterPageState {
       _needsBaselineComfort = 80;
       _needsDecayHunger = 5;
       _needsDecayBladder = 5;
+      _needsDecayBowels = 5;
       _needsDecayEnergy = 5;
       _needsDecaySocial = 5;
       _needsDecayFun = 5;

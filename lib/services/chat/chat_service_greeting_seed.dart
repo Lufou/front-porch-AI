@@ -71,6 +71,7 @@ extension ChatServiceGreetingSeed on ChatService {
       currentTask: cardBase.currentTask,
       needsBaselineHunger: need('hunger', cardBase.needsBaselineHunger),
       needsBaselineBladder: need('bladder', cardBase.needsBaselineBladder),
+      needsBaselineBowels: need('bowels', cardBase.needsBaselineBowels),
       needsBaselineEnergy: need('energy', cardBase.needsBaselineEnergy),
       needsBaselineSocial: need('social', cardBase.needsBaselineSocial),
       needsBaselineFun: need('fun', cardBase.needsBaselineFun),
@@ -325,7 +326,8 @@ extension ChatServiceGreetingSeed on ChatService {
         _activeGroup != null &&
         !greetingFirstMesEmpty(_activeGroup!.firstMessage);
     if (groupCustom) {
-      final authored = greetingOverlayAt(
+      final authored =
+          greetingOverlayAt(
             _activeGroup!.greetingSeeds,
             _greetingIndex,
             firstMesEmpty: false,

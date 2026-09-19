@@ -197,6 +197,7 @@ extension ChatServiceGroupRealismHelpers on ChatService {
       return {
         'hunger': ext.needsDecayHunger,
         'bladder': ext.needsDecayBladder,
+        'bowels': ext.needsDecayBowels,
         'energy': ext.needsDecayEnergy,
         'social': ext.needsDecaySocial,
         'fun': ext.needsDecayFun,

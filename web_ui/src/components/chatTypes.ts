@@ -78,6 +78,7 @@ export interface LoreEntry {
 export const NEED_LABELS: Record<string, string> = {
   hunger: 'Hunger',
   bladder: 'Bladder',
+  bowels: 'Bowels',
   energy: 'Energy',
   social: 'Social',
   fun: 'Fun',

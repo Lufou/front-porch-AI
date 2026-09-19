@@ -266,6 +266,11 @@ class RealismStep extends StatelessWidget {
                     state.needsBaselineBladder = v;
                     state.notify();
                   },
+                  baselineBowels: state.needsBaselineBowels,
+                  onBaselineBowelsChanged: (v) {
+                    state.needsBaselineBowels = v;
+                    state.notify();
+                  },
                   baselineEnergy: state.needsBaselineEnergy,
                   onBaselineEnergyChanged: (v) {
                     state.needsBaselineEnergy = v;
@@ -299,6 +304,11 @@ class RealismStep extends StatelessWidget {
                   decayBladder: state.needsDecayBladder,
                   onDecayBladderChanged: (v) {
                     state.needsDecayBladder = v;
+                    state.notify();
+                  },
+                  decayBowels: state.needsDecayBowels,
+                  onDecayBowelsChanged: (v) {
+                    state.needsDecayBowels = v;
                     state.notify();
                   },
                   decayEnergy: state.needsDecayEnergy,

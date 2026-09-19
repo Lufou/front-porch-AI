@@ -122,6 +122,7 @@ extension ChatServiceControls on ChatService {
         _needsSimulation.initializeFreshWithDefaults(const {
           'hunger': 80,
           'bladder': 80,
+          'bowels': 80,
           'energy': 80,
           'social': 80,
           'fun': 80,
@@ -278,6 +279,7 @@ extension ChatServiceControls on ChatService {
         final newExt = ext.copyWith(
           needsDecayHunger: key == 'hunger' ? value : null,
           needsDecayBladder: key == 'bladder' ? value : null,
+          needsDecayBowels: key == 'bowels' ? value : null,
           needsDecayEnergy: key == 'energy' ? value : null,
           needsDecaySocial: key == 'social' ? value : null,
           needsDecayFun: key == 'fun' ? value : null,
@@ -322,6 +324,7 @@ extension ChatServiceControls on ChatService {
     final newExt = ext.copyWith(
       needsDecayHunger: key == 'hunger' ? value : null,
       needsDecayBladder: key == 'bladder' ? value : null,
+      needsDecayBowels: key == 'bowels' ? value : null,
       needsDecayEnergy: key == 'energy' ? value : null,
       needsDecaySocial: key == 'social' ? value : null,
       needsDecayFun: key == 'fun' ? value : null,

@@ -118,6 +118,13 @@ extension _GroupWizardMemberRealismCard on _CreateGroupChatPageState {
                   });
                   _updateMemberRealism(id, {'needsBaselineBladder': v});
                 },
+                baselineBowels: _memberNeedsBaselines[id]?['bowels'] ?? 80,
+                onBaselineBowelsChanged: (v) {
+                  rebuildState(() {
+                    _memberNeedsBaselines[id]!['bowels'] = v;
+                  });
+                  _updateMemberRealism(id, {'needsBaselineBowels': v});
+                },
                 baselineEnergy: _memberNeedsBaselines[id]?['energy'] ?? 80,
                 onBaselineEnergyChanged: (v) {
                   rebuildState(() {
@@ -168,6 +175,13 @@ extension _GroupWizardMemberRealismCard on _CreateGroupChatPageState {
                     _memberNeedsBaselines[id]!['decayBladder'] = v;
                   });
                   _updateMemberRealism(id, {'needsDecayBladder': v});
+                },
+                decayBowels: _memberNeedsBaselines[id]?['decayBowels'] ?? 5,
+                onDecayBowelsChanged: (v) {
+                  rebuildState(() {
+                    _memberNeedsBaselines[id]!['decayBowels'] = v;
+                  });
+                  _updateMemberRealism(id, {'needsDecayBowels': v});
                 },
                 decayEnergy: _memberNeedsBaselines[id]?['decayEnergy'] ?? 5,
                 onDecayEnergyChanged: (v) {

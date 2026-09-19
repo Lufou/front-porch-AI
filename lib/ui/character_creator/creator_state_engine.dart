@@ -85,10 +85,9 @@ extension CreatorEngine on CreatorState {
       card.firstMessage = firstMessageController.text;
       card.mesExample = exampleDialogueController.text;
       card.systemPrompt = systemPromptController.text;
-      final greetingPairs = compactGreetingPairs(
-        [for (final c in altGreetingControllers) c.text],
-        greetingSeeds,
-      );
+      final greetingPairs = compactGreetingPairs([
+        for (final c in altGreetingControllers) c.text,
+      ], greetingSeeds);
       card.alternateGreetings = greetingPairs.greetings;
 
       // Always build the V2.5 extensions — even when realism is disabled — so
@@ -132,6 +131,7 @@ extension CreatorEngine on CreatorState {
         realismNeedsDirectorAuthority: realismNeedsDirectorAuthority,
         needsBaselineHunger: needsBaselineHunger,
         needsBaselineBladder: needsBaselineBladder,
+        needsBaselineBowels: needsBaselineBowels,
         needsBaselineEnergy: needsBaselineEnergy,
         needsBaselineSocial: needsBaselineSocial,
         needsBaselineFun: needsBaselineFun,
@@ -139,6 +139,7 @@ extension CreatorEngine on CreatorState {
         needsBaselineComfort: needsBaselineComfort,
         needsDecayHunger: needsDecayHunger,
         needsDecayBladder: needsDecayBladder,
+        needsDecayBowels: needsDecayBowels,
         needsDecayEnergy: needsDecayEnergy,
         needsDecaySocial: needsDecaySocial,
         needsDecayFun: needsDecayFun,

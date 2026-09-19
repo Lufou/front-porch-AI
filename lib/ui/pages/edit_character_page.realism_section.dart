@@ -161,6 +161,11 @@ extension _EditCharacterRealismSection on _EditCharacterPageState {
               _needsBaselineBladder = v;
               _realismSettingsModified = true;
             }),
+            baselineBowels: _needsBaselineBowels,
+            onBaselineBowelsChanged: (v) => rebuildState(() {
+              _needsBaselineBowels = v;
+              _realismSettingsModified = true;
+            }),
             baselineEnergy: _needsBaselineEnergy,
             onBaselineEnergyChanged: (v) => rebuildState(() {
               _needsBaselineEnergy = v;
@@ -194,6 +199,11 @@ extension _EditCharacterRealismSection on _EditCharacterPageState {
             decayBladder: _needsDecayBladder,
             onDecayBladderChanged: (v) => rebuildState(() {
               _needsDecayBladder = v;
+              _realismSettingsModified = true;
+            }),
+            decayBowels: _needsDecayBowels,
+            onDecayBowelsChanged: (v) => rebuildState(() {
+              _needsDecayBowels = v;
               _realismSettingsModified = true;
             }),
             decayEnergy: _needsDecayEnergy,

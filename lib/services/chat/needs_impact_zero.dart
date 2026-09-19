@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 //
 // All-zero needs impact is a failed read, not a quiet scene. Tools models
-// fill the seven required ints with 0; the old prompt even invited that.
+// fill the eight required ints with 0; the old prompt even invited that.
 // Recover: text retry, then one repair pass. Individual 0s are fine.
 
 import 'package:front_porch_ai/services/chat/needs_simulation.dart';
@@ -38,11 +38,12 @@ String needsImpactAllZeroRepairPrompt(String scene, int strength) =>
     'The previous needs eval scored this beat as all zeros. That is a '
     'failed read — a roleplay turn always moves at least one need '
     '(comfort, social, fun, energy, a restoration). Individual needs may '
-    'be 0; all seven may not.\n\n'
+    'be 0; all eight may not.\n\n'
     'SCENE:\n$scene\n\n'
     'Strength ${strength}x. Return ONLY raw JSON:\n'
     '{"hunger_delta": <int>, "energy_delta": <int>, "hygiene_delta": <int>, '
     '"fun_delta": <int>, "social_delta": <int>, "bladder_delta": <int>, '
+    '"bowels_delta": <int>, '
     '"comfort_delta": <int>, "reason": "<brief>"}\n';
 
 Future<String?> _stripped(

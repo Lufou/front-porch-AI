@@ -127,6 +127,9 @@ extension _GroupWizardCommit on _CreateGroupChatPageState {
           needsBaselineBladder:
               (seed['needsBaselineBladder'] as int?) ??
               source.frontPorchExtensions!.needsBaselineBladder,
+          needsBaselineBowels:
+              (seed['needsBaselineBowels'] as int?) ??
+              source.frontPorchExtensions!.needsBaselineBowels,
           needsBaselineEnergy:
               (seed['needsBaselineEnergy'] as int?) ??
               source.frontPorchExtensions!.needsBaselineEnergy,
@@ -148,6 +151,9 @@ extension _GroupWizardCommit on _CreateGroupChatPageState {
           needsDecayBladder:
               (seed['needsDecayBladder'] as int?) ??
               source.frontPorchExtensions!.needsDecayBladder,
+          needsDecayBowels:
+              (seed['needsDecayBowels'] as int?) ??
+              source.frontPorchExtensions!.needsDecayBowels,
           needsDecayEnergy:
               (seed['needsDecayEnergy'] as int?) ??
               source.frontPorchExtensions!.needsDecayEnergy,
@@ -177,6 +183,7 @@ extension _GroupWizardCommit on _CreateGroupChatPageState {
               (seed['needsDirectorAuthority'] as bool?) ?? false,
           needsBaselineHunger: (seed['needsBaselineHunger'] as int?) ?? 80,
           needsBaselineBladder: (seed['needsBaselineBladder'] as int?) ?? 80,
+          needsBaselineBowels: (seed['needsBaselineBowels'] as int?) ?? 80,
           needsBaselineEnergy: (seed['needsBaselineEnergy'] as int?) ?? 80,
           needsBaselineSocial: (seed['needsBaselineSocial'] as int?) ?? 80,
           needsBaselineFun: (seed['needsBaselineFun'] as int?) ?? 80,
@@ -184,6 +191,7 @@ extension _GroupWizardCommit on _CreateGroupChatPageState {
           needsBaselineComfort: (seed['needsBaselineComfort'] as int?) ?? 80,
           needsDecayHunger: (seed['needsDecayHunger'] as int?) ?? 5,
           needsDecayBladder: (seed['needsDecayBladder'] as int?) ?? 5,
+          needsDecayBowels: (seed['needsDecayBowels'] as int?) ?? 5,
           needsDecayEnergy: (seed['needsDecayEnergy'] as int?) ?? 5,
           needsDecaySocial: (seed['needsDecaySocial'] as int?) ?? 5,
           needsDecayFun: (seed['needsDecayFun'] as int?) ?? 5,

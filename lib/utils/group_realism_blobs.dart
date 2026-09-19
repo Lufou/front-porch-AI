@@ -117,6 +117,7 @@ Map<String, dynamic> defaultGroupMemberRealismSeed() => {
   'needs': <String, int>{
     'hunger': 75,
     'bladder': 80,
+    'bowels': 75,
     'energy': 80,
     'social': 65,
     'fun': 65,
@@ -131,6 +132,7 @@ Map<String, dynamic> defaultGroupMemberRealismSeed() => {
   'needsSimStrength': 1,
   'needsBaselineHunger': 80,
   'needsBaselineBladder': 80,
+  'needsBaselineBowels': 80,
   'needsBaselineEnergy': 80,
   'needsBaselineSocial': 80,
   'needsBaselineFun': 80,
@@ -138,6 +140,7 @@ Map<String, dynamic> defaultGroupMemberRealismSeed() => {
   'needsBaselineComfort': 80,
   'needsDecayHunger': 5,
   'needsDecayBladder': 5,
+  'needsDecayBowels': 5,
   'needsDecayEnergy': 5,
   'needsDecaySocial': 5,
   'needsDecayFun': 5,

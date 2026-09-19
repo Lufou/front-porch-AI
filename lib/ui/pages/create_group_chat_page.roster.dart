@@ -42,6 +42,7 @@ extension _GroupWizardRoster on _CreateGroupChatPageState {
         _memberNeedsBaselines[id] = {
           'hunger': s['needsBaselineHunger'] as int? ?? 80,
           'bladder': s['needsBaselineBladder'] as int? ?? 80,
+          'bowels': s['needsBaselineBowels'] as int? ?? 80,
           'energy': s['needsBaselineEnergy'] as int? ?? 80,
           'social': s['needsBaselineSocial'] as int? ?? 80,
           'fun': s['needsBaselineFun'] as int? ?? 80,
@@ -49,6 +50,7 @@ extension _GroupWizardRoster on _CreateGroupChatPageState {
           'comfort': s['needsBaselineComfort'] as int? ?? 80,
           'decayHunger': s['needsDecayHunger'] as int? ?? 5,
           'decayBladder': s['needsDecayBladder'] as int? ?? 5,
+          'decayBowels': s['needsDecayBowels'] as int? ?? 5,
           'decayEnergy': s['needsDecayEnergy'] as int? ?? 5,
           'decaySocial': s['needsDecaySocial'] as int? ?? 5,
           'decayFun': s['needsDecayFun'] as int? ?? 5,

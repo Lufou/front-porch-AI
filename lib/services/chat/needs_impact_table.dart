@@ -57,6 +57,23 @@ Map<String, int> needsImpactAfkKeywordFallback(String sceneText) {
     {'bladder': 50},
   );
 
+  // Bowels — full relief
+  check(
+    [
+      'pooped',
+      'pooping',
+      'took a dump',
+      'taking a dump',
+      'bowel movement',
+      'defecated',
+      'defecate',
+      'number two',
+    ],
+    {'bowels': 45},
+  );
+  // Bowels — gas only (partial relief)
+  check(['farted', 'farting', 'passed gas', 'let one rip'], {'bowels': 15});
+
   // Hygiene — specific phrases first
   check(
     ['shower', 'showering', 'showered', 'showers', 'bath', 'bathed', 'bathing'],

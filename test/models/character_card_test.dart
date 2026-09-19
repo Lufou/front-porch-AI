@@ -33,6 +33,7 @@ void main() {
       expect(ext.currentTask, '');
       expect(ext.needsDecayHunger, 2);
       expect(ext.needsDecayBladder, 3);
+      expect(ext.needsDecayBowels, 2);
       expect(ext.needsDecayEnergy, 3);
       expect(ext.needsDecaySocial, 2);
       expect(ext.needsDecayFun, 2);
@@ -56,6 +57,7 @@ void main() {
         currentTask: 'Guard the gate',
         needsDecayHunger: 2,
         needsDecayBladder: 3,
+        needsDecayBowels: 5,
         needsDecayEnergy: 4,
         needsDecaySocial: 6,
         needsDecayFun: 8,
@@ -76,6 +78,7 @@ void main() {
       expect(ext.currentTask, 'Guard the gate');
       expect(ext.needsDecayHunger, 2);
       expect(ext.needsDecayBladder, 3);
+      expect(ext.needsDecayBowels, 5);
       expect(ext.needsDecayEnergy, 4);
       expect(ext.needsDecaySocial, 6);
       expect(ext.needsDecayFun, 8);
@@ -143,6 +146,7 @@ void main() {
           'current_task': 'Sweep the floor',
           'needs_decay_hunger': 2,
           'needs_decay_bladder': 4,
+          'needs_decay_bowels': 3,
           'needs_decay_energy': 6,
           'needs_decay_social': 8,
           'needs_decay_fun': 10,
@@ -167,6 +171,7 @@ void main() {
       expect(ext.currentTask, 'Sweep the floor');
       expect(ext.needsDecayHunger, 2);
       expect(ext.needsDecayBladder, 4);
+      expect(ext.needsDecayBowels, 3);
       expect(ext.needsDecayEnergy, 6);
       expect(ext.needsDecaySocial, 8);
       expect(ext.needsDecayFun, 10);
@@ -218,6 +223,7 @@ void main() {
         currentTask: 'Watch the stars',
         needsDecayHunger: 1,
         needsDecayBladder: 2,
+        needsDecayBowels: 8,
         needsDecayEnergy: 3,
         needsDecaySocial: 4,
         needsDecayFun: 5,

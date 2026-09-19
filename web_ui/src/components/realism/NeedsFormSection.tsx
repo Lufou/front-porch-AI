@@ -12,10 +12,11 @@ import { type RealismValues, decayDescription } from './realismTypes';
 
 type Patch = (patch: Partial<RealismValues>) => void;
 
-// [label, baseline key, decay key] for the 7 Sims-style needs.
+// [label, baseline key, decay key] for the 8 Sims-style needs.
 const NEEDS: [string, keyof RealismValues, keyof RealismValues][] = [
   ['Hunger', 'needsBaselineHunger', 'needsDecayHunger'],
   ['Bladder', 'needsBaselineBladder', 'needsDecayBladder'],
+  ['Bowels', 'needsBaselineBowels', 'needsDecayBowels'],
   ['Energy', 'needsBaselineEnergy', 'needsDecayEnergy'],
   ['Social', 'needsBaselineSocial', 'needsDecaySocial'],
   ['Fun', 'needsBaselineFun', 'needsDecayFun'],

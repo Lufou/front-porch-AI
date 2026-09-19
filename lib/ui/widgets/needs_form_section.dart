@@ -37,6 +37,8 @@ class NeedsFormSection extends StatelessWidget {
   final ValueChanged<int> onBaselineHungerChanged;
   final int baselineBladder;
   final ValueChanged<int> onBaselineBladderChanged;
+  final int baselineBowels;
+  final ValueChanged<int> onBaselineBowelsChanged;
   final int baselineEnergy;
   final ValueChanged<int> onBaselineEnergyChanged;
   final int baselineSocial;
@@ -53,6 +55,8 @@ class NeedsFormSection extends StatelessWidget {
   final ValueChanged<int>? onDecayHungerChanged;
   final int? decayBladder;
   final ValueChanged<int>? onDecayBladderChanged;
+  final int? decayBowels;
+  final ValueChanged<int>? onDecayBowelsChanged;
   final int? decayEnergy;
   final ValueChanged<int>? onDecayEnergyChanged;
   final int? decaySocial;
@@ -76,6 +80,8 @@ class NeedsFormSection extends StatelessWidget {
     required this.onBaselineHungerChanged,
     required this.baselineBladder,
     required this.onBaselineBladderChanged,
+    required this.baselineBowels,
+    required this.onBaselineBowelsChanged,
     required this.baselineEnergy,
     required this.onBaselineEnergyChanged,
     required this.baselineSocial,
@@ -90,6 +96,8 @@ class NeedsFormSection extends StatelessWidget {
     this.onDecayHungerChanged,
     this.decayBladder,
     this.onDecayBladderChanged,
+    this.decayBowels,
+    this.onDecayBowelsChanged,
     this.decayEnergy,
     this.onDecayEnergyChanged,
     this.decaySocial,
@@ -161,6 +169,15 @@ class NeedsFormSection extends StatelessWidget {
                   onChanged: onBaselineBladderChanged,
                   decayValue: decayBladder,
                   onDecayChanged: onDecayBladderChanged,
+                  context: context,
+                ),
+                const SizedBox(height: 12),
+                _needsSlider(
+                  label: 'Bowels',
+                  value: baselineBowels,
+                  onChanged: onBaselineBowelsChanged,
+                  decayValue: decayBowels,
+                  onDecayChanged: onDecayBowelsChanged,
                   context: context,
                 ),
                 const SizedBox(height: 12),

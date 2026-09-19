@@ -156,6 +156,9 @@ extension _CreateCharacterRealismStep on _CreateCharacterPageState {
                   baselineBladder: _needsBaselineBladder,
                   onBaselineBladderChanged: (v) =>
                       rebuildState(() => _needsBaselineBladder = v),
+                  baselineBowels: _needsBaselineBowels,
+                  onBaselineBowelsChanged: (v) =>
+                      rebuildState(() => _needsBaselineBowels = v),
                   baselineEnergy: _needsBaselineEnergy,
                   onBaselineEnergyChanged: (v) =>
                       rebuildState(() => _needsBaselineEnergy = v),
@@ -177,6 +180,9 @@ extension _CreateCharacterRealismStep on _CreateCharacterPageState {
                   decayBladder: _needsDecayBladder,
                   onDecayBladderChanged: (v) =>
                       rebuildState(() => _needsDecayBladder = v),
+                  decayBowels: _needsDecayBowels,
+                  onDecayBowelsChanged: (v) =>
+                      rebuildState(() => _needsDecayBowels = v),
                   decayEnergy: _needsDecayEnergy,
                   onDecayEnergyChanged: (v) =>
                       rebuildState(() => _needsDecayEnergy = v),

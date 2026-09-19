@@ -93,6 +93,7 @@ extension ChatServiceImportSeed on ChatService {
         _needsSimulation.initializeFreshWithDefaults({
           'hunger': extSeed.needsBaselineHunger,
           'bladder': extSeed.needsBaselineBladder,
+          'bowels': extSeed.needsBaselineBowels,
           'energy': extSeed.needsBaselineEnergy,
           'social': extSeed.needsBaselineSocial,
           'fun': extSeed.needsBaselineFun,
@@ -161,6 +162,7 @@ extension ChatServiceImportSeed on ChatService {
           _needsSimulation.initializeFreshWithDefaults(const {
             'hunger': 80,
             'bladder': 80,
+            'bowels': 80,
             'energy': 80,
             'social': 80,
             'fun': 80,

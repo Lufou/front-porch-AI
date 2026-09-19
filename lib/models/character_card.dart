@@ -140,6 +140,7 @@ class FrontPorchExtensions {
   // with this character. Default 80 matches legacy initialization behavior.
   int needsBaselineHunger;
   int needsBaselineBladder;
+  int needsBaselineBowels;
   int needsBaselineEnergy;
   int needsBaselineSocial;
   int needsBaselineFun;
@@ -150,6 +151,7 @@ class FrontPorchExtensions {
   // Defaults match the legacy hardcoded NeedsSimulation.needDecay values.
   int needsDecayHunger;
   int needsDecayBladder;
+  int needsDecayBowels;
   int needsDecayEnergy;
   int needsDecaySocial;
   int needsDecayFun;
@@ -249,6 +251,7 @@ class FrontPorchExtensions {
     // Per-need baseline values (0-100). Default 80 matches legacy initialization.
     this.needsBaselineHunger = 80,
     this.needsBaselineBladder = 80,
+    this.needsBaselineBowels = 80,
     this.needsBaselineEnergy = 80,
     this.needsBaselineSocial = 80,
     this.needsBaselineFun = 80,
@@ -257,6 +260,7 @@ class FrontPorchExtensions {
 
     this.needsDecayHunger = 2,
     this.needsDecayBladder = 3,
+    this.needsDecayBowels = 2,
     this.needsDecayEnergy = 3,
     this.needsDecaySocial = 2,
     this.needsDecayFun = 2,
@@ -339,6 +343,7 @@ class FrontPorchExtensions {
       needsSimStrength: realism['needs_sim_strength'] as int? ?? 1,
       needsBaselineHunger: realism['needs_baseline_hunger'] as int? ?? 80,
       needsBaselineBladder: realism['needs_baseline_bladder'] as int? ?? 80,
+      needsBaselineBowels: realism['needs_baseline_bowels'] as int? ?? 80,
       needsBaselineEnergy: realism['needs_baseline_energy'] as int? ?? 80,
       needsBaselineSocial: realism['needs_baseline_social'] as int? ?? 80,
       needsBaselineFun: realism['needs_baseline_fun'] as int? ?? 80,
@@ -346,6 +351,7 @@ class FrontPorchExtensions {
       needsBaselineComfort: realism['needs_baseline_comfort'] as int? ?? 80,
       needsDecayHunger: realism['needs_decay_hunger'] as int? ?? 2,
       needsDecayBladder: realism['needs_decay_bladder'] as int? ?? 3,
+      needsDecayBowels: realism['needs_decay_bowels'] as int? ?? 2,
       needsDecayEnergy: realism['needs_decay_energy'] as int? ?? 3,
       needsDecaySocial: realism['needs_decay_social'] as int? ?? 2,
       needsDecayFun: realism['needs_decay_fun'] as int? ?? 2,
@@ -412,6 +418,7 @@ class FrontPorchExtensions {
     currentTask: currentTask,
     needsBaselineHunger: needsBaselineHunger,
     needsBaselineBladder: needsBaselineBladder,
+    needsBaselineBowels: needsBaselineBowels,
     needsBaselineEnergy: needsBaselineEnergy,
     needsBaselineSocial: needsBaselineSocial,
     needsBaselineFun: needsBaselineFun,

@@ -99,6 +99,18 @@ extension _GroupNeedsMemberCard on _GroupNeedsTabState {
             ),
           ),
           _needsSlider(
+            'Bowels',
+            baselines[_kBowels] ?? 80,
+            (v) => _updateNeedsBaseline(id, _kBowels, v),
+            decayValue: _decayRates[id]?[_kBowels] ?? 4,
+            onDecayChanged: (v) => _updateMemberDecay(id, _kBowels, v),
+            onDecayChangeEnd: (v) => widget.chatService.setGroupNeedsDecayRate(
+              _kBowels,
+              v,
+              memberId: id,
+            ),
+          ),
+          _needsSlider(
             'Energy',
             baselines[_kEnergy] ?? 80,
             (v) => _updateNeedsBaseline(id, _kEnergy, v),

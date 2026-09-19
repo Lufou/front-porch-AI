@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 //
 // All-zero needs impact is a failed read. Tools fill required ints with 0;
-// retry text, then a repair pass. Individual 0s are fine; all seven are not.
+// retry text, then a repair pass. Individual 0s are fine; all eight are not.
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -23,6 +23,7 @@ const _zeroArgs = {
   'fun_delta': 0,
   'social_delta': 0,
   'bladder_delta': 0,
+  'bowels_delta': 0,
   'comfort_delta': 0,
   'reason': 'none',
 };
@@ -34,7 +35,7 @@ void main() {
         needsImpactHasNonZeroDelta(
           '{"hunger_delta":0,"energy_delta":0,"hygiene_delta":0,'
           '"fun_delta":0,"social_delta":0,"bladder_delta":0,'
-          '"comfort_delta":0,"reason":"none"}',
+          '"bowels_delta":0,"comfort_delta":0,"reason":"none"}',
         ),
         isFalse,
       );

@@ -31,6 +31,7 @@ import 'package:front_porch_ai/ui/widgets/needs_form_section.dart';
 import 'package:front_porch_ai/ui/theme/app_colors.dart';
 import 'package:front_porch_ai/providers/app_state.dart';
 
+part 'create_character_page.needs_state.dart';
 part 'create_character_page.save.dart';
 part 'create_character_page.step_lorebook.dart';
 part 'create_character_page.step_portrait.dart';
@@ -55,7 +56,8 @@ class CreateCharacterPage extends StatefulWidget {
   State<CreateCharacterPage> createState() => _CreateCharacterPageState();
 }
 
-class _CreateCharacterPageState extends State<CreateCharacterPage> {
+class _CreateCharacterPageState extends State<CreateCharacterPage>
+    with _CreateCharacterNeedsState {
   /// Re-exposes the protected [setState] for the `part of` extensions
   /// (`create_character_page.*.dart`). Same bridge as settings_page,
   /// chat_page and the group wizard.
@@ -149,23 +151,6 @@ class _CreateCharacterPageState extends State<CreateCharacterPage> {
   int _realismVerificationMaxReprocesses = 1;
   int _realismVerificationStrictness = 3;
   bool _realismNeedsDirectorAuthority = false;
-
-  // ── Needs Simulation baselines (0-100) ──
-  int _needsBaselineHunger = 80;
-  int _needsBaselineBladder = 80;
-  int _needsBaselineEnergy = 80;
-  int _needsBaselineSocial = 80;
-  int _needsBaselineFun = 80;
-  int _needsBaselineHygiene = 80;
-  int _needsBaselineComfort = 80;
-
-  int _needsDecayHunger = 5;
-  int _needsDecayBladder = 5;
-  int _needsDecayEnergy = 5;
-  int _needsDecaySocial = 5;
-  int _needsDecayFun = 5;
-  int _needsDecayHygiene = 5;
-  int _needsDecayComfort = 5;
 
   // ── Token counter ──
   final ValueNotifier<int> _tokenNotifier = ValueNotifier<int>(0);

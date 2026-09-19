@@ -189,6 +189,7 @@ class _EditCharacterPageState extends State<EditCharacterPage>
   // Per-need baseline values (0-100).
   int _needsBaselineHunger = 80;
   int _needsBaselineBladder = 80;
+  int _needsBaselineBowels = 80;
   int _needsBaselineEnergy = 80;
   int _needsBaselineSocial = 80;
   int _needsBaselineFun = 80;
@@ -197,6 +198,7 @@ class _EditCharacterPageState extends State<EditCharacterPage>
 
   int _needsDecayHunger = 5;
   int _needsDecayBladder = 5;
+  int _needsDecayBowels = 5;
   int _needsDecayEnergy = 5;
   int _needsDecaySocial = 5;
   int _needsDecayFun = 5;
@@ -288,6 +290,7 @@ class _EditCharacterPageState extends State<EditCharacterPage>
       _needsSimStrength = ext.needsSimStrength;
       _needsBaselineHunger = ext.needsBaselineHunger;
       _needsBaselineBladder = ext.needsBaselineBladder;
+      _needsBaselineBowels = ext.needsBaselineBowels;
       _needsBaselineEnergy = ext.needsBaselineEnergy;
       _needsBaselineSocial = ext.needsBaselineSocial;
       _needsBaselineFun = ext.needsBaselineFun;
@@ -296,6 +299,7 @@ class _EditCharacterPageState extends State<EditCharacterPage>
 
       _needsDecayHunger = ext.needsDecayHunger;
       _needsDecayBladder = ext.needsDecayBladder;
+      _needsDecayBowels = ext.needsDecayBowels;
       _needsDecayEnergy = ext.needsDecayEnergy;
       _needsDecaySocial = ext.needsDecaySocial;
       _needsDecayFun = ext.needsDecayFun;

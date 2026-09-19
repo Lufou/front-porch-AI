@@ -303,6 +303,7 @@ class CreatorState extends ChangeNotifier {
   // FrontPorchExtensions on save. Defaults match create_character_page.
   int needsBaselineHunger = 80;
   int needsBaselineBladder = 80;
+  int needsBaselineBowels = 80;
   int needsBaselineEnergy = 80;
   int needsBaselineSocial = 80;
   int needsBaselineFun = 80;
@@ -310,6 +311,7 @@ class CreatorState extends ChangeNotifier {
   int needsBaselineComfort = 80;
   int needsDecayHunger = 5;
   int needsDecayBladder = 5;
+  int needsDecayBowels = 5;
   int needsDecayEnergy = 5;
   int needsDecaySocial = 5;
   int needsDecayFun = 5;

@@ -92,6 +92,7 @@ export interface RealismValues {
   needsSimStrength: number;
   needsBaselineHunger: number;
   needsBaselineBladder: number;
+  needsBaselineBowels: number;
   needsBaselineEnergy: number;
   needsBaselineSocial: number;
   needsBaselineFun: number;
@@ -99,6 +100,7 @@ export interface RealismValues {
   needsBaselineComfort: number;
   needsDecayHunger: number;
   needsDecayBladder: number;
+  needsDecayBowels: number;
   needsDecayEnergy: number;
   needsDecaySocial: number;
   needsDecayFun: number;
@@ -125,6 +127,7 @@ export interface GreetingSeed {
   currentTask?: string;
   needsBaselineHunger?: number;
   needsBaselineBladder?: number;
+  needsBaselineBowels?: number;
   needsBaselineEnergy?: number;
   needsBaselineSocial?: number;
   needsBaselineFun?: number;
@@ -170,6 +173,7 @@ export const REALISM_DEFAULTS: RealismValues = {
   needsSimStrength: 1,
   needsBaselineHunger: 80,
   needsBaselineBladder: 80,
+  needsBaselineBowels: 80,
   needsBaselineEnergy: 80,
   needsBaselineSocial: 80,
   needsBaselineFun: 80,
@@ -177,6 +181,7 @@ export const REALISM_DEFAULTS: RealismValues = {
   needsBaselineComfort: 80,
   needsDecayHunger: 2,
   needsDecayBladder: 3,
+  needsDecayBowels: 2,
   needsDecayEnergy: 3,
   needsDecaySocial: 2,
   needsDecayFun: 2,
