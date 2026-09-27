@@ -329,7 +329,11 @@ class NeedsImpactEvaluator {
         deltas.removeWhere((k, _) => !onlyNeeds.contains(k));
       }
 
-      // C: if after strip/parse we got literally no delta keys at all, treat as failure (do not apply empty "correction")
+      _boundDeltas(deltas);
+
+      // After the off-need drop: an off-only reply is an empty change, not
+      // a success. Used to run before [_boundDeltas], which reported success
+      // when the model only moved disabled needs.
       if (deltas.isEmpty) {
         debugPrint(
           '[Realism:Needs] reprocess parsed no deltas in scope '
@@ -338,8 +342,6 @@ class NeedsImpactEvaluator {
         );
         return false;
       }
-
-      _boundDeltas(deltas);
 
       // Scoped: everything the user did NOT tick keeps the delta it already
       // had. Unscoped stays byte-for-byte what it always was.

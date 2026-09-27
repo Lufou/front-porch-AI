@@ -482,6 +482,7 @@ export function ChatPage() {
         onClosePersona={() => setShowPersona(false)}
         onPersonaChanged={refresh}
         reprocessIndex={reprocessIndex}
+        messages={state.messages}
         onSubmitReprocess={submitReprocess}
         onCloseReprocess={() => setReprocessIndex(null)}
         chance={chance}

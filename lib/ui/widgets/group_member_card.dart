@@ -140,9 +140,9 @@ class _GroupMemberCardState extends State<GroupMemberCard> {
         ? chat.getFixationLifespanForGroupCharacter(widget.character)
         : null;
     final needs = isRealism
-        ? visibleNeeds(
+        ? visibleNeedsFor(
             chat.getNeedsForGroupCharacter(widget.character),
-            widget.character.frontPorchExtensions?.needsOff ?? const [],
+            widget.character,
           )
         : const <String, int>{};
     final topNeeds = isRealism
