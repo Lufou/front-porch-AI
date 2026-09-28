@@ -143,17 +143,35 @@ class ChatFacade {
       _realism.participantRealism(participantId);
 
   /// Extract the per-message Realism chip deltas from a message's active-swipe
-  /// metadata (the same keys the desktop bubble reads), omitting zeros/empties.
+  /// metadata (the same keys the desktop bubble reads). Bond and trust keep
+  /// a recorded 0. Arousal still omits zero. A missing key stays omitted.
   Map<String, dynamic>? _messageChips(Map<String, dynamic>? md, int index) {
     if (md == null) return null;
     final out = <String, dynamic>{};
     for (final entry in const {
       'bond_delta': 'bondDelta',
       'trust_delta': 'trustDelta',
-      'arousal_delta': 'arousalDelta',
     }.entries) {
       final v = md[entry.key];
-      if (v is int && v != 0) out[entry.value] = v;
+      if (v is int) out[entry.value] = v;
+    }
+    final arousal = md['arousal_delta'];
+    if (arousal is int && arousal != 0) out['arousalDelta'] = arousal;
+    // A scored reply with no stored bond/trust is a dropped zero. The
+    // bubble says "unchanged" instead of looking like the judge never ran.
+    final scored =
+        (md['emotion_label'] is String &&
+            (md['emotion_label'] as String).isNotEmpty) ||
+        md['needs_deltas'] is Map ||
+        md[kNeedsUnaffectedMeta] == true ||
+        (md['time_passed'] is String &&
+            (md['time_passed'] as String).isNotEmpty) ||
+        (md['time_skip_to'] is String &&
+            (md['time_skip_to'] as String).isNotEmpty) ||
+        md['realism_verification'] is Map;
+    if (scored) {
+      out.putIfAbsent('bondDelta', () => 0);
+      out.putIfAbsent('trustDelta', () => 0);
     }
     for (final entry in const {
       'emotion_label': 'emotionLabel',

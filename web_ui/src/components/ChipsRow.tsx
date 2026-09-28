@@ -33,11 +33,11 @@ export function ChipsRow({
   onRevert: () => void;
 }) {
   const [openKey, setOpenKey] = useState<string | null>(null);
-  const signed = (n: number) => (n > 0 ? `+${n}` : `${n}`);
+  const signed = (n: number) => (n >= 0 ? `+${n}` : `${n}`);
 
   const realism: Pill[] = [];
-  if (chips.bondDelta) realism.push({ key: 'bond', label: `Bond ${signed(chips.bondDelta)}`, cls: chips.bondDelta > 0 ? 'up' : 'down', reason: chips.bondReason });
-  if (chips.trustDelta) realism.push({ key: 'trust', label: `Trust ${signed(chips.trustDelta)}`, cls: chips.trustDelta > 0 ? 'up' : 'down', reason: chips.trustReason });
+  if (chips.bondDelta != null) realism.push({ key: 'bond', label: chips.bondDelta === 0 ? 'Bond unchanged' : `Bond ${signed(chips.bondDelta)}`, cls: chips.bondDelta > 0 ? 'up' : chips.bondDelta < 0 ? 'down' : 'time', reason: chips.bondReason });
+  if (chips.trustDelta != null) realism.push({ key: 'trust', label: chips.trustDelta === 0 ? 'Trust unchanged' : `Trust ${signed(chips.trustDelta)}`, cls: chips.trustDelta > 0 ? 'up' : chips.trustDelta < 0 ? 'down' : 'time', reason: chips.trustReason });
   if (chips.arousalDelta) realism.push({ key: 'arousal', label: `Arousal ${signed(chips.arousalDelta)}`, cls: chips.arousalDelta > 0 ? 'up' : 'down' });
   if (chips.emotionLabel) realism.push({ key: 'mood', label: chips.emotionLabel, cls: 'mood' });
   if (chips.timePassed) realism.push({ key: 'passed', label: `⏱ ${chips.timePassed}`, cls: 'time' });
