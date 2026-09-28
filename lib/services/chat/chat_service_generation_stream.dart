@@ -438,6 +438,16 @@ extension ChatServiceGenerationStream on ChatService {
       _drainTimer = null;
     }
 
+    // A think that never closed leaves duration at 0. The next group
+    // speaker keeps isGenerating true, and this bubble would say
+    // "Thinking…" for that whole reply. Record the time on this message.
+    void sealThinkClock() {
+      final started = _thinkStartTime;
+      if (started == null || streamTarget.thinkingDurationMs > 0) return;
+      final ms = DateTime.now().difference(started).inMilliseconds;
+      streamTarget.thinkingDurationMs = ms <= 0 ? 1 : ms;
+    }
+
     // User cancel (stream-loop break above, or Stop during the drain):
     // halt the turn HERE — no finalize, no lorebook scan, no post-turn
     // evals on an aborted reply. Mirrors the catch path's treatAsCancel:
@@ -466,15 +476,14 @@ extension ChatServiceGenerationStream on ChatService {
           modelName: t.originalModelName,
         );
       }
-      if (_messages.isNotEmpty) {
-        final last = _messages.last;
-        final closed = closeOpenThink(last.text);
-        if (closed != last.text) last.text = closed;
-      }
+      sealThinkClock();
+      final closed = closeOpenThink(streamTarget.text);
+      if (closed != streamTarget.text) streamTarget.text = closed;
       await _saveChat();
       notifyListeners();
       return true;
     }
+    sealThinkClock();
     return false;
   }
 }

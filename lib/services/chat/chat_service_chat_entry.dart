@@ -38,7 +38,10 @@ extension ChatServiceChatEntry on ChatService {
         (c) => identical(c, card) || (c.dbId != null && c.dbId == card.dbId),
       );
       if (i != -1) {
-        _groupCharacters[i] = card;
+        // characters is an unmodifiable view. The editor mutates the member
+        // in place, then this refresh replaces the slot when the caller
+        // handed back a copy. Writing the view throws on Save.
+        _groupManager?.replaceCharacterAt(i, card);
         if (_activeCharacter?.dbId == card.dbId) {
           _activeCharacter = card;
         }

@@ -224,12 +224,13 @@ extension ChatServiceMessageOps on ChatService {
   }
 
   void deleteMessage(int index) async {
-    // No deletes while a generation is live: removing entries shifts every
-    // position the active turn still relies on (chip attach, lorebook scan,
-    // journal invalidation) — and made a dream banner the last message,
-    // where the aborted turn's writes landed (2026-07-28). Stop first.
-    if (_isTurnBusy) return;
+    // The tail is the live reply. Positional writers still assume it stays
+    // last, and removing it made a dream banner the last message, where
+    // the aborted turn's writes landed (2026-07-28). Stop before deleting
+    // THAT bubble. An earlier one is already finished — a group mate's
+    // long generation must not trap it.
     if (index < 0 || index >= _messages.length) return;
+    if (_isTurnBusy && index == _messages.length - 1) return;
     final dbPos = persistMessagePosition(
       base: _history.basePosition,
       index: index,
@@ -241,7 +242,11 @@ extension ChatServiceMessageOps on ChatService {
       await _awaitHistoryHydrated();
       index = dbPos;
       if (index < 0 || index >= _messages.length) return;
+      if (_isTurnBusy && index == _messages.length - 1) return;
     }
+    // Re-read after the hydration await. The turn may have finished,
+    // in which case this is an ordinary delete.
+    final duringTurn = _isTurnBusy;
     if (index >= 0 && index < _messages.length) {
       final deleted = _messages[index];
 
@@ -288,9 +293,10 @@ extension ChatServiceMessageOps on ChatService {
       // (and all realism fields) reset to their previous saved values — in
       // groups, inside the NEW LAST speaker's own _groupRealism entry.
       // Clock is the new visible tip's after — tail and non-tail.
-      if (_messages.isNotEmpty) {
-        final newLast = _messages.last;
-        _restoreRealismStateForSpeaker(newLast, restoreClock: false);
+      // The streaming tail's snapshot is the turn still in flight.
+      // Restoring it would rewind the speaker who is generating.
+      if (_messages.isNotEmpty && !duringTurn) {
+        _restoreRealismStateForSpeaker(_messages.last, restoreClock: false);
       }
 
       // Group: also roll back the DELETED speaker's OWN _groupRealism entry to
@@ -319,7 +325,9 @@ extension ChatServiceMessageOps on ChatService {
           if (speaker != null &&
               _getCharacterIdFromCard(speaker) == deletedSid &&
               m.activeMetadata?['realism_state'] is Map) {
-            _restoreRealismStateForSpeaker(m, restoreClock: false);
+            _keepingLiveSpeaker(() {
+              _restoreRealismStateForSpeaker(m, restoreClock: false);
+            });
             break;
           }
         }
@@ -336,7 +344,11 @@ extension ChatServiceMessageOps on ChatService {
 
       if (!deleted.isUser && deleted.sender != 'System') {
         _rewindPocketsForDeletedMessage(deleted, wasTail: wasTail);
-        _applyClockAfterDelete(deleted, wasTail: wasTail);
+        // The live tip is the reply still being written. Applying the
+        // clock from it mid-turn would move story time under that speaker.
+        if (!duringTurn) {
+          _applyClockAfterDelete(deleted, wasTail: wasTail);
+        }
       }
 
       if (wasTail && _history.hasMore) {

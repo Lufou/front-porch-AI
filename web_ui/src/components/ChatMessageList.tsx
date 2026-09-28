@@ -191,7 +191,7 @@ const TranscriptRows = memo(function TranscriptRows({
               )}
               {m.text ? (
                 <MessageContent text={m.text} />
-              ) : !m.isUser && m.thinkingContent && !busy ? (
+              ) : !m.isUser && m.thinkingContent && !(busy && m.index === lastIndex) ? (
                 // Thought-only reply (the model spent its whole turn inside a
                 // <think> block): say so instead of a bare empty bubble.
                 <span className="muted small">

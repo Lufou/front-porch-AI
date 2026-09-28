@@ -148,7 +148,7 @@ export function MessageActions({
         <button className="icon-btn" title="Fork from here" disabled={busy} onClick={onFork}>⑂</button>
       )}
       <button className="icon-btn" title="Edit" disabled={busy} onClick={onEdit}>✎</button>
-      <button className="icon-btn" title="Delete" disabled={busy} onClick={onDelete}>🗑</button>
+      <button className="icon-btn" title="Delete" disabled={busy && isLast} onClick={onDelete}>🗑</button>
       </div>
       {picker && (
         <VariantPickerModal

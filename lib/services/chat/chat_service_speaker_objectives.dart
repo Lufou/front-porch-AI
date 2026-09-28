@@ -248,6 +248,28 @@ extension ChatServiceSpeakerObjectives on ChatService {
     return _realismStateInjection.buildRealismStateInjection();
   }
 
+  /// A group delete loads the deleted member into the live scalar
+  /// registers. While another member is mid-turn, put those registers
+  /// back or the next save writes the deleted member onto the speaker.
+  void _keepingLiveSpeaker(void Function() body) {
+    final live = _activeCharacter;
+    if (_activeGroup == null || !_isTurnBusy || live == null) {
+      body();
+      return;
+    }
+    final sid = _getCharacterIdFromCard(live);
+    if (sid.isEmpty) {
+      body();
+      return;
+    }
+    _saveScalarsIntoGroupRealism(sid);
+    try {
+      body();
+    } finally {
+      _loadGroupRealismIntoScalars(sid);
+    }
+  }
+
   /// Group-aware wrapper for [_restoreRealismStateFromMessage]. In a group the
   /// snapshot belongs to the message's SPEAKER, so the restore must go through
   /// their _groupRealism entry (load → restore scalars → save) — a bare scalar
