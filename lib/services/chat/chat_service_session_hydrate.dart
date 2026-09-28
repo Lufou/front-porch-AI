@@ -134,6 +134,8 @@ extension ChatServiceSessionHydrate on ChatService {
     _authorNoteStrength = s.authorNoteDepth;
     _summary = s.summary ?? '';
     _summaryLastIndex = s.summaryLastIndex ?? 0;
+    _recapBoundSessionId = s.id;
+    _recapClearArmed = false;
     _sessionName = s.name;
     _sessionDescription = s.description;
     _selectedLooks = decodeSelectedLooks(s.selectedLookAvatarId);

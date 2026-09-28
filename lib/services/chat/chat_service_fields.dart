@@ -247,6 +247,13 @@ mixin ChatServiceFieldBag {
   // ── Chat Summary ──
   String _summary = '';
   int _summaryLastIndex = 0;
+
+  /// Session id whose in-memory recap matches the row. Until hydrate,
+  /// a save must not blank or replace `sessions.summary`.
+  String? _recapBoundSessionId;
+
+  /// The editor or a timeline rewrite cleared "Where we are" on purpose.
+  bool _recapClearArmed = false;
   // Secondary runtime flag (like _isSummaryGenerating); must be defensively
   // zeroed on *all* reset/new-chat/0-session/group/setActive/load/delete
   // paths or pause state leaks across contexts (see CLAUDE.md keep-sync).

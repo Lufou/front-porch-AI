@@ -21,6 +21,15 @@ part of '../chat_service.dart';
 /// Session persist: enqueue, write, and replace-all.
 /// Guest / group-realism hydrate stays on [ChatServiceSessionState].
 extension ChatServiceSessionStateSave on ChatService {
+  /// An edit of the open chat's recap. Binds the row so the following
+  /// save writes this text, including a deliberate clear.
+  void _rememberRecapEdit(String text) {
+    _summary = text;
+    final id = _currentSessionId;
+    if (id != null) _recapBoundSessionId = id;
+    _recapClearArmed = text.trim().isEmpty;
+  }
+
   Future<void> _saveChat({bool replaceAll = false}) async {
     // Turn taken = this write. Snapshot at enqueue so a later reload
     // cannot shrink the queued transcript. [replaceAll] is only for
@@ -175,15 +184,21 @@ extension ChatServiceSessionStateSave on ChatService {
       groupDbId = keptGroup;
     }
 
-    // Opening a chat clears the live recap before hydrate. A save in that
-    // window must not blank the row. The stored text wins until hydrate
-    // has put it back in memory.
-    final summaryText = _isLoadingSession
-        ? (existing?.summary ?? '')
-        : _summary;
-    final summaryIndex = _isLoadingSession
-        ? (existing?.summaryLastIndex ?? 0)
-        : _summaryLastIndex;
+    // Opening a chat, a model switch, and quit all save while the live
+    // recap is still empty. That empty copy must not null the row.
+    final kept = recapColumnsForSave(
+      boundToThisSession: _recapBoundSessionId == sessionId,
+      clearArmed: _recapClearArmed,
+      memory: _summary,
+      memoryCursor: _summaryLastIndex,
+      stored: existing?.summary,
+      storedCursor: existing?.summaryLastIndex,
+    );
+    if (_recapBoundSessionId == sessionId && _summary.trim().isNotEmpty) {
+      _recapClearArmed = false;
+    }
+    final summaryText = kept.text ?? '';
+    final summaryIndex = kept.cursor ?? 0;
 
     // Upsert session (INSERT OR REPLACE to avoid UNIQUE constraint errors)
     final timestamp = int.tryParse(sessionId) ?? 0;
