@@ -407,6 +407,28 @@ extension AppDatabaseMaintenance on AppDatabase {
         '[DB] Schema repair (including new tables) completed in ${stopwatch.elapsedMilliseconds}ms total',
       );
     }
+    await _ensureMessageSessionIndex();
+  }
+
+  /// Tail and older-page reads are `session_id = ? ORDER BY position`.
+  /// Without this index each page scans every message blob in the
+  /// library. A long chat then holds the loading cover for minutes.
+  Future<void> _ensureMessageSessionIndex() async {
+    try {
+      final sw = Stopwatch()..start();
+      await customStatement(
+        'CREATE INDEX IF NOT EXISTS messages_session_position '
+        'ON messages (session_id, position)',
+      );
+      if (sw.elapsedMilliseconds > 50) {
+        debugPrint(
+          '[DB] messages_session_position ready in '
+          '${sw.elapsedMilliseconds}ms',
+        );
+      }
+    } catch (e) {
+      debugPrint('[DB] messages_session_position skipped: $e');
+    }
   }
 
   /// Introspects the live physical columns using the SQLite PRAGMA that works

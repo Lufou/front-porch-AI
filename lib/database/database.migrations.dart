@@ -14,6 +14,7 @@ part of 'database.dart';
 extension _AppDatabaseMigrationLadder on AppDatabase {
   Future<void> _onCreateMigration(Migrator m) async {
     await m.createAll();
+    await _ensureMessageSessionIndex();
     // Seed the sync_meta row on fresh installs
     await customInsert(
       'INSERT OR IGNORE INTO sync_meta (id, version, last_modified_at) '

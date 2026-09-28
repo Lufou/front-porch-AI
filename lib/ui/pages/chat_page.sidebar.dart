@@ -39,10 +39,15 @@ extension _ChatPageSidebar on _ChatPageState {
     final messages = Provider.of<ChatService>(context, listen: false).messages;
     if (position < 0 || position >= messages.length) return;
     final target = messages[position];
+    _transcriptWindow.revealAround(position, messages.length);
+    rebuildState(() {});
+    await WidgetsBinding.instance.endOfFrame;
     await jumpToMessage(
       controller: _scrollController,
       messages: messages,
       target: target,
+      builtStart: _transcriptWindow.start,
+      builtEnd: _transcriptWindow.end,
       // This page's own keys. Null for a not-yet-built bubble — the seek
       // treats that as "keep paging"; the itemBuilder mints the key the
       // moment the bubble materializes.

@@ -87,6 +87,10 @@ class _ChatPageState extends State<ChatPage> {
   /// at newest + scrollbar metrics reset).
   final GlobalKey _transcriptListKey = GlobalKey();
 
+  /// Which rows the transcript mounts. The service list can be the
+  /// whole archive; the screen stays on the latest lines.
+  final TranscriptWindow _transcriptWindow = TranscriptWindow();
+
   late final FocusNode _chatFocusNode;
   // Journal receipts tap-to-jump: the just-landed-on bubble, briefly tinted.
   ChatMessage? _jumpFlashMessage;
