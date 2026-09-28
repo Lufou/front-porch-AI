@@ -283,7 +283,7 @@ class _LookupRow extends StatelessWidget {
               const SizedBox(width: 8),
               _SourceChip(
                 key: const Key('regen-lookup-wiki'),
-                label: 'Her wiki',
+                label: 'Wiki',
                 selected: wiki && wikiEnabled,
                 enabled: wikiEnabled,
                 onTap: wikiEnabled ? () => onWiki(true) : null,
@@ -292,7 +292,7 @@ class _LookupRow extends StatelessWidget {
           )
         else
           Text(
-            'Her wiki',
+            'Wiki',
             key: const Key('regen-lookup-wiki'),
             style: TextStyle(
               fontSize: 12,

@@ -157,7 +157,7 @@ extension _BubbleRealismChips on _MessageBubbleState {
               Icon(Icons.menu_book, size: 11, color: amber),
               const SizedBox(width: 4),
               Text(
-                wikiOk ? 'Looked up in her wiki' : 'Wiki — nothing',
+                wikiOk ? 'Wiki' : 'Wiki — nothing',
                 style: TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.w600,
@@ -167,8 +167,8 @@ extension _BubbleRealismChips on _MessageBubbleState {
             ],
           ),
           wikiOk
-              ? 'Looked up in her wiki: $wikiQuery'
-              : 'Looked up "$wikiQuery" in her wiki — nothing reliable',
+              ? 'Looked up: $wikiQuery'
+              : 'Looked up "$wikiQuery" — nothing reliable',
         ),
       );
     }

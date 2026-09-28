@@ -135,7 +135,7 @@ class _GenTurn {
   /// Stamped as `search_receipt` when this turn ran a web_search lookup.
   Map<String, dynamic>? searchReceipt;
 
-  /// Stamped as `wiki_receipt` when this turn opened her wiki.
+  /// Stamped as `wiki_receipt` when this turn opened the wiki.
   /// When only the wiki ran, [searchReceipt] is the same map so the chip shows.
   Map<String, dynamic>? wikiReceipt;
 

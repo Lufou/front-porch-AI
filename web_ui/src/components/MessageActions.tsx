@@ -204,11 +204,11 @@ export function MessageActions({
                       disabled={!lookupWiki}
                       onClick={() => lookupWiki && setLookupIsWiki(true)}
                     >
-                      Her wiki
+                      Wiki
                     </button>
                   </div>
                 ) : (
-                  <span className="muted small" data-testid="regen-lookup-wiki">Her wiki</span>
+                  <span className="muted small" data-testid="regen-lookup-wiki">Wiki</span>
                 )}
                 <input
                   className="regen-lookup-query"
