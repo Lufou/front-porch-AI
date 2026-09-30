@@ -7,6 +7,7 @@ Last shipped nightly: `rawhide.20260921.f50f22e`. Everything below is unreleased
 
 ## Recent improvements (unreleased — ships in the next build)
 
+- 📚 **A character’s lorebook can be saved on its own** — Edit Character → Lorebook → Export file writes a world-info file. Import file on that tab reads it back.
 - 🔎 **You can name exactly what gets looked up** — end a line with `/search -- the name` or `/wiki -- the name`, or type those words in the regenerate box. The words after `--` are the search. A bare `/search` does not guess. Web shows up in regenerate only when Web Search is on. Wiki is greyed out until this chat has one. Same on the phone.
 - 🔄 **Reprocess Needs only lists the needs that are on** for that speaker — disabled ones stay hidden. Same on the phone.
 - ⏱️ **A normal send always moves the story clock** — at least a minute or two, and a ⏱ chip names it. Same moment only when the scene is one continuous instant. Passage of Time is the only driver (Realism off still ticks). Continue does not tick. Needs bars stay put unless the scene itself moves them; a short no-action turn says “No needs affected.” Same on the phone.
