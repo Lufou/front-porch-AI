@@ -76,31 +76,36 @@ void main() {
     );
   }
 
-  test('a slow dialog is not timed out off Windows', () async {
-    final live = await Directory.systemTemp.createTemp('fpai_picker_slow_');
-    addTearDown(() async {
-      if (live.existsSync()) await live.delete(recursive: true);
-    });
-    final key = PickerPrefs.testPrefsKey(PickerPrefs.catExport);
-    SharedPreferences.setMockInitialValues({key: live.path});
-    PickerPrefs.testForceWindowsPickerGuard = false;
-    PickerPrefs.testWindowsPickerTimeout = const Duration(milliseconds: 20);
-    PickerPrefs.testNativePicker =
-        ({required String op, required String? initialDirectory}) async {
-          expect(op, 'saveFile');
-          expect(initialDirectory, live.path);
-          await Future<void>.delayed(const Duration(milliseconds: 80));
-          return null;
-        };
+  test(
+    'a slow dialog is not timed out off Windows',
+    () async {
+      final live = await Directory.systemTemp.createTemp('fpai_picker_slow_');
+      addTearDown(() async {
+        if (live.existsSync()) await live.delete(recursive: true);
+      });
+      final key = PickerPrefs.testPrefsKey(PickerPrefs.catExport);
+      SharedPreferences.setMockInitialValues({key: live.path});
+      PickerPrefs.testForceWindowsPickerGuard = false;
+      PickerPrefs.testWindowsPickerTimeout = const Duration(milliseconds: 20);
+      PickerPrefs.testNativePicker =
+          ({required String op, required String? initialDirectory}) async {
+            expect(op, 'saveFile');
+            expect(initialDirectory, live.path);
+            await Future<void>.delayed(const Duration(milliseconds: 80));
+            return null;
+          };
 
-    await PickerPrefs.saveFile(
-      category: PickerPrefs.catExport,
-      bytes: Uint8List.fromList(const [1]),
-      fileName: 'lore.json',
-    );
-    final prefs = await SharedPreferences.getInstance();
-    expect(prefs.getString(key), live.path);
-  });
+      await PickerPrefs.saveFile(
+        category: PickerPrefs.catExport,
+        bytes: Uint8List.fromList(const [1]),
+        fileName: 'lore.json',
+      );
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getString(key), live.path);
+    },
+    // On Windows the guard is always on, so this off-Windows case can't run.
+    skip: Platform.isWindows ? 'guard is always on on Windows' : false,
+  );
 }
 
 class _PickerCase {
